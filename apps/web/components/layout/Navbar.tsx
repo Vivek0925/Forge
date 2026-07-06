@@ -53,12 +53,12 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="#"
+          <Link
+            href="/login"
             className="hidden text-[13px] text-[#5B5D6E] transition-colors hover:text-[#14141C] md:block"
           >
             Log in
-          </a>
+          </Link>
           {/* `size` isn't defined on ButtonProps in this codebase; cast to any to pass through for now */}
           <Button {...({ size: "sm" } as any)}>Join beta</Button>
         </div>
