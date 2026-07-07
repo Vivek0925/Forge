@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { login } from "@/lib/auth";
 
 function GithubIcon() {
   return (
@@ -26,10 +28,34 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // wire up to your auth provider here
+  const router = useRouter();
+
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+ async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
+
+  try {
+    setLoading(true);
+    setError("");
+
+    await login({
+      email,
+      password,
+    });
+
+    router.push("/dashboard");
+  } catch (err) {
+    if (err instanceof Error) {
+      setError(err.message);
+    } else {
+      setError("Login failed");
+    }
+  } finally {
+    setLoading(false);
   }
+}
 
   return (
     <div className="flex w-full max-w-[380px] flex-col">
@@ -114,11 +140,18 @@ export default function LoginForm() {
           />
         </div>
 
+        {error && (
+  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+    {error}
+  </div>
+)}
+
         <button
-          type="submit"
+  type="submit"
+  disabled={loading}
           className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-black transition-colors hover:bg-primary-hover"
         >
-          Sign in
+          {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
 

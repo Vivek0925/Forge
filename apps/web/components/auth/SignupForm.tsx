@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { register } from "@/app/lib/auth";
+import { register } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 function GithubIcon() {
