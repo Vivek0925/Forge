@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { register } from "@/app/lib/auth";
+import { useRouter } from "next/navigation";
 
 function GithubIcon() {
   return (
@@ -14,10 +16,22 @@ function GithubIcon() {
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.42-.22-2.05H12v3.72h6.6c-.13 1.1-.85 2.75-2.45 3.86l-.02.15 3.56 2.76.25.02c2.26-2.09 3.58-5.17 3.58-8.46Z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.78-2.93c-1.01.7-2.37 1.19-4.15 1.19-3.18 0-5.87-2.1-6.83-5.01l-.14.01-3.71 2.87-.05.14C3.24 21.3 7.28 24 12 24Z" />
-      <path fill="#FBBC05" d="M5.17 14.33a7.35 7.35 0 0 1-.39-2.33c0-.81.14-1.6.38-2.33l-.01-.16-3.75-2.9-.12.06A11.98 11.98 0 0 0 0 12c0 1.93.47 3.76 1.28 5.38l3.89-3.05Z" />
-      <path fill="#EA4335" d="M12 4.75c2.26 0 3.79.97 4.66 1.79l3.4-3.31C17.94 1.19 15.24 0 12 0 7.28 0 3.24 2.7 1.28 6.62l3.89 3.05c.96-2.91 3.65-4.92 6.83-4.92Z" />
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.82-.07-1.42-.22-2.05H12v3.72h6.6c-.13 1.1-.85 2.75-2.45 3.86l-.02.15 3.56 2.76.25.02c2.26-2.09 3.58-5.17 3.58-8.46Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.78-2.93c-1.01.7-2.37 1.19-4.15 1.19-3.18 0-5.87-2.1-6.83-5.01l-.14.01-3.71 2.87-.05.14C3.24 21.3 7.28 24 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.17 14.33a7.35 7.35 0 0 1-.39-2.33c0-.81.14-1.6.38-2.33l-.01-.16-3.75-2.9-.12.06A11.98 11.98 0 0 0 0 12c0 1.93.47 3.76 1.28 5.38l3.89-3.05Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c2.26 0 3.79.97 4.66 1.79l3.4-3.31C17.94 1.19 15.24 0 12 0 7.28 0 3.24 2.7 1.28 6.62l3.89 3.05c.96-2.91 3.65-4.92 6.83-4.92Z"
+      />
     </svg>
   );
 }
@@ -53,18 +67,47 @@ function PasswordStrength({ password }: { password: string }) {
 }
 
 export default function SignupForm() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const passwordsMismatch =
     confirmPassword.length > 0 && confirmPassword !== password;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // wire up to your auth provider here
+
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      await register({
+        name,
+        email,
+        password,
+      });
+
+      router.push("/login");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -73,7 +116,9 @@ export default function SignupForm() {
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-text">
           <span className="h-[9px] w-[9px] rounded-[2px] bg-primary" />
         </span>
-        <span className="text-[15px] font-medium tracking-tight text-text">Forge</span>
+        <span className="text-[15px] font-medium tracking-tight text-text">
+          Forge
+        </span>
       </div>
 
       <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
@@ -143,7 +188,10 @@ export default function SignupForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-[13px] font-medium text-text">
+          <label
+            htmlFor="password"
+            className="text-[13px] font-medium text-text"
+          >
             Password
           </label>
           <input
@@ -160,7 +208,10 @@ export default function SignupForm() {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="confirm-password" className="text-[13px] font-medium text-text">
+          <label
+            htmlFor="confirm-password"
+            className="text-[13px] font-medium text-text"
+          >
             Confirm password
           </label>
           <input
@@ -175,7 +226,9 @@ export default function SignupForm() {
             }`}
           />
           {passwordsMismatch && (
-            <span className="text-[12px] text-red-500">Passwords don&apos;t match</span>
+            <span className="text-[12px] text-red-500">
+              Passwords don&apos;t match
+            </span>
           )}
         </div>
 
@@ -189,29 +242,45 @@ export default function SignupForm() {
           />
           <span>
             I agree to Forge&apos;s{" "}
-            <Link href="/terms" className="font-medium text-text hover:text-primary">
+            <Link
+              href="/terms"
+              className="font-medium text-text hover:text-primary"
+            >
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="font-medium text-text hover:text-primary">
+            <Link
+              href="/privacy"
+              className="font-medium text-text hover:text-primary"
+            >
               Privacy Policy
             </Link>
             .
           </span>
         </label>
 
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={!agreed || passwordsMismatch}
-          className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-white transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!agreed || passwordsMismatch || loading}
+          className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-bla
+           transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Create account
+          {loading ? "Creating account..." : "Create account"}
         </button>
       </form>
 
       <p className="mt-8 text-center text-[13px] text-text-secondary">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-text hover:text-primary">
+        <Link
+          href="/login"
+          className="font-medium text-text hover:text-primary"
+        >
           Sign in
         </Link>
       </p>

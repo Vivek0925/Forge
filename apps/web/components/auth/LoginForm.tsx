@@ -116,7 +116,7 @@ export default function LoginForm() {
 
         <button
           type="submit"
-          className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-white transition-colors hover:bg-primary-hover"
+          className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-black transition-colors hover:bg-primary-hover"
         >
           Sign in
         </button>
