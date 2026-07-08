@@ -51,50 +51,49 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const { email, password } = dto;
+  const { email, password } = dto;
 
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email,
-      },
-    });
+  const user = await this.prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
 
-    if (!user) {
-      throw new UnauthorizedException(
-        "Invalid email or password",
-      );
-    }
-
-    if (!user.passwordHash) {
-      throw new UnauthorizedException(
-        "Please login with your social account",
-      );
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.passwordHash,
+  if (!user) {
+    throw new UnauthorizedException(
+      "Invalid email or password",
     );
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        "Invalid email or password",
-      );
-    }
-
-    const token = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-    });
-
-    return {
-      message: "Login successful",
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    };
   }
+
+  if (!user.passwordHash) {
+    throw new UnauthorizedException(
+      "Please login with your social account",
+    );
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    password,
+    user.passwordHash,
+  );
+
+  if (!isPasswordValid) {
+    throw new UnauthorizedException(
+      "Invalid email or password",
+    );
+  }
+
+  const token = await this.jwtService.signAsync({
+    sub: user.id,
+    email: user.email,
+  });
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+  };
+}
 }
