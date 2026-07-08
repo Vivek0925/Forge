@@ -1,8 +1,10 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, Get, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { AuthService } from '../services/auth.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { CurrentUser } from '../decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -31,5 +33,11 @@ export class AuthController {
       message: 'Login successful',
       user,
     };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user: any) {
+    return user;
   }
 }

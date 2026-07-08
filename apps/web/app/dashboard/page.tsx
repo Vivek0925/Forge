@@ -1,7 +1,9 @@
+"use client";
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
 import { Navbar } from "@/components/layout";
+import { useAuth } from "@/app/context/AuthContext";
 
 const recentWorkspaces: Array<{
   name: string;
@@ -11,12 +13,15 @@ const recentWorkspaces: Array<{
   accent: string;
 }> = [];
 
-function EmptyState() {
+function EmptyState({ user }: { user?: { name?: string | null } | null }) {
   return (
     <div className="rounded-[var(--radius-md)] border border-dashed border-[#C7C9DA] bg-[#FAFAF8]/80 px-6 py-8 text-center shadow-[var(--shadow-sm)]">
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#ECEDF3]">
         <span className="h-3 w-3 rounded-[4px] bg-[#059669]" />
       </div>
+      <h1 className="mb-2 text-[20px] font-medium tracking-[-0.02em] text-black text-[#14141C]">
+  Welcome {user?.name}
+</h1>
       <h3 className="text-[15px] font-medium text-[#14141C]">
         No workspace history yet
       </h3>
@@ -28,13 +33,19 @@ function EmptyState() {
   );
 }
 
-export const metadata = {
-  title: "Dashboard | Forge",
-  description:
-    "Manage workspaces, launch a quick meeting room, and review recent project activity.",
-};
+// export const metadata = {
+//   title: "Dashboard | Forge",
+//   description:
+//     "Manage workspaces, launch a quick meeting room, and review recent project activity.",
+// };
 
 export default function Dashboard() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <main className="relative min-h-screen bg-[#F8F8F6] text-[#14141C]">
       {/* Decorative blobs */}
@@ -162,7 +173,7 @@ export default function Dashboard() {
           </div>
 
           {recentWorkspaces.length === 0 ? (
-            <EmptyState />
+            <EmptyState user={user} />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {recentWorkspaces.map((workspace) => (
