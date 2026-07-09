@@ -1,11 +1,8 @@
 "use client";
 import { useAuth } from "@/app/context/AuthContext";
+import { useWorkspaces } from "@/app/hooks/useWorkspaces";
 import Container from "@/components/ui/Container";
 import { DashboardHeader, Hero, WorkspaceHistory } from "./components";
-import type { WorkspaceCardData } from "./components/WorkspaceCard";
-import Footer from "@/components/layout/Footer";
-
-const recentWorkspaces: WorkspaceCardData[] = [];
 
 // export const metadata = {
 //   title: "Dashboard | Forge",
@@ -15,8 +12,13 @@ const recentWorkspaces: WorkspaceCardData[] = [];
 
 export default function Dashboard() {
   const { user, loading } = useAuth();
+  const {
+    workspaces,
+    loading: workspacesLoading,
+    addWorkspace,
+  } = useWorkspaces();
 
-  if (loading) {
+  if (loading || workspacesLoading) {
     return <div>Loading...</div>;
   }
 
@@ -32,16 +34,15 @@ export default function Dashboard() {
 
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-20">
         <Container>
-          <Hero user={user} />
+          <Hero user={user} onWorkspaceCreated={addWorkspace} />
         </Container>
       </section>
 
       <section className="border-t border-[#DEDFE8]/40 bg-[#FAFAF8]/40 py-20">
         <Container>
-          <WorkspaceHistory user={user} workspaces={recentWorkspaces} />
+          <WorkspaceHistory user={user} workspaces={workspaces} />
         </Container>
       </section>
-        <Footer />
     </main>
   );
 }

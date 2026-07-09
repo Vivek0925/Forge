@@ -1,12 +1,21 @@
+"use client";
+
+import { useState } from "react";
+import { CreateWorkspaceModal } from "@/components/workspace";
+import type { Workspace } from "@/lib/workspace";
+
 type User = {
   name?: string | null;
 };
 
 interface HeroProps {
   user?: User | null;
+  onWorkspaceCreated?: (workspace: Workspace) => void;
 }
 
-export default function Hero({ user }: HeroProps) {
+export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <div className="flex flex-col items-center justify-center text-center">
       <h1 className="max-w-[800px] text-[48px] font-light leading-[1.15] tracking-[-0.03em] text-[#14141C] md:text-[64px] lg:text-[72px]">
@@ -18,7 +27,10 @@ export default function Hero({ user }: HeroProps) {
       </p>
 
       <div className="mt-12 flex w-full max-w-[600px] flex-col items-center gap-4 sm:flex-row sm:gap-3">
-        <button className="flex flex-1 items-center justify-center rounded-full bg-[#14141C] px-8 py-3 text-[16px] font-medium text-white transition-colors hover:bg-[#1F1F29]">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex flex-1 items-center justify-center rounded-full border border-[#86D9A8] bg-[#EAFBF1] px-8 py-3 text-[16px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8]"
+        >
           <svg
             className="mr-2 h-5 w-5"
             fill="none"
@@ -34,7 +46,7 @@ export default function Hero({ user }: HeroProps) {
           </svg>
           Create workspace
         </button>
-        <button className="flex flex-1 items-center justify-center rounded-full border-2 border-[#DEDFE8] bg-transparent px-8 py-3 text-[16px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]">
+        <button className="flex flex-1 items-center justify-center rounded-full border border-[#DEDFE8] bg-transparent px-8 py-3 text-[16px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]">
           <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
@@ -74,6 +86,12 @@ export default function Hero({ user }: HeroProps) {
           </svg>
         </div>
       </div>
+
+      <CreateWorkspaceModal
+        open={open}
+        onOpenChange={setOpen}
+        onCreated={onWorkspaceCreated}
+      />
     </div>
   );
 }

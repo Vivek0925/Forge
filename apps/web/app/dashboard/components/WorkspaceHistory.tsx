@@ -1,5 +1,5 @@
 import EmptyWorkspaceState from "./EmptyWorkspaceState";
-import WorkspaceCard, { type WorkspaceCardData } from "./WorkspaceCard";
+import WorkspaceCard, { WorkspaceCardData } from "@/components/workspace/WorkspaceCard";
 
 interface WorkspaceHistoryProps {
   user?: { name?: string | null } | null;
