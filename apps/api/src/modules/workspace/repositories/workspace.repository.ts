@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../../database/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../database/prisma.service';
 
 @Injectable()
 export class WorkspaceRepository {
@@ -20,7 +20,7 @@ export class WorkspaceRepository {
         members: {
           create: {
             userId: data.ownerId,
-            role: "OWNER",
+            role: 'OWNER',
           },
         },
       },
@@ -36,12 +36,34 @@ export class WorkspaceRepository {
     });
   }
 
+  async findById(id: string) {
+    return this.prisma.workspace.findUnique({
+      where: { id },
+    });
+  }
+
   async findByOwner(ownerId: string) {
     return this.prisma.workspace.findMany({
       where: { ownerId },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
+    });
+  }
+
+  async update(id: string, data: { name: string; slug: string }) {
+    return this.prisma.workspace.update({
+      where: { id },
+      data: {
+        name: data.name,
+        slug: data.slug,
+      },
+    });
+  }
+
+  async delete(id: string) {
+    return this.prisma.workspace.delete({
+      where: { id },
     });
   }
 }

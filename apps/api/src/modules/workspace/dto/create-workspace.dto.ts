@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateWorkspaceDto {
   @IsString()
@@ -10,4 +10,11 @@ export class CreateWorkspaceDto {
   @IsString()
   @MaxLength(500)
   description?: string;
+}
+
+export class UpdateWorkspaceDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string;
 }

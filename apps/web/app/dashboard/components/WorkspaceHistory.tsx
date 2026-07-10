@@ -1,14 +1,20 @@
 import EmptyWorkspaceState from "./EmptyWorkspaceState";
-import WorkspaceCard, { WorkspaceCardData } from "@/components/workspace/WorkspaceCard";
+import WorkspaceCard, {
+  WorkspaceCardData,
+} from "@/components/workspace/WorkspaceCard";
 
 interface WorkspaceHistoryProps {
   user?: { name?: string | null } | null;
   workspaces: WorkspaceCardData[];
+  onWorkspaceUpdated?: () => void;
+  onWorkspaceDeleted?: () => void;
 }
 
 export default function WorkspaceHistory({
   user,
   workspaces,
+  onWorkspaceUpdated,
+  onWorkspaceDeleted,
 }: WorkspaceHistoryProps) {
   return (
     <>
@@ -31,7 +37,12 @@ export default function WorkspaceHistory({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {workspaces.map((workspace) => (
-            <WorkspaceCard key={workspace.name} workspace={workspace} />
+            <WorkspaceCard
+              key={workspace.id}
+              workspace={workspace}
+              onUpdated={() => onWorkspaceUpdated?.()}
+              onDeleted={() => onWorkspaceDeleted?.()}
+            />
           ))}
         </div>
       )}

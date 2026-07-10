@@ -16,6 +16,7 @@ export default function Dashboard() {
     workspaces,
     loading: workspacesLoading,
     addWorkspace,
+    refresh,
   } = useWorkspaces();
 
   if (loading || workspacesLoading) {
@@ -40,7 +41,12 @@ export default function Dashboard() {
 
       <section className="border-t border-[#DEDFE8]/40 bg-[#FAFAF8]/40 py-20">
         <Container>
-          <WorkspaceHistory user={user} workspaces={workspaces} />
+          <WorkspaceHistory
+            user={user}
+            workspaces={workspaces}
+            onWorkspaceUpdated={() => void refresh()}
+            onWorkspaceDeleted={() => void refresh()}
+          />
         </Container>
       </section>
     </main>

@@ -25,6 +25,7 @@ function toCardData(
   index: number,
 ): WorkspaceCardData {
   return {
+    id: workspace.id,
     name: workspace.name,
     status: "Created",
     updatedAt: workspace.updatedAt

@@ -1,9 +1,12 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export interface CreateWorkspacePayload {
   name: string;
   description?: string;
+}
+
+export interface UpdateWorkspacePayload {
+  name: string;
 }
 
 export interface Workspace {
@@ -14,10 +17,7 @@ export interface Workspace {
   icon?: string;
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestInit,
-): Promise<T> {
+async function request<T>(endpoint: string, options: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     credentials: "include",
     headers: {
@@ -35,12 +35,26 @@ async function request<T>(
   return data;
 }
 
-export function createWorkspace(
-  data: CreateWorkspacePayload,
-) {
+export function createWorkspace(data: CreateWorkspacePayload) {
   return request<Workspace>("/workspaces", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+export function updateWorkspace(
+  workspaceId: string,
+  data: UpdateWorkspacePayload,
+) {
+  return request<Workspace>(`/workspaces/${workspaceId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteWorkspace(workspaceId: string) {
+  return request<void>(`/workspaces/${workspaceId}`, {
+    method: "DELETE",
   });
 }
 
