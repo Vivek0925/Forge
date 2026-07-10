@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import {
   Delete,
   Edit3,
@@ -17,6 +18,7 @@ import {
 
 export interface WorkspaceCardData {
   id: string;
+  slug: string;
   name: string;
   status: string;
   updatedAt: string;
@@ -35,14 +37,36 @@ export default function WorkspaceCard({
   onUpdated,
   onDeleted,
 }: WorkspaceCardProps) {
+  const router = useRouter();
+  const cardRef = useRef<HTMLElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const closeMenu = () => setMenuOpen(false);
 
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+
+      if (cardRef.current && target && !cardRef.current.contains(target)) {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [menuOpen]);
+
   const handleOpen = () => {
     closeMenu();
-    console.log(`Open workspace ${workspace.id}`);
+    router.push(`/workspace/${workspace.slug}`);
   };
 
   const handleRename = async () => {
@@ -94,9 +118,21 @@ export default function WorkspaceCard({
   };
 
   return (
-    <article className="rounded-[28px] border border-[#DEDFE8] bg-white p-5 shadow-[var(--shadow-sm)] transition-transform duration-200 hover:-translate-y-0.5">
+    <article
+      ref={cardRef}
+      role="button"
+      tabIndex={0}
+      onClick={handleOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleOpen();
+        }
+      }}
+      className="group relative rounded-[28px] border border-[#DEDFE8] bg-white p-5 shadow-[var(--shadow-sm)] transition-transform duration-200 hover:-translate-y-0.5"
+    >
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className={`h-2.5 w-2.5 rounded-full ${workspace.accent}`} />
           <h3 className="mt-4 text-[17px] font-medium tracking-[-0.02em] text-[#14141C]">
             {workspace.name}
@@ -114,7 +150,10 @@ export default function WorkspaceCard({
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             aria-label={`Workspace actions for ${workspace.name}`}
-            onClick={() => setMenuOpen((current) => !current)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setMenuOpen((current) => !current);
+            }}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-[#DEDFE8] text-[#5B5D6E] transition-colors hover:bg-[#FAFAF8] hover:text-[#14141C] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <MoreVertical className="h-4 w-4" />
@@ -124,6 +163,7 @@ export default function WorkspaceCard({
             <div
               role="menu"
               aria-label="Workspace actions"
+              onClick={(event) => event.stopPropagation()}
               className="absolute right-0 top-11 z-20 min-w-[220px] rounded-[20px] border border-[#DEDFE8] bg-white p-2 shadow-[0_24px_64px_rgba(20,20,28,0.16)]"
             >
               <button

@@ -53,4 +53,12 @@ export class WorkspaceController {
   findMine(@CurrentUser() user: CurrentUserData) {
     return this.workspaceService.findMyWorkspaces(user.id);
   }
+
+  @Get(':slug')
+  findOneBySlug(
+    @CurrentUser() user: CurrentUserData,
+    @Param('slug') slug: string,
+  ) {
+    return this.workspaceService.findBySlug(user.id, slug);
+  }
 }

@@ -37,6 +37,16 @@ export class WorkspaceService {
     return this.workspaceRepository.findByOwner(ownerId);
   }
 
+  async findBySlug(ownerId: string, slug: string) {
+    const workspace = await this.workspaceRepository.findBySlug(slug);
+
+    if (!workspace || workspace.ownerId !== ownerId) {
+      throw new NotFoundException('Workspace not found.');
+    }
+
+    return workspace;
+  }
+
   async update(ownerId: string, workspaceId: string, dto: UpdateWorkspaceDto) {
     const workspace = await this.workspaceRepository.findById(workspaceId);
 

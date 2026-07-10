@@ -42,6 +42,12 @@ export function createWorkspace(data: CreateWorkspacePayload) {
   });
 }
 
+export function getWorkspaceBySlug(slug: string) {
+  return request<Workspace>(`/workspaces/${slug}`, {
+    method: "GET",
+  });
+}
+
 export function updateWorkspace(
   workspaceId: string,
   data: UpdateWorkspacePayload,

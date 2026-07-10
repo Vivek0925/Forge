@@ -27,7 +27,7 @@ export default function WorkspaceHistory({
             Recent workspaces
           </h2>
           <p className="text-[14px] leading-relaxed text-[#5B5D6E]">
-            Create your first workspace to see recent activity here.
+            Create workspace to see recent activity here.
           </p>
         </div>
       </div>

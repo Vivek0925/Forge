@@ -1,6 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createWorkspace, type Workspace } from "@/lib/workspace";
 
@@ -15,6 +16,7 @@ export default function CreateWorkspaceModal({
   onOpenChange,
   onCreated,
 }: CreateWorkspaceModalProps) {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
@@ -51,6 +53,7 @@ export default function CreateWorkspaceModal({
 
       onCreated?.(workspace);
       onOpenChange(false);
+      router.push(`/workspace/${workspace.slug}`);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
