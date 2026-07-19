@@ -1,55 +1,9 @@
 import WorkspaceSectionPage from "./_components/WorkspaceSectionPage";
 
-const quickStats = [
-  {
-    label: "Projects",
-    value: "8",
-    detail: "Active projects",
-  },
-  {
-    label: "Tasks",
-    value: "24",
-    detail: "Tasks to do",
-  },
-  {
-    label: "Meetings",
-    value: "3",
-    detail: "Upcoming",
-  },
-  {
-    label: "Documents",
-    value: "15",
-    detail: "Recent files",
-  },
-];
 
-const activity = [
-  {
-    title: "Ananya Sharma updated the project",
-    detail: "Redesign Landing Page",
-    time: "2h ago",
-  },
-  {
-    title: "Rohit Verma completed task",
-    detail: "Fix login issue",
-    time: "5h ago",
-  },
-  {
-    title: "You created a new document",
-    detail: "Product Requirements.docx",
-    time: "1d ago",
-  },
-  {
-    title: "Meera Joshi completed task",
-    detail: "API integration",
-    time: "2d ago",
-  },
-];
 
 const meetings = [
   { date: "JUL 10", title: "Sprint Planning", time: "Today, 10:00 AM" },
-  { date: "JUL 11", title: "Design Review", time: "Tomorrow, 02:00 PM" },
-  { date: "JUL 13", title: "Project Demo", time: "Jul 13, 11:00 AM" },
 ];
 
 const documents = [
@@ -87,35 +41,14 @@ export default function WorkspacePage() {
       title="Workspace overview"
       description="A clean home for project work, task tracking, docs, meetings, chat, and files."
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {quickStats.map((card) => (
-          <QuickStat key={card.label} {...card} />
-        ))}
-      </div>
+    
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
           <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
             Recent activity
           </div>
-          <div className="mt-4 space-y-4">
-            {activity.map((item) => (
-              <div
-                key={item.detail}
-                className="flex items-center justify-between gap-4 rounded-[20px] border border-white bg-white px-4 py-3 shadow-[0_8px_20px_rgba(20,20,28,0.04)]"
-              >
-                <div>
-                  <div className="text-[14px] font-medium text-[#14141C]">
-                    {item.title}
-                  </div>
-                  <div className="mt-1 text-[13px] text-[#5B5D6E]">
-                    {item.detail}
-                  </div>
-                </div>
-                <div className="text-[12px] text-[#5B5D6E]">{item.time}</div>
-              </div>
-            ))}
-          </div>
+        
         </div>
 
         <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
