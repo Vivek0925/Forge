@@ -8,6 +8,7 @@ import * as cookie from "cookie";
 
 import { PrismaService } from "../../../database/prisma.service";
 import { CurrentUserData } from "../../auth/interfaces/current-user.interface";
+import { parse } from "path/win32";
 
 interface JwtPayload {
   sub: string;
@@ -35,7 +36,7 @@ export class SocketAuthService {
 
     const cookies = cookie.parse(cookieHeader);
 
-    const token = cookies.access_token;
+const token = cookies.access_token;
 
     if (!token) {
       throw new UnauthorizedException(

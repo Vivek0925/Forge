@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 interface OnlineUser {
+  [x: string]: any;
   userId: string;
   socketId: string;
   workspaceId: string;

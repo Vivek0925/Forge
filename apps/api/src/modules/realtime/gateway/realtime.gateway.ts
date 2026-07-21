@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
@@ -12,6 +13,7 @@ import { Server } from "socket.io";
 import { PresenceService } from "../services/presence.service";
 import { SocketAuthService } from "../services/socket-auth.service";
 import type { AuthenticatedSocket } from "../interfaces/authenticated-socket.interface";
+import { JoinWorkspaceDto } from "../dto/join-workspace.dto";
 
 @WebSocketGateway({
   cors: {
@@ -23,7 +25,7 @@ export class RealtimeGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-    server!: Server;
+  server!: Server;
 
   private readonly logger = new Logger(RealtimeGateway.name);
 
@@ -40,54 +42,62 @@ export class RealtimeGateway
       socket.data.currentUser = currentUser;
 
       this.logger.log(
-        `${currentUser.name} connected`,
+        `${currentUser.name} connected (${socket.id})`,
       );
     } catch (error) {
-      this.logger.warn("Unauthorized socket connection");
-      socket.disconnect();
+      this.logger.warn(
+        `Unauthorized socket connection: ${socket.id}`,
+      );
+
+      socket.disconnect(true);
     }
   }
 
   handleDisconnect(socket: AuthenticatedSocket) {
-    const user = this.presenceService.getUser(socket.id);
+    const onlineUser = this.presenceService.getUser(socket.id);
 
-    if (!user) return;
+    if (!onlineUser) return;
 
     this.presenceService.removeUser(socket.id);
 
-    socket.to(`workspace:${user.workspaceId}`).emit(
-      "presence:update",
-      {
+    this.server
+      .to(`workspace:${onlineUser.workspaceId}`)
+      .emit("presence:update", {
         users: this.presenceService.getWorkspaceUsers(
-          user.workspaceId,
+          onlineUser.workspaceId,
         ),
-      },
-    );
+      });
 
-    this.logger.log(`${user.userId} disconnected`);
+    this.logger.log(
+      `${onlineUser.name} disconnected`,
+    );
   }
 
   @SubscribeMessage("workspace:join")
   handleWorkspaceJoin(
+    @MessageBody() dto: JoinWorkspaceDto,
     @ConnectedSocket() socket: AuthenticatedSocket,
-    workspaceId: string,
   ) {
+    const { workspaceId } = dto;
+
     socket.join(`workspace:${workspaceId}`);
 
     this.presenceService.addUser({
       socketId: socket.id,
       workspaceId,
       userId: socket.data.currentUser.id,
+      name: socket.data.currentUser.name,
+      email: socket.data.currentUser.email,
     });
 
-    this.server.to(`workspace:${workspaceId}`).emit(
-      "presence:update",
-      {
-        users: this.presenceService.getWorkspaceUsers(
-          workspaceId,
-        ),
-      },
-    );
+    this.server
+      .to(`workspace:${workspaceId}`)
+      .emit("presence:update", {
+        users:
+          this.presenceService.getWorkspaceUsers(
+            workspaceId,
+          ),
+      });
 
     this.logger.log(
       `${socket.data.currentUser.name} joined workspace ${workspaceId}`,
@@ -96,21 +106,23 @@ export class RealtimeGateway
 
   @SubscribeMessage("workspace:leave")
   handleWorkspaceLeave(
+    @MessageBody() dto: JoinWorkspaceDto,
     @ConnectedSocket() socket: AuthenticatedSocket,
-    workspaceId: string,
   ) {
+    const { workspaceId } = dto;
+
     socket.leave(`workspace:${workspaceId}`);
 
     this.presenceService.removeUser(socket.id);
 
-    this.server.to(`workspace:${workspaceId}`).emit(
-      "presence:update",
-      {
-        users: this.presenceService.getWorkspaceUsers(
-          workspaceId,
-        ),
-      },
-    );
+    this.server
+      .to(`workspace:${workspaceId}`)
+      .emit("presence:update", {
+        users:
+          this.presenceService.getWorkspaceUsers(
+            workspaceId,
+          ),
+      });
 
     this.logger.log(
       `${socket.data.currentUser.name} left workspace ${workspaceId}`,
