@@ -4,9 +4,9 @@ import { useEffect } from "react";
 import { socket } from "@/lib/socket";
 
 export default function WorkspaceSocket({
-  workspaceId,
+  workspaceSlug,
 }: {
-  workspaceId: string;
+  workspaceSlug: string;
 }) {
   useEffect(() => {
     console.log("WorkspaceSocket mounted");
@@ -17,7 +17,7 @@ export default function WorkspaceSocket({
       console.log("✅ Socket connected:", socket.id);
 
       socket.emit("workspace:join", {
-        workspaceId,
+        workspaceSlug,
       });
     };
 
@@ -35,7 +35,7 @@ export default function WorkspaceSocket({
 
     return () => {
       socket.emit("workspace:leave", {
-        workspaceId,
+        workspaceSlug,
       });
 
       socket.off("connect", onConnect);
@@ -44,7 +44,7 @@ export default function WorkspaceSocket({
 
       socket.disconnect();
     };
-  }, [workspaceId]);
+  }, [workspaceSlug]);
 
   return null;
 }
