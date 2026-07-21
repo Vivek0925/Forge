@@ -7,9 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//////////////////////////////////////////////////////
-// ENUMS
-//////////////////////////////////////////////////////
+model User {
+  id                   String                @id @default(cuid())
+  name                 String
+  email                String                @unique
+  passwordHash         String?
+  avatar               String?
+  provider             AuthProvider          @default(LOCAL)
+  providerId           String?
+  emailVerified        Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  sentInvitations      WorkspaceInvitation[]
+  workspaceMemberships WorkspaceMember[]
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+
+  @@map("users")
+}
+
+model Workspace {
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String                @unique
+  description          String?
+  icon                 String?
+  ownerId              String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  workspaceInvitations WorkspaceInvitation[]
+  members              WorkspaceMember[]
+  owner                User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id          String           @id @default(cuid())
+  email       String
+  workspaceId String
+  invitedById String
+  role        WorkspaceRole    @default(MEMBER)
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  invitedBy   User             @relation(fields: [invitedById], references: [id], onDelete: Cascade)
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([email])
+  @@map("workspace_invitations")
+}
 
 enum AuthProvider {
   LOCAL
@@ -28,115 +93,4 @@ enum InvitationStatus {
   ACCEPTED
   EXPIRED
   REVOKED
-}
-
-//////////////////////////////////////////////////////
-// USER
-//////////////////////////////////////////////////////
-
-model User {
-  id           String  @id @default(cuid())
-  name         String
-  email        String  @unique
-  passwordHash String?
-
-  avatar String?
-
-  provider   AuthProvider @default(LOCAL)
-  providerId String?
-
-  emailVerified Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
-  workspaceMemberships WorkspaceMember[]
-  sentInvitations      WorkspaceInvitation[]
-
-  @@map("users")
-}
-
-//////////////////////////////////////////////////////
-// WORKSPACE
-//////////////////////////////////////////////////////
-
-model Workspace {
-  id String @id @default(cuid())
-
-  name String
-  slug String @unique
-
-  description String?
-  icon        String?
-
-  ownerId String
-
-  owner   User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members WorkspaceMember[]
-
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  workspaceInvitations WorkspaceInvitation[]
-
-  @@index([ownerId])
-  @@map("workspaces")
-}
-
-//////////////////////////////////////////////////////
-// WORKSPACE MEMBER
-//////////////////////////////////////////////////////
-
-model WorkspaceMember {
-  id String @id @default(cuid())
-
-  workspaceId String
-  userId      String
-
-  role WorkspaceRole @default(MEMBER)
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  joinedAt DateTime @default(now())
-
-  @@unique([workspaceId, userId])
-  @@index([workspaceId])
-  @@index([userId])
-  @@map("workspace_members")
-}
-
-//////////////////////////////////////////////////////
-// WORKSPACE INVITATION
-//////////////////////////////////////////////////////
-
-model WorkspaceInvitation {
-  id String @id @default(cuid())
-
-  email String
-
-  workspaceId String
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  invitedById String
-
-  invitedBy User @relation(fields: [invitedById], references: [id], onDelete: Cascade)
-
-  role WorkspaceRole @default(MEMBER)
-
-  token String @unique
-
-  status InvitationStatus @default(PENDING)
-
-  expiresAt DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([workspaceId])
-  @@index([email])
-  @@map("workspace_invitations")
 }

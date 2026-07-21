@@ -1,4 +1,5 @@
 import WorkspaceSectionPage from "./_components/WorkspaceSectionPage";
+import WorkspaceSocket from "./_components/WorkspaceSocket";
 
 
 
@@ -41,6 +42,7 @@ export default function WorkspacePage() {
       title="Workspace overview"
       description="A clean home for project work, task tracking, docs, meetings, chat, and files."
     >
+
     
 
       <div className="grid gap-4 xl:grid-cols-2">
