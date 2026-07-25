@@ -15,6 +15,8 @@ import { SocketAuthService } from "../services/socket-auth.service";
 import type { AuthenticatedSocket } from "../interfaces/authenticated-socket.interface";
 import { JoinWorkspaceDto } from "../dto/join-workspace.dto";
 import { PrismaService } from "../../../database/prisma.service";
+import { ChatService } from "../../chat/services/chat.service";
+import { SendMessageDto } from "../../chat/dto/send-message.dto";
 
 @WebSocketGateway({
   cors: {
@@ -34,6 +36,7 @@ export class RealtimeGateway
     private readonly socketAuthService: SocketAuthService,
     private readonly presenceService: PresenceService,
     private readonly prisma: PrismaService,
+    private readonly chatService: ChatService,
   ) {}
 
   async handleConnection(socket: AuthenticatedSocket) {
@@ -147,4 +150,20 @@ export class RealtimeGateway
       `${socket.data.currentUser.name} left workspace ${workspace.slug}`,
     );
   }
+  @SubscribeMessage("chat:send")
+async handleChatSend(
+  @MessageBody() dto: SendMessageDto,
+  @ConnectedSocket() socket: AuthenticatedSocket,
+) {
+  const message = await this.chatService.createMessage(
+    socket.data.currentUser.id,
+    dto,
+  );
+
+  this.server
+    .to(`workspace:${message.workspaceId}`)
+    .emit("chat:new", message);
+
+  return message;
+}
 }
