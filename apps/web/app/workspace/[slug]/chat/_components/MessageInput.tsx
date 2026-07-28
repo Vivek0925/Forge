@@ -11,7 +11,7 @@ export default function MessageInput() {
 
     if (!content) return;
 
-    console.log(content); // Replace with socket.emit later
+    console.log(content);
 
     setMessage("");
   };
@@ -24,46 +24,43 @@ export default function MessageInput() {
   };
 
   return (
-    <div className="border-t border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="flex items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <button
-          type="button"
-          className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
-        >
-          <Paperclip size={18} />
-        </button>
+    <div className="border-t border-[#ECEEF3] bg-[#FAFAFB] px-8 py-6">
+      <div className="mx-auto max-w-5xl">
+        <div className="flex items-end gap-3 rounded-3xl border border-[#DEDFE8] bg-white px-5 py-4 shadow-sm transition-all focus-within:border-[#BEEAD7] focus-within:shadow-md">
 
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          placeholder="Message this workspace..."
-          className="max-h-40 flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-zinc-400"
-        />
+          <button
+            type="button"
+            className="rounded-xl p-2 text-[#7C8093] transition hover:bg-[#F5F6F8]"
+          >
+            <Paperclip size={18} />
+          </button>
 
-        <button
-          type="button"
-          className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
-        >
-          <Smile size={18} />
-        </button>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder="Message this workspace..."
+            className="max-h-40 flex-1 resize-none bg-transparent text-[15px] leading-6 text-[#23262F] placeholder:text-[#9CA3AF] outline-none"
+          />
 
-        <button
-          onClick={sendMessage}
-          disabled={!message.trim()}
-          className="rounded-xl bg-emerald-600 p-2 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <SendHorizontal size={18} />
-        </button>
+          <button
+            type="button"
+            className="rounded-xl p-2 text-[#7C8093] transition hover:bg-[#F5F6F8]"
+          >
+            <Smile size={18} />
+          </button>
+
+          <button
+            onClick={sendMessage}
+            disabled={!message.trim()}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E7F8EF] text-[#1E8E5A] transition hover:bg-[#D8F3E5] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <SendHorizontal size={18} />
+          </button>
+
+        </div>
       </div>
-
-      <p className="mt-2 text-xs text-zinc-400">
-        Press <kbd className="rounded bg-zinc-100 px-1 py-0.5">Enter</kbd> to
-        send •{" "}
-        <kbd className="rounded bg-zinc-100 px-1 py-0.5">Shift + Enter</kbd> for
-        a new line
-      </p>
     </div>
   );
 }
