@@ -4,9 +4,14 @@ import { WorkspaceModule } from "../workspace/workspace.module";
 
 import { ChatService } from "./services/chat.service";
 import { MessageRepository } from "./repositories/message.repository";
-
+import { ChatController } from "./controllers/chat.controller";
 @Module({
-  imports: [WorkspaceModule],
+  imports: [
+    WorkspaceModule,
+  ],
+  controllers: [
+    ChatController,
+  ],
   providers: [
     ChatService,
     MessageRepository,
