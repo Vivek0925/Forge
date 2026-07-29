@@ -1,5 +1,15 @@
 import WorkspaceChat from "./_components/WorkspaceChat";
 
-export default function ChatPage() {
-  return <WorkspaceChat />;
+interface ChatPageProps {
+  params: Promise<{
+    slug: string;
+  }>;
+}
+
+export default async function ChatPage({
+  params,
+}: ChatPageProps) {
+  const { slug } = await params;
+
+  return <WorkspaceChat slug={slug} />;
 }

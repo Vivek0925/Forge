@@ -9,7 +9,7 @@ export async function api<T>(
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(options?.headers || {}),
+      ...(options?.headers ?? {}),
     },
     ...options,
   });
