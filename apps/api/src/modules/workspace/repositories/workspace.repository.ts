@@ -42,14 +42,30 @@ export class WorkspaceRepository {
     });
   }
 
-  async findByOwner(ownerId: string) {
-    return this.prisma.workspace.findMany({
-      where: { ownerId },
-      orderBy: {
-        createdAt: 'desc',
+ async findUserWorkspaces(userId: string) {
+  return this.prisma.workspace.findMany({
+    where: {
+      members: {
+        some: {
+          userId,
+        },
       },
-    });
-  }
+    },
+    include: {
+      members: {
+        where: {
+          userId,
+        },
+        select: {
+          role: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
 
   async update(id: string, data: { name: string; slug: string }) {
     return this.prisma.workspace.update({
