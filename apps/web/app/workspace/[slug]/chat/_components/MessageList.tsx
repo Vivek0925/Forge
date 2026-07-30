@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
+import { useAuth } from "@/app/context/AuthContext";
+
 import type { Message } from "@/types/chats";
 import MessageItem from "./MessageItem";
 
@@ -12,6 +14,8 @@ interface MessageListProps {
 export default function MessageList({
   messages,
 }: MessageListProps) {
+  const { user } = useAuth();
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,6 +31,7 @@ export default function MessageList({
           <MessageItem
             key={message.id}
             message={message}
+            currentUserId={user?.id}
           />
         ))}
 

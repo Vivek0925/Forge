@@ -32,9 +32,9 @@ export default function MessageInput({
   };
 
   return (
-    <div className="border-t border-[#ECEEF3] bg-[#FAFAFB] px-8 py-6">
+    <div className="border-t border-[#ECEEF3] bg-[#FAFAFB] px-6 py-4">
       <div className="mx-auto max-w-5xl">
-        <div className="flex items-end gap-3 rounded-3xl border border-[#DEDFE8] bg-white px-5 py-4 shadow-sm transition-all focus-within:border-[#BEEAD7] focus-within:shadow-md">
+        <div className="flex items-end gap-3 rounded-3xl border border-[#DEDFE8] bg-white px-4 py-2 shadow-sm transition-all focus-within:border-[#BEEAD7] focus-within:shadow-md">
           <button
             type="button"
             className="rounded-xl p-2 text-[#7C8093] transition hover:bg-[#F5F6F8]"
