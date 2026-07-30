@@ -79,6 +79,15 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
           </div>
 
           <div className="flex items-center gap-2">
+
+            {/* button to redirect to dashboard */}
+            <Link
+              href="/dashboard"
+              className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+            >
+              Dashboard
+            </Link>
+
             <button className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]">
               Invite
             </button>
