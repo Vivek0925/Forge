@@ -59,6 +59,6 @@ export class WorkspaceController {
     @CurrentUser() user: CurrentUserData,
     @Param('slug') slug: string,
   ) {
-    return this.workspaceService.findBySlug(user.id, slug);
+    return this.workspaceService.findAccessibleWorkspace(user.id, slug);
   }
 }

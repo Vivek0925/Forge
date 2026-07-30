@@ -67,6 +67,17 @@ export class WorkspaceRepository {
   });
 }
 
+async findMember(workspaceId: string, userId: string) {
+  return this.prisma.workspaceMember.findUnique({
+    where: {
+      workspaceId_userId: {
+        workspaceId,
+        userId,
+      },
+    },
+  });
+}
+
   async update(id: string, data: { name: string; slug: string }) {
     return this.prisma.workspace.update({
       where: { id },
@@ -83,3 +94,5 @@ export class WorkspaceRepository {
     });
   }
 }
+
+

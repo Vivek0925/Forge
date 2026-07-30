@@ -36,9 +36,9 @@ export class WorkspaceService {
     });
   }
 
-  async findMyWorkspaces(ownerId: string) {
-    return this.workspaceRepository.findByOwner(ownerId);
-  }
+ async findMyWorkspaces(userId: string) {
+  return this.workspaceRepository.findUserWorkspaces(userId);
+}
 
   /**
    * Used internally by other modules
@@ -59,15 +59,26 @@ export class WorkspaceService {
    * Used by workspace REST endpoints.
    * Ensures the requester owns the workspace.
    */
-  async findBySlug(ownerId: string, slug: string) {
-    const workspace = await this.findWorkspaceBySlug(slug);
+ async findAccessibleWorkspace(
+  userId: string,
+  slug: string,
+) {
+  const workspace = await this.findWorkspaceBySlug(slug);
 
-    if (workspace.ownerId !== ownerId) {
-      throw new NotFoundException('Workspace not found.');
-    }
+  const membership =
+    await this.workspaceRepository.findMember(
+      workspace.id,
+      userId,
+    );
 
-    return workspace;
+  if (!membership) {
+    throw new NotFoundException(
+      'Workspace not found.',
+    );
   }
+
+  return workspace;
+}
 
   async update(
     ownerId: string,
