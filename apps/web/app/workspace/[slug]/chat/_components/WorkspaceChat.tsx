@@ -12,24 +12,23 @@ interface WorkspaceChatProps {
 export default function WorkspaceChat({
   slug,
 }: WorkspaceChatProps) {
-  const { messages, loading } = useChat(slug);
+  const {
+    messages,
+    loading,
+    sendMessage,
+  } = useChat(slug);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-[32px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
-
       {/* Header */}
-      <div className="border-b border-[#ECEEF3] px-8 py-6">
+      <div className="border-b border-[#ECEEF3] px-5 py-3">
         <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-[#20232D]">
           Workspace Chat
         </h1>
-
-        <p className="mt-2 text-[14px] text-[#707487]">
-          Collaborate with everyone in your workspace in real time.
-        </p>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Messages */}
+      <div className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex h-full items-center justify-center text-[#707487]">
             Loading messages...
@@ -53,7 +52,7 @@ export default function WorkspaceChat({
         )}
       </div>
 
-      <MessageInput />
+      <MessageInput onSend={sendMessage} />
     </div>
   );
 }

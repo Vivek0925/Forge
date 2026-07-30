@@ -22,9 +22,6 @@ export default function WorkspaceSocket({
       
     };
 
-    const onNewMessage = (message: unknown) => {
-      console.log("💬 New message:", message);
-    };
 
     const onPresenceUpdate = (data: unknown) => {
       console.log("Presence update:", data);
@@ -37,7 +34,6 @@ export default function WorkspaceSocket({
     socket.on("connect", onConnect);
     socket.on("presence:update", onPresenceUpdate);
     socket.on("connect_error", onError);
-    socket.on("chat:new", onNewMessage);
 
     return () => {
       socket.emit("workspace:leave", {
@@ -47,7 +43,6 @@ export default function WorkspaceSocket({
       socket.off("connect", onConnect);
       socket.off("presence:update", onPresenceUpdate);
       socket.off("connect_error", onError);
-      socket.off("chat:new", onNewMessage);
 
       socket.disconnect();
     };

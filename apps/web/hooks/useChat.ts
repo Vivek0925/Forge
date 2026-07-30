@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 import { getWorkspaceMessages } from "@/lib/chat";
+import { socket } from "@/lib/socket";
+
 import type { Message } from "@/types/chats";
 
 export function useChat(slug: string) {
@@ -12,8 +14,8 @@ export function useChat(slug: string) {
   useEffect(() => {
     async function loadMessages() {
       try {
-        const messages = await getWorkspaceMessages(slug);
-        setMessages(messages);
+        const data = await getWorkspaceMessages(slug);
+        setMessages(data);
       } catch (error) {
         console.error("Failed to load messages", error);
       } finally {
@@ -26,9 +28,28 @@ export function useChat(slug: string) {
     }
   }, [slug]);
 
+  useEffect(() => {
+    function handleNewMessage(message: Message) {
+      setMessages((prev) => [...prev, message]);
+    }
+
+    socket.on("chat:new", handleNewMessage);
+
+    return () => {
+      socket.off("chat:new", handleNewMessage);
+    };
+  }, []);
+
+  const sendMessage = (content: string) => {
+    socket.emit("chat:send", {
+      workspaceSlug: slug,
+      content,
+    });
+  };
+
   return {
     messages,
     loading,
-    setMessages,
+    sendMessage,
   };
 }
