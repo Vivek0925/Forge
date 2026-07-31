@@ -27,7 +27,7 @@ export class WorkspaceInvitationRepository {
       where: {
         workspaceId,
         email,
-        status: 'PENDING',
+        status: InvitationStatus.PENDING,
       },
     });
   }
