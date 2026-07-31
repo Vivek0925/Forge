@@ -3,7 +3,7 @@ import { PrismaService } from '../../../database/prisma.service';
 
 @Injectable()
 export class WorkspaceRepository {
-    findMemberByEmail: any;
+  
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
@@ -75,6 +75,23 @@ async findMember(workspaceId: string, userId: string) {
         workspaceId,
         userId,
       },
+    },
+  });
+}
+
+async findMemberByEmail(
+  workspaceId: string,
+  email: string,
+) {
+  return this.prisma.workspaceMember.findFirst({
+    where: {
+      workspaceId,
+      user: {
+        email,
+      },
+    },
+    include: {
+      user: true,
     },
   });
 }
