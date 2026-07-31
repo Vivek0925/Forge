@@ -2,8 +2,12 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from "@nestjs/common";
-import { WorkspaceRole } from "@prisma/client";
+import {
+  InvitationStatus,
+  WorkspaceRole,
+} from "@prisma/client";
 import { randomUUID } from "crypto";
 
 import { WorkspaceService } from "../../workspace/services/workspace.service";
@@ -21,22 +25,20 @@ export class WorkspaceInvitationService {
   ) {}
 
   async getMyInvitations(email: string) {
-  return this.invitationRepository.findPendingForUser(email);
-}
+    return this.invitationRepository.findPendingForUser(email);
+  }
 
   async createInvitation(
     userId: string,
     workspaceSlug: string,
     dto: CreateWorkspaceInvitationDto,
   ) {
-    // Find workspace
     const workspace =
       await this.workspaceService.findAccessibleWorkspace(
         userId,
         workspaceSlug,
       );
 
-    // Check inviter membership
     const membership =
       await this.workspaceRepository.findMember(
         workspace.id,
@@ -49,7 +51,6 @@ export class WorkspaceInvitationService {
       );
     }
 
-    // Only OWNER and ADMIN can invite
     if (
       membership.role !== WorkspaceRole.OWNER &&
       membership.role !== WorkspaceRole.ADMIN
@@ -59,7 +60,6 @@ export class WorkspaceInvitationService {
       );
     }
 
-    // Prevent duplicate invitation
     const existingInvitation =
       await this.invitationRepository.findPendingByEmail(
         workspace.id,
@@ -72,7 +72,6 @@ export class WorkspaceInvitationService {
       );
     }
 
-    // Prevent inviting existing members
     const existingMember =
       await this.workspaceRepository.findMemberByEmail(
         workspace.id,
@@ -85,8 +84,6 @@ export class WorkspaceInvitationService {
       );
     }
 
-
-    // Create invitation token
     const token = randomUUID();
 
     const expiresAt = new Date();
@@ -100,5 +97,59 @@ export class WorkspaceInvitationService {
       token,
       expiresAt,
     });
+  }
+
+  async acceptInvitation(
+    invitationId: string,
+    userId: string,
+  ) {
+    const invitation =
+      await this.invitationRepository.findById(
+        invitationId,
+      );
+
+    if (!invitation) {
+      throw new NotFoundException(
+        "Invitation not found.",
+      );
+    }
+
+    if (
+      invitation.status !== InvitationStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        "Invitation has already been processed.",
+      );
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      throw new BadRequestException(
+        "Invitation has expired.",
+      );
+    }
+
+    const existingMember =
+      await this.workspaceRepository.findMember(
+        invitation.workspaceId,
+        userId,
+      );
+
+    if (existingMember) {
+      throw new BadRequestException(
+        "You are already a member of this workspace.",
+      );
+    }
+
+    await this.invitationRepository.completeInvitation({
+  invitationId: invitation.id,
+  workspaceId: invitation.workspaceId,
+  userId,
+  role: invitation.role,
+});
+
+    return {
+      message: "Invitation accepted successfully.",
+      workspace: invitation.workspace,
+    };
   }
 }

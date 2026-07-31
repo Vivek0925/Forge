@@ -1,11 +1,16 @@
+import {
+  InvitationStatus,
+  WorkspaceRole,
+} from "@prisma/client";
 import { Injectable } from "@nestjs/common";
-import { WorkspaceRole, InvitationStatus } from "@prisma/client";
+
 import { PrismaService } from "../../../database/prisma.service";
 
 @Injectable()
 export class WorkspaceInvitationRepository {
-    [x: string]: any;
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
   async create(data: {
     email: string;
@@ -34,34 +39,33 @@ export class WorkspaceInvitationRepository {
   }
 
   async findPendingForUser(email: string) {
-  return this.prisma.workspaceInvitation.findMany({
-    where: {
-      email,
-      status: InvitationStatus.PENDING,
-    },
-    include: {
-      workspace: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          icon: true,
+    return this.prisma.workspaceInvitation.findMany({
+      where: {
+        email,
+        status: InvitationStatus.PENDING,
+      },
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            icon: true,
+          },
+        },
+        invitedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
       },
-      invitedBy: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+      orderBy: {
+        createdAt: "desc",
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-}
-
+    });
+  }
 
   async findByToken(token: string) {
     return this.prisma.workspaceInvitation.findUnique({
@@ -72,18 +76,53 @@ export class WorkspaceInvitationRepository {
   }
 
   async findById(id: string) {
-  return this.prisma.workspaceInvitation.findUnique({
-    where: { id },
-  });
-}
+    return this.prisma.workspaceInvitation.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        workspace: true,
+      },
+    });
+  }
 
   async updateStatus(
     id: string,
     status: InvitationStatus,
   ) {
     return this.prisma.workspaceInvitation.update({
-      where: { id },
-      data: { status },
+      where: {
+        id,
+      },
+      data: {
+        status,
+      },
+    });
+  }
+
+  async completeInvitation(data: {
+    invitationId: string;
+    workspaceId: string;
+    userId: string;
+    role: WorkspaceRole;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.workspaceMember.create({
+        data: {
+          workspaceId: data.workspaceId,
+          userId: data.userId,
+          role: data.role,
+        },
+      });
+
+      await tx.workspaceInvitation.update({
+        where: {
+          id: data.invitationId,
+        },
+        data: {
+          status: InvitationStatus.ACCEPTED,
+        },
+      });
     });
   }
 }
