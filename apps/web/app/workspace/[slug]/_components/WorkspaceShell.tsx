@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { getWorkspaceBySlug, type Workspace } from "@/lib/workspace";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
+import InviteMemberModal from "@/components/modals/InviteMemberModal";
+
 
 type WorkspaceShellProps = {
   children: React.ReactNode;
@@ -16,6 +18,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const slug = typeof params?.slug === "string" ? params.slug : "";
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) {
@@ -79,7 +82,6 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
           </div>
 
           <div className="flex items-center gap-2">
-
             {/* button to redirect to dashboard */}
             <Link
               href="/dashboard"
@@ -88,9 +90,13 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
               Dashboard
             </Link>
 
-            <button className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]">
+            <button
+              onClick={() => setInviteOpen(true)}
+              className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+            >
               Invite
             </button>
+
             <button className="rounded-full bg-[#EAFBF1] px-4 py-2 text-[13px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8]">
               + New
             </button>
@@ -128,6 +134,11 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
           )}
         </main>
       </div>
+      <InviteMemberModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        workspaceSlug={slug}
+      />
     </div>
   );
 }

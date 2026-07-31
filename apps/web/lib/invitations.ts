@@ -1,18 +1,20 @@
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000";
 
 export async function inviteMember(
-  slug: string,
+  workspaceSlug: string,
   email: string,
-  role = "MEMBER",
+  role: string,
 ) {
   const res = await fetch(
-    `${API_URL}/workspaces/${slug}/invitations`,
+    `${API_URL}/workspaces/${workspaceSlug}/invitations`,
     {
       method: "POST",
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify({
         email,
@@ -21,10 +23,14 @@ export async function inviteMember(
     },
   );
 
+  const data = await res.json();
+
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message);
+    throw new Error(
+      data.message ||
+        "Failed to send invitation.",
+    );
   }
 
-  return res.json();
+  return data;
 }
