@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
+import { WorkspaceRole } from '@prisma/client/wasm';
 
 @Injectable()
 export class WorkspaceRepository {
@@ -93,6 +94,16 @@ async findMemberByEmail(
     include: {
       user: true,
     },
+  });
+}
+
+async addMember(data: {
+  workspaceId: string;
+  userId: string;
+  role: WorkspaceRole;
+}) {
+  return this.prisma.workspaceMember.create({
+    data,
   });
 }
 

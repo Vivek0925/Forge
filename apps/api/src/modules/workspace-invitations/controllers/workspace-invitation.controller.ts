@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   Post,
   UseGuards,
@@ -32,4 +33,12 @@ export class WorkspaceInvitationController {
       dto,
     );
   }
+  @Get()
+getMyInvitations(
+  @CurrentUser() user: CurrentUserData,
+) {
+  return this.workspaceInvitationService.getMyInvitations(
+    user.email,
+  );
+}
 }

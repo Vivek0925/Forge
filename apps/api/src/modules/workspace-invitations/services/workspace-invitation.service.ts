@@ -20,6 +20,10 @@ export class WorkspaceInvitationService {
     private readonly invitationRepository: WorkspaceInvitationRepository,
   ) {}
 
+  async getMyInvitations(email: string) {
+  return this.invitationRepository.findPendingForUser(email);
+}
+
   async createInvitation(
     userId: string,
     workspaceSlug: string,
@@ -80,6 +84,7 @@ export class WorkspaceInvitationService {
         "User is already a member of this workspace.",
       );
     }
+
 
     // Create invitation token
     const token = randomUUID();

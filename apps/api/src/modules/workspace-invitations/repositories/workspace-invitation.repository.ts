@@ -4,6 +4,7 @@ import { PrismaService } from "../../../database/prisma.service";
 
 @Injectable()
 export class WorkspaceInvitationRepository {
+    [x: string]: any;
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
@@ -32,6 +33,36 @@ export class WorkspaceInvitationRepository {
     });
   }
 
+  async findPendingForUser(email: string) {
+  return this.prisma.workspaceInvitation.findMany({
+    where: {
+      email,
+      status: InvitationStatus.PENDING,
+    },
+    include: {
+      workspace: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          icon: true,
+        },
+      },
+      invitedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
+
   async findByToken(token: string) {
     return this.prisma.workspaceInvitation.findUnique({
       where: {
@@ -39,6 +70,12 @@ export class WorkspaceInvitationRepository {
       },
     });
   }
+
+  async findById(id: string) {
+  return this.prisma.workspaceInvitation.findUnique({
+    where: { id },
+  });
+}
 
   async updateStatus(
     id: string,
