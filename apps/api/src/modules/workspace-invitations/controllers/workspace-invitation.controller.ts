@@ -14,14 +14,14 @@ import type { CurrentUserData } from "../../auth/interfaces/current-user.interfa
 import { WorkspaceInvitationService } from "../services/workspace-invitation.service";
 import { CreateWorkspaceInvitationDto } from "../dto/create-workspace-invitation.dto";
 
-@Controller("workspaces/:slug/invitations")
+@Controller()
 @UseGuards(JwtAuthGuard)
 export class WorkspaceInvitationController {
   constructor(
     private readonly workspaceInvitationService: WorkspaceInvitationService,
   ) {}
 
-  @Post()
+  @Post("workspaces/:slug/invitations")
   createInvitation(
     @CurrentUser() user: CurrentUserData,
     @Param("slug") slug: string,
@@ -33,12 +33,24 @@ export class WorkspaceInvitationController {
       dto,
     );
   }
-  @Get()
-getMyInvitations(
-  @CurrentUser() user: CurrentUserData,
-) {
-  return this.workspaceInvitationService.getMyInvitations(
-    user.email,
-  );
-}
+
+  @Get("invitations")
+  getMyInvitations(
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.workspaceInvitationService.getMyInvitations(
+      user.email,
+    );
+  }
+
+  @Post("invitations/:id/accept")
+  acceptInvitation(
+    @CurrentUser() user: CurrentUserData,
+    @Param("id") id: string,
+  ) {
+    return this.workspaceInvitationService.acceptInvitation(
+      id,
+      user.id,
+    );
+  }
 }
