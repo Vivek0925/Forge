@@ -13,6 +13,9 @@ import { WorkspaceService } from "./services/workspace.service";
     WorkspaceService,
     WorkspaceRepository,
   ],
-  exports: [WorkspaceService],
+  exports: [
+    WorkspaceService,
+    WorkspaceRepository,
+  ],
 })
 export class WorkspaceModule {}
