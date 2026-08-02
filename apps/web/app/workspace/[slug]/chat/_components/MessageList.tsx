@@ -25,7 +25,7 @@ export default function MessageList({ messages }: MessageListProps) {
 
   return (
     <div className="h-full overflow-y-auto px-8 py-6">
-      <div className="space-y-8">
+      <div className="space-y-2">
         {messages.map((message, index) => {
           const previous = messages[index - 1];
 

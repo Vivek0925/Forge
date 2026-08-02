@@ -71,7 +71,7 @@ export default function MessageItem({
         {/* Bubble */}
         <div
           className={clsx(
-            "rounded-2xl px-4 py-3 transition-colors",
+            "rounded-2xl px-4 py-2 transition-colors",
             isMine
               ? "bg-[#20232D] text-white"
               : "border border-zinc-200 bg-white text-zinc-700",
