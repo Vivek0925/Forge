@@ -6,6 +6,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { WorkspaceModule } from "./modules/workspace/workspace.module";
 import { RealtimeModule } from "./modules/realtime/realtime.module";
 import { WorkspaceInvitationModule } from "./modules/workspace-invitations/workspace-invitation.module";
+import { StorageModule } from "./modules/storage/storage.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { WorkspaceInvitationModule } from "./modules/workspace-invitations/works
     WorkspaceModule,
     RealtimeModule,
     WorkspaceInvitationModule,
+    StorageModule,
   ],
 })
 export class AppModule {}
