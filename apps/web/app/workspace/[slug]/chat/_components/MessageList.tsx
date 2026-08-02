@@ -12,9 +12,7 @@ interface MessageListProps {
   messages: Message[];
 }
 
-export default function MessageList({
-  messages,
-}: MessageListProps) {
+export default function MessageList({ messages }: MessageListProps) {
   const { user } = useAuth();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -31,27 +29,21 @@ export default function MessageList({
         {messages.map((message, index) => {
           const previous = messages[index - 1];
 
-          const currentDate = new Date(
-            message.createdAt,
-          ).toDateString();
+          const currentDate = new Date(message.createdAt).toDateString();
 
           const previousDate = previous
             ? new Date(previous.createdAt).toDateString()
             : null;
 
-          const showDate =
-            currentDate !== previousDate;
+          const showDate = currentDate !== previousDate;
 
           return (
             <div key={message.id}>
-              {showDate && (
-                <DateSeparator
-                  date={message.createdAt}
-                />
-              )}
+              {showDate && <DateSeparator date={message.createdAt} />}
 
               <MessageItem
                 message={message}
+                previousMessage={messages[index - 1]}
                 currentUserId={user?.id}
               />
             </div>
