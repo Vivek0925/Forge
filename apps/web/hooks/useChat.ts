@@ -7,6 +7,14 @@ import { socket } from "@/lib/socket";
 
 import type { Message } from "@/types/chats";
 
+interface Attachment {
+  fileName: string;
+  key: string;
+  url: string;
+  mimeType: string;
+  size: number;
+}
+
 export function useChat(slug: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +48,14 @@ export function useChat(slug: string) {
     };
   }, []);
 
-  const sendMessage = (content: string) => {
+  const sendMessage = (
+    content: string,
+    attachments: Attachment[] = [],
+  ) => {
     socket.emit("chat:send", {
       workspaceSlug: slug,
       content,
+      attachments,
     });
   };
 
