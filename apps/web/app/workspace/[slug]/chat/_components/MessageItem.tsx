@@ -43,7 +43,6 @@ export default function MessageItem({
           isMine ? "items-end" : "items-start"
         )}
       >
-        {/* Header only for first message in group */}
         {!isMine && !shouldGroup && (
           <div className="mb-2 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
@@ -68,27 +67,112 @@ export default function MessageItem({
           </div>
         )}
 
-        {/* Bubble */}
         <div
           className={clsx(
-            "rounded-2xl px-4 py-2 transition-colors",
+            "rounded-2xl px-4 py-3 transition-colors",
             isMine
               ? "bg-[#20232D] text-white"
               : "border border-zinc-200 bg-white text-zinc-700",
-
-            // Connected bubbles
             shouldGroup &&
               (isMine
                 ? "rounded-tr-2xl rounded-br-md"
                 : "rounded-tl-2xl rounded-bl-md")
           )}
         >
-          <p className="whitespace-pre-wrap text-[15px] leading-7">
-            {message.content}
-          </p>
+          {/* Attachments */}
+
+          {message.attachments?.length > 0 && (
+            <div className="mb-3 space-y-3">
+              {message.attachments.map((attachment, index) => {
+                const isImage =
+                  attachment.mimeType.startsWith("image/");
+
+                const isVideo =
+                  attachment.mimeType.startsWith("video/");
+
+                const isPdf =
+                  attachment.mimeType === "application/pdf";
+
+                if (isImage) {
+                  return (
+                    <img
+                      key={attachment.id ?? index}
+                      src={attachment.url}
+                      alt={attachment.fileName}
+                      className="max-h-80 w-full rounded-xl border object-cover"
+                    />
+                  );
+                }
+
+                if (isVideo) {
+                  return (
+                    <video
+                      key={attachment.id ?? index}
+                      controls
+                      className="max-h-80 w-full rounded-xl border"
+                    >
+                      <source
+                        src={attachment.url}
+                        type={attachment.mimeType}
+                      />
+                    </video>
+                  );
+                }
+
+                if (isPdf) {
+                  return (
+                    <a
+                      key={attachment.id ?? index}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-3 rounded-xl border bg-zinc-50 px-4 py-3 transition hover:bg-zinc-100"
+                    >
+                      📄
+                      <div>
+                        <p className="font-medium">
+                          {attachment.fileName}
+                        </p>
+
+                        <p className="text-xs opacity-70">
+                          PDF Document
+                        </p>
+                      </div>
+                    </a>
+                  );
+                }
+
+                return (
+                  <a
+                    key={attachment.id ?? index}
+                    href={attachment.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-xl border bg-zinc-50 px-4 py-3 transition hover:bg-zinc-100"
+                  >
+                    📎
+                    <div>
+                      <p className="font-medium">
+                        {attachment.fileName}
+                      </p>
+
+                      <p className="text-xs opacity-70">
+                        {(attachment.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          {message.content && (
+            <p className="whitespace-pre-wrap text-[15px] leading-7">
+              {message.content}
+            </p>
+          )}
         </div>
 
-        {/* Mine timestamp only on last grouped message for now */}
         {isMine && !shouldGroup && (
           <div className="mt-1 text-xs text-zinc-400">
             You • {time}

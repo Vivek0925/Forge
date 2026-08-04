@@ -6,16 +6,8 @@ export async function uploadFile(file: File) {
   formData.append("file", file);
   formData.append("folder", "chat");
 
-  const { data } = await api.post(
-    "/storage/upload",
-    formData,
-    {
-      headers: {
-        "Content-Type":
-          "multipart/form-data",
-      },
-    },
-  );
-
-  return data;
+  return api("/storage/upload", {
+    method: "POST",
+    body: formData,
+  });
 }
