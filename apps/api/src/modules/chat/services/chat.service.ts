@@ -24,6 +24,7 @@ export class ChatService {
       content: dto.content,
       workspaceId: workspace.id,
       senderId,
+      attachments: dto.attachments,
     });
   }
 
@@ -39,5 +40,4 @@ export class ChatService {
       workspace.id,
     );
   }
-  
 }

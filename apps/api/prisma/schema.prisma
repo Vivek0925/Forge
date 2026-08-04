@@ -116,12 +116,29 @@ model Message {
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  attachments MessageAttachment[]
 
   @@index([workspaceId])
   @@index([senderId])
   @@index([workspaceId, createdAt])
 
   @@map("messages")
+}
+
+model MessageAttachment {
+  id         String   @id @default(cuid())
+
+  messageId  String
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileName   String
+  key        String
+  url        String
+
+  mimeType   String
+  size       Int
+
+  createdAt  DateTime @default(now())
 }
 
 enum AuthProvider {

@@ -1,23 +1,16 @@
-import {
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 
-import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
+import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
-import { s3 } from "./s3.client";
+import { s3 } from './s3.client';
 
 @Injectable()
 export class StorageService {
-  async upload(
-    file: any,
-    folder: string,
-  ) {
-    const extension =
-      file.originalname.split(".").pop();
+  async upload(file: any, folder: string) {
+    const extension = file.originalname.split('.').pop();
 
-    const key =
-      `${folder}/${randomUUID()}.${extension}`;
+    const key = `${folder}/${randomUUID()}.${extension}`;
 
     await s3.send(
       new PutObjectCommand({
@@ -29,10 +22,11 @@ export class StorageService {
     );
 
     return {
+      fileName: file.originalname,
       key,
       url: `${process.env.S3_ENDPOINT}/${process.env.S3_BUCKET}/${key}`,
-      size: file.size,
       mimeType: file.mimetype,
+      size: file.size,
     };
   }
 }

@@ -1,17 +1,49 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../../database/prisma.service";
 
+interface CreateMessageInput {
+  content: string;
+  workspaceId: string;
+  senderId: string;
+
+  attachments?: {
+    fileName: string;
+    key: string;
+    url: string;
+    mimeType: string;
+    size: number;
+  }[];
+}
+
 @Injectable()
 export class MessageRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+  ) {}
 
-  create(data: {
-    content: string;
-    workspaceId: string;
-    senderId: string;
-  }) {
+  create({
+    content,
+    workspaceId,
+    senderId,
+    attachments = [],
+  }: CreateMessageInput) {
     return this.prisma.message.create({
-      data,
+      data: {
+        content,
+        workspaceId,
+        senderId,
+
+        attachments: {
+          create: attachments.map((attachment) => ({
+            fileName: attachment.fileName,
+            key: attachment.key,
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            size: attachment.size,
+          })),
+        },
+      },
+
       include: {
         sender: {
           select: {
@@ -20,6 +52,8 @@ export class MessageRepository {
             avatar: true,
           },
         },
+
+        attachments: true,
       },
     });
   }
@@ -29,6 +63,7 @@ export class MessageRepository {
       where: {
         workspaceId,
       },
+
       include: {
         sender: {
           select: {
@@ -37,7 +72,10 @@ export class MessageRepository {
             avatar: true,
           },
         },
+
+        attachments: true,
       },
+
       orderBy: {
         createdAt: "asc",
       },
