@@ -80,7 +80,7 @@ export default function MessageItem({
 
           <div
             className={clsx(
-              "rounded-2xl px-4 py-3 transition-colors",
+              "rounded-2xl px-4 py-1.5 transition-colors",
               isMine
                 ? "bg-[#20232D] text-white"
                 : "border border-zinc-200 bg-white text-zinc-700",
@@ -93,7 +93,7 @@ export default function MessageItem({
             {message.replyTo && (
               <div
                 className={clsx(
-                  "mb-3 rounded-lg border-l-4 px-3 py-2",
+                  "mb-3 rounded-lg border-l-4 px-3 py-1",
                   isMine
                     ? "border-white/40 bg-white/10"
                     : "border-emerald-500 bg-zinc-100",
