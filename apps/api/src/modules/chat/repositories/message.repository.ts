@@ -1,10 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../../database/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../database/prisma.service';
 
 interface CreateMessageInput {
   content: string;
   workspaceId: string;
   senderId: string;
+
+  replyToId?: string;
 
   attachments?: {
     fileName: string;
@@ -17,21 +19,38 @@ interface CreateMessageInput {
 
 @Injectable()
 export class MessageRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   create({
     content,
     workspaceId,
     senderId,
+    replyToId,
     attachments = [],
   }: CreateMessageInput) {
     return this.prisma.message.create({
       data: {
         content,
-        workspaceId,
-        senderId,
+
+        workspace: {
+          connect: {
+            id: workspaceId,
+          },
+        },
+
+        sender: {
+          connect: {
+            id: senderId,
+          },
+        },
+
+        replyTo: replyToId
+          ? {
+              connect: {
+                id: replyToId,
+              },
+            }
+          : undefined,
 
         attachments: {
           create: attachments.map((attachment) => ({
@@ -54,6 +73,19 @@ export class MessageRepository {
         },
 
         attachments: true,
+
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -74,10 +106,23 @@ export class MessageRepository {
         },
 
         attachments: true,
+
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
 
       orderBy: {
-        createdAt: "asc",
+        createdAt: 'asc',
       },
     });
   }

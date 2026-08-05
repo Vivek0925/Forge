@@ -4,8 +4,8 @@ import {
   IsString,
   ValidateNested,
   IsInt,
-} from "class-validator";
-import { Type } from "class-transformer";
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 class AttachmentDto {
   @IsString()
@@ -36,4 +36,7 @@ export class SendMessageDto {
   @ValidateNested({ each: true })
   @Type(() => AttachmentDto)
   attachments?: AttachmentDto[];
+  @IsOptional()
+  @IsString()
+  replyToId?: string;
 }

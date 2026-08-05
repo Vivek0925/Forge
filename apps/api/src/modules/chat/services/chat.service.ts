@@ -25,6 +25,7 @@ export class ChatService {
       workspaceId: workspace.id,
       senderId,
       attachments: dto.attachments,
+      replyToId: dto.replyToId,
     });
   }
 
