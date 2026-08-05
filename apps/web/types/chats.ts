@@ -15,6 +15,17 @@ export interface Attachment {
   size: number;
 }
 
+export interface ReplyMessage {
+  id: string;
+
+  content: string;
+
+  sender: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Message {
   id: string;
 
@@ -23,6 +34,8 @@ export interface Message {
   sender: User;
 
   attachments: Attachment[];
+
+  replyTo?: ReplyMessage | null;
 
   edited: boolean;
 

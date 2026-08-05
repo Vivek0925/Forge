@@ -5,14 +5,20 @@ import { useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 import type { Message } from "@/types/chats";
+
 import MessageItem from "./MessageItem";
 import DateSeparator from "../DateSeparator";
 
 interface MessageListProps {
   messages: Message[];
+
+  onReply: (message: Message) => void;
 }
 
-export default function MessageList({ messages }: MessageListProps) {
+export default function MessageList({
+  messages,
+  onReply,
+}: MessageListProps) {
   const { user } = useAuth();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -29,22 +35,32 @@ export default function MessageList({ messages }: MessageListProps) {
         {messages.map((message, index) => {
           const previous = messages[index - 1];
 
-          const currentDate = new Date(message.createdAt).toDateString();
+          const currentDate = new Date(
+            message.createdAt,
+          ).toDateString();
 
           const previousDate = previous
-            ? new Date(previous.createdAt).toDateString()
+            ? new Date(
+                previous.createdAt,
+              ).toDateString()
             : null;
 
-          const showDate = currentDate !== previousDate;
+          const showDate =
+            currentDate !== previousDate;
 
           return (
             <div key={message.id}>
-              {showDate && <DateSeparator date={message.createdAt} />}
+              {showDate && (
+                <DateSeparator
+                  date={message.createdAt}
+                />
+              )}
 
               <MessageItem
                 message={message}
-                previousMessage={messages[index - 1]}
+                previousMessage={previous}
                 currentUserId={user?.id}
+                onReply={onReply}
               />
             </div>
           );

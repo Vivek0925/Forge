@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import MessageInput from "./MessageInput";
 import MessageList from "./MessageList";
 
 import { useChat } from "@/hooks/useChat";
+
+import type { Message } from "@/types/chats";
 
 interface WorkspaceChatProps {
   slug: string;
@@ -17,6 +21,9 @@ export default function WorkspaceChat({
     loading,
     sendMessage,
   } = useChat(slug);
+
+  const [replyingTo, setReplyingTo] =
+    useState<Message | null>(null);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-[32px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
@@ -48,11 +55,32 @@ export default function WorkspaceChat({
             </p>
           </div>
         ) : (
-          <MessageList messages={messages} />
+          <MessageList
+            messages={messages}
+            onReply={setReplyingTo}
+          />
         )}
       </div>
 
-      <MessageInput onSend={sendMessage} />
+      <MessageInput
+        replyingTo={replyingTo}
+        onCancelReply={() =>
+          setReplyingTo(null)
+        }
+        onSend={(
+          content,
+          attachments,
+          replyToId,
+        ) => {
+          sendMessage(
+            content,
+            attachments,
+            replyToId,
+          );
+
+          setReplyingTo(null);
+        }}
+      />
     </div>
   );
 }

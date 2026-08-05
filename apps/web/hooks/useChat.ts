@@ -51,11 +51,13 @@ export function useChat(slug: string) {
   const sendMessage = (
     content: string,
     attachments: Attachment[] = [],
+    replyToId?: string,
   ) => {
     socket.emit("chat:send", {
       workspaceSlug: slug,
       content,
       attachments,
+      replyToId,
     });
   };
 
