@@ -7,6 +7,7 @@ import { WorkspaceModule } from "./modules/workspace/workspace.module";
 import { RealtimeModule } from "./modules/realtime/realtime.module";
 import { WorkspaceInvitationModule } from "./modules/workspace-invitations/workspace-invitation.module";
 import { StorageModule } from "./modules/storage/storage.module";
+import { MeetingModule } from "./modules/meeting/meeting.module";
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { StorageModule } from "./modules/storage/storage.module";
     RealtimeModule,
     WorkspaceInvitationModule,
     StorageModule,
+    MeetingModule,
   ],
 })
 export class AppModule {}
