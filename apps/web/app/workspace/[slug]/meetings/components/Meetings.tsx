@@ -197,10 +197,10 @@ export default function Meetings({
   );
 
   return (
-    <div className="flex h-full flex-col bg-[#FAFAFB]">
+    <div className="flex h-full flex-col rounded-xl bg-white  ">
       {/* Header */}
 
-      <div className="border-b border-[#ECEEF3] bg-white px-8 py-6">
+      <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">

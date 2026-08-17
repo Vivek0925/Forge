@@ -106,7 +106,7 @@ export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
         </span>
       </div>
 
-      <div className="mt-5 flex items-center justify-between border-t border-[#F0F1F4] pt-3">
+      <div className="mt-4 flex items-center justify-between border-t border-[#F0F1F4] pt-2">
         <p className="text-xs text-[#85899A]">
           Created by{" "}
           <span className="font-medium text-[#555968]">
@@ -118,7 +118,7 @@ export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
           <button
             type="button"
             onClick={() => onJoin(meeting.id)}
-            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-3 py-1.5 border text-sm font-medium text-black transition hover:bg-[#30333E]"
+            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-3 py-1.5 border border-[#ECEEF3]  text-sm font-medium text-black transition hover:bg-[#30333E]"
           >
             <Video size={16} />
 
