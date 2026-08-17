@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CalendarDays,
-  Clock,
-  Users,
-  Video,
-} from "lucide-react";
+import { CalendarDays, Clock, Users, Video } from "lucide-react";
 
 interface Meeting {
   id: string;
@@ -36,10 +31,7 @@ interface MeetingCardProps {
   onJoin: (meetingId: string) => void;
 }
 
-export default function MeetingCard({
-  meeting,
-  onJoin,
-}: MeetingCardProps) {
+export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
   const isActive = meeting.status === "ACTIVE";
   const isEnded = meeting.status === "ENDED";
 
@@ -52,10 +44,7 @@ export default function MeetingCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF1]">
-            <Video
-              size={21}
-              className="text-[#1E8E5A]"
-            />
+            <Video size={21} className="text-[#1E8E5A]" />
           </div>
 
           <div>
@@ -82,14 +71,11 @@ export default function MeetingCard({
                 <span className="flex items-center gap-1.5">
                   <CalendarDays size={14} />
 
-                  {scheduledDate.toLocaleDateString(
-                    [],
-                    {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    },
-                  )}
+                  {scheduledDate.toLocaleDateString([], {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </span>
               )}
 
@@ -97,13 +83,10 @@ export default function MeetingCard({
                 <span className="flex items-center gap-1.5">
                   <Clock size={14} />
 
-                  {scheduledDate.toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  )}
+                  {scheduledDate.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               )}
             </div>
@@ -123,7 +106,7 @@ export default function MeetingCard({
         </span>
       </div>
 
-      <div className="mt-6 flex items-center justify-between border-t border-[#F0F1F4] pt-4">
+      <div className="mt-5 flex items-center justify-between border-t border-[#F0F1F4] pt-3">
         <p className="text-xs text-[#85899A]">
           Created by{" "}
           <span className="font-medium text-[#555968]">
@@ -135,12 +118,11 @@ export default function MeetingCard({
           <button
             type="button"
             onClick={() => onJoin(meeting.id)}
-            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#30333E]"
+            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-3 py-1.5 border text-sm font-medium text-black transition hover:bg-[#30333E]"
           >
             <Video size={16} />
-            {isActive
-              ? "Join Meeting"
-              : "Open Meeting"}
+
+            {isActive ? "Join Meeting" : "View Meeting"}
           </button>
         )}
       </div>

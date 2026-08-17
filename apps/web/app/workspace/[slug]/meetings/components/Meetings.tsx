@@ -43,6 +43,8 @@ interface MeetingsProps {
   slug: string;
 }
 
+type MeetingMode = "now" | "scheduled";
+
 export default function Meetings({
   slug,
 }: MeetingsProps) {
@@ -54,6 +56,9 @@ export default function Meetings({
 
   const [showCreate, setShowCreate] =
     useState(false);
+
+  const [mode, setMode] =
+    useState<MeetingMode>("now");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] =
@@ -83,9 +88,7 @@ export default function Meetings({
         error,
       );
 
-      setError(
-        "Failed to load meetings.",
-      );
+      setError("Failed to load meetings.");
     } finally {
       setLoading(false);
     }
@@ -97,9 +100,31 @@ export default function Meetings({
     }
   }, [slug]);
 
+  function resetForm() {
+    setTitle("");
+    setDescription("");
+    setScheduledAt("");
+    setMode("now");
+    setError("");
+  }
+
+  function closeModal() {
+    if (creating) return;
+
+    setShowCreate(false);
+    resetForm();
+  }
+
   async function createMeeting() {
     if (!title.trim()) {
       setError("Meeting title is required.");
+      return;
+    }
+
+    if (mode === "scheduled" && !scheduledAt) {
+      setError(
+        "Please select a date and time.",
+      );
       return;
     }
 
@@ -116,8 +141,14 @@ export default function Meetings({
             title: title.trim(),
             description:
               description.trim() || undefined,
-            scheduledAt:
-              scheduledAt || undefined,
+
+            ...(mode === "scheduled"
+              ? {
+                  scheduledAt: new Date(
+                    scheduledAt,
+                  ).toISOString(),
+                }
+              : {}),
           }),
         },
       );
@@ -127,11 +158,8 @@ export default function Meetings({
         ...prev,
       ]);
 
-      setTitle("");
-      setDescription("");
-      setScheduledAt("");
-
       setShowCreate(false);
+      resetForm();
     } catch (error) {
       console.error(
         "Failed to create meeting",
@@ -154,9 +182,19 @@ export default function Meetings({
       meetingId,
     );
 
-    // We'll navigate to the meeting
-    // lobby here next.
+    // Meeting lobby navigation
+    // will be added next.
   }
+
+  const activeMeetings = meetings.filter(
+    (meeting) =>
+      meeting.status === "ACTIVE",
+  );
+
+  const scheduledMeetings = meetings.filter(
+    (meeting) =>
+      meeting.status === "SCHEDULED",
+  );
 
   return (
     <div className="flex h-full flex-col bg-[#FAFAFB]">
@@ -164,25 +202,23 @@ export default function Meetings({
 
       <div className="border-b border-[#ECEEF3] bg-white px-8 py-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">
-                <Video
-                  size={21}
-                  className="text-[#1E8E5A]"
-                />
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">
+              <Video
+                size={21}
+                className="text-[#1E8E5A]"
+              />
+            </div>
 
-              <div>
-                <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#20232D]">
-                  Meetings
-                </h1>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#20232D]">
+                Meetings
+              </h1>
 
-                <p className="mt-1 text-sm text-[#707487]">
-                  Meet, collaborate, and stay
-                  connected with your workspace.
-                </p>
-              </div>
+              <p className="mt-1 text-sm text-[#707487]">
+                Meet, collaborate, and stay
+                connected with your workspace.
+              </p>
             </div>
           </div>
 
@@ -203,7 +239,7 @@ export default function Meetings({
 
       <div className="flex-1 overflow-y-auto px-8 py-8">
         <div className="mx-auto max-w-6xl">
-          {error && (
+          {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
@@ -223,13 +259,12 @@ export default function Meetings({
               </div>
 
               <h2 className="text-xl font-semibold text-[#20232D]">
-                No meetings yet
+                No active or upcoming meetings
               </h2>
 
               <p className="mt-2 max-w-md text-center text-sm leading-6 text-[#707487]">
-                Create your first meeting and
-                start collaborating with your
-                workspace.
+                Start an instant meeting or
+                schedule one for later.
               </p>
 
               <button
@@ -237,27 +272,68 @@ export default function Meetings({
                 onClick={() =>
                   setShowCreate(true)
                 }
-                className="mt-6 flex items-center gap-2 rounded-xl bg-[#20232D] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#30333E]"
+                className="mt-6 flex items-center gap-2 rounded-xl bg-[#20232D] px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]"
               >
                 <Plus size={17} />
-                Create Meeting
+                New Meeting
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="mb-5">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-[#85899A]">
-                  Your Meetings
-                </h2>
-              </div>
+            <div className="space-y-10">
+              {/* Live */}
 
-              {meetings.map((meeting) => (
-                <MeetingCard
-                  key={meeting.id}
-                  meeting={meeting}
-                  onJoin={handleJoin}
-                />
-              ))}
+              {activeMeetings.length > 0 && (
+                <section>
+                  <div className="mb-5 flex items-center gap-3">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#1E8E5A]" />
+
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[#85899A]">
+                      Live now
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    {activeMeetings.map(
+                      (meeting) => (
+                        <MeetingCard
+                          key={meeting.id}
+                          meeting={meeting}
+                          onJoin={handleJoin}
+                        />
+                      ),
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Upcoming */}
+
+              {scheduledMeetings.length > 0 && (
+                <section>
+                  <div className="mb-5 flex items-center gap-3">
+                    <CalendarDays
+                      size={16}
+                      className="text-[#85899A]"
+                    />
+
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[#85899A]">
+                      Upcoming
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    {scheduledMeetings.map(
+                      (meeting) => (
+                        <MeetingCard
+                          key={meeting.id}
+                          meeting={meeting}
+                          onJoin={handleJoin}
+                        />
+                      ),
+                    )}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </div>
@@ -271,26 +347,28 @@ export default function Meetings({
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-[#20232D]">
-                  Create Meeting
+                  New Meeting
                 </h2>
 
                 <p className="mt-1 text-sm text-[#707487]">
-                  Set up a new workspace meeting.
+                  Start now or schedule it for
+                  later.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowCreate(false)
-                }
-                className="rounded-xl p-2 text-[#85899A] transition hover:bg-zinc-100 hover:text-[#20232D]"
+                onClick={closeModal}
+                disabled={creating}
+                className="rounded-xl p-2 text-[#85899A] transition hover:bg-zinc-100 hover:text-[#20232D] disabled:opacity-50"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="mt-6 space-y-5">
+              {/* Title */}
+
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#20232D]">
                   Meeting title
@@ -306,9 +384,14 @@ export default function Meetings({
                 />
               </div>
 
+              {/* Description */}
+
               <div>
                 <label className="mb-2 block text-sm font-medium text-[#20232D]">
                   Description
+                  <span className="ml-1 font-normal text-[#A1A5B3]">
+                    (optional)
+                  </span>
                 </label>
 
                 <textarea
@@ -324,32 +407,119 @@ export default function Meetings({
                 />
               </div>
 
+              {/* Meeting mode */}
+
               <div>
-                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#20232D]">
-                  <CalendarDays size={15} />
-                  Schedule
+                <label className="mb-3 block text-sm font-medium text-[#20232D]">
+                  When?
                 </label>
 
-                <input
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) =>
-                    setScheduledAt(
-                      e.target.value,
-                    )
-                  }
-                  className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMode("now")
+                    }
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      mode === "now"
+                        ? "border-[#9ADDBB] bg-[#F0FBF5]"
+                        : "border-[#E1E3EA] bg-white hover:bg-[#FAFAFB]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full ${
+                          mode === "now"
+                            ? "bg-[#1E8E5A]"
+                            : "border border-[#B7BAC5]"
+                        }`}
+                      />
+
+                      <span className="text-sm font-semibold text-[#20232D]">
+                        Start now
+                      </span>
+                    </div>
+
+                    <p className="mt-2 pl-4 text-xs leading-5 text-[#707487]">
+                      Start the meeting
+                      immediately.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMode("scheduled")
+                    }
+                    className={`rounded-2xl border px-4 py-4 text-left transition ${
+                      mode === "scheduled"
+                        ? "border-[#9ADDBB] bg-[#F0FBF5]"
+                        : "border-[#E1E3EA] bg-white hover:bg-[#FAFAFB]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CalendarDays
+                        size={15}
+                        className={
+                          mode ===
+                          "scheduled"
+                            ? "text-[#1E8E5A]"
+                            : "text-[#85899A]"
+                        }
+                      />
+
+                      <span className="text-sm font-semibold text-[#20232D]">
+                        Schedule
+                      </span>
+                    </div>
+
+                    <p className="mt-2 pl-6 text-xs leading-5 text-[#707487]">
+                      Pick a date and time.
+                    </p>
+                  </button>
+                </div>
               </div>
+
+              {/* Schedule date */}
+
+              {mode === "scheduled" && (
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#20232D]">
+                    <CalendarDays size={15} />
+                    Date and time
+                  </label>
+
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    min={new Date()
+                      .toISOString()
+                      .slice(0, 16)}
+                    onChange={(e) =>
+                      setScheduledAt(
+                        e.target.value,
+                      )
+                    }
+                    className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
+                  />
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
             </div>
+
+            {/* Actions */}
 
             <div className="mt-7 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  setShowCreate(false)
-                }
-                className="rounded-xl px-4 py-2.5 text-sm font-medium text-[#707487] transition hover:bg-zinc-100"
+                onClick={closeModal}
+                disabled={creating}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium text-[#707487] transition hover:bg-zinc-100 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -359,13 +529,19 @@ export default function Meetings({
                 onClick={createMeeting}
                 disabled={
                   creating ||
-                  !title.trim()
+                  !title.trim() ||
+                  (mode === "scheduled" &&
+                    !scheduledAt)
                 }
-                className="rounded-xl bg-[#20232D] px-5 py-2.5 text-sm font-medium text-black border  transition hover:bg-[#30333E] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl bg-[#20232D] px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E] disabled:cursor-not-allowed disabled:opacity-50"
               >
+                <Video size={16} />
+
                 {creating
                   ? "Creating..."
-                  : "Create Meeting"}
+                  : mode === "now"
+                    ? "Start Meeting"
+                    : "Schedule Meeting"}
               </button>
             </div>
           </div>
