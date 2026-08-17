@@ -28,6 +28,9 @@ model User {
   // Chat
   messages Message[]
 
+  meetingsCreated     Meeting[]            @relation("MeetingCreator")
+  meetingParticipants MeetingParticipant[]
+
   @@map("users")
 }
 
@@ -49,6 +52,8 @@ model Workspace {
 
   // Chat
   messages Message[]
+
+  meetings Meeting[]
 
   @@index([ownerId])
   @@map("workspaces")
@@ -142,6 +147,62 @@ model MessageAttachment {
   size     Int
 
   createdAt DateTime @default(now())
+}
+
+model Meeting {
+  id String @id @default(cuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("MeetingCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+
+  status MeetingStatus @default(SCHEDULED)
+
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  participants MeetingParticipant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([workspaceId, scheduledAt])
+  @@map("meetings")
+}
+
+model MeetingParticipant {
+  id String @id @default(cuid())
+
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime?
+  leftAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([meetingId, userId])
+  @@index([meetingId])
+  @@index([userId])
+  @@map("meeting_participants")
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
 }
 
 enum AuthProvider {
