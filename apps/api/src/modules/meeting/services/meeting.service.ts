@@ -26,12 +26,28 @@ export class MeetingService {
         workspaceSlug,
       );
 
+    const scheduledAt = dto.scheduledAt
+      ? new Date(dto.scheduledAt)
+      : undefined;
+
+    /*
+     * No scheduledAt = start immediately.
+     * scheduledAt = create an upcoming meeting.
+     */
+    const status = scheduledAt
+      ? "SCHEDULED"
+      : "ACTIVE";
+
+    const startedAt = scheduledAt
+      ? undefined
+      : new Date();
+
     return this.meetingRepository.create({
       title: dto.title,
       description: dto.description,
-      scheduledAt: dto.scheduledAt
-        ? new Date(dto.scheduledAt)
-        : undefined,
+      scheduledAt,
+      startedAt,
+      status,
       workspaceId: workspace.id,
       createdById: userId,
     });
@@ -58,6 +74,13 @@ export class MeetingService {
         workspaceSlug,
       );
 
+    /*
+     * Only currently relevant meetings are shown.
+     *
+     * ACTIVE     → live meetings
+     * SCHEDULED  → upcoming meetings
+     * ENDED      → hidden from this list
+     */
     return this.meetingRepository.findByWorkspace(
       workspace.id,
     );
@@ -72,6 +95,10 @@ export class MeetingService {
       );
     }
 
+    if (meeting.status === "ACTIVE") {
+      return meeting;
+    }
+
     return this.meetingRepository.start(id);
   }
 
@@ -81,6 +108,12 @@ export class MeetingService {
     if (meeting.status === "ENDED") {
       throw new BadRequestException(
         "Meeting has already ended",
+      );
+    }
+
+    if (meeting.status !== "ACTIVE") {
+      throw new BadRequestException(
+        "Only an active meeting can be ended",
       );
     }
 
@@ -100,6 +133,12 @@ export class MeetingService {
       );
     }
 
+    if (meeting.status !== "ACTIVE") {
+      throw new BadRequestException(
+        "Meeting has not started yet",
+      );
+    }
+
     return this.meetingRepository.join(
       meetingId,
       userId,
@@ -110,7 +149,14 @@ export class MeetingService {
     meetingId: string,
     userId: string,
   ) {
-    await this.findById(meetingId);
+    const meeting =
+      await this.findById(meetingId);
+
+    if (meeting.status === "ENDED") {
+      throw new BadRequestException(
+        "Meeting has ended",
+      );
+    }
 
     return this.meetingRepository.leave(
       meetingId,

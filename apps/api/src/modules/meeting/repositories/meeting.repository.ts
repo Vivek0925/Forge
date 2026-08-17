@@ -12,6 +12,8 @@ export class MeetingRepository {
     title: string;
     description?: string;
     scheduledAt?: Date;
+    startedAt?: Date;
+    status: "SCHEDULED" | "ACTIVE";
     workspaceId: string;
     createdById: string;
   }) {
@@ -20,6 +22,8 @@ export class MeetingRepository {
         title: data.title,
         description: data.description,
         scheduledAt: data.scheduledAt,
+        startedAt: data.startedAt,
+        status: data.status,
         workspaceId: data.workspaceId,
         createdById: data.createdById,
       },
@@ -82,6 +86,19 @@ export class MeetingRepository {
     return this.prisma.meeting.findMany({
       where: {
         workspaceId,
+
+        /*
+         * The Meetings page only shows:
+         *
+         * ACTIVE    → currently live
+         * SCHEDULED → upcoming
+         *
+         * ENDED meetings remain in PostgreSQL
+         * but are intentionally not returned here.
+         */
+        status: {
+          in: ["ACTIVE", "SCHEDULED"],
+        },
       },
 
       include: {
@@ -106,9 +123,17 @@ export class MeetingRepository {
         },
       },
 
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        {
+          status: "asc",
+        },
+        {
+          scheduledAt: "asc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
     });
   }
 
@@ -121,6 +146,29 @@ export class MeetingRepository {
       data: {
         status: "ACTIVE",
         startedAt: new Date(),
+        endedAt: null,
+      },
+
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -135,10 +183,35 @@ export class MeetingRepository {
         status: "ENDED",
         endedAt: new Date(),
       },
+
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
-  async join(meetingId: string, userId: string) {
+  async join(
+    meetingId: string,
+    userId: string,
+  ) {
     return this.prisma.meetingParticipant.upsert({
       where: {
         meetingId_userId: {
@@ -170,7 +243,10 @@ export class MeetingRepository {
     });
   }
 
-  async leave(meetingId: string, userId: string) {
+  async leave(
+    meetingId: string,
+    userId: string,
+  ) {
     return this.prisma.meetingParticipant.update({
       where: {
         meetingId_userId: {
