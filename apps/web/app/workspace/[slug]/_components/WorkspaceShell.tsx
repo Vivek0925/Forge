@@ -60,7 +60,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
       <WorkspaceSidebar slug={slug} title={title} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-[#DEDFE8]/80 bg-white/85 px-4 backdrop-blur-xl md:px-6">
+        <header className="flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="md:hidden">
               <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#059669]">
@@ -85,7 +85,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
             {/* button to redirect to dashboard */}
             <Link
               href="/dashboard"
-              className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
             >
               Dashboard
             </Link>

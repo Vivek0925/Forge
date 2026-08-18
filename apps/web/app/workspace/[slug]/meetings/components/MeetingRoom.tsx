@@ -10,10 +10,13 @@ import {
   ArrowLeft,
   Camera,
   CameraOff,
+  Maximize,
+  Minimize,
   Mic,
   MicOff,
   PhoneOff,
   Settings,
+  Users,
 } from "lucide-react";
 
 interface MeetingRoomProps {
@@ -46,6 +49,9 @@ export default function MeetingRoom({
   const [error, setError] =
     useState<string | null>(null);
 
+  const [isFullscreen, setIsFullscreen] =
+    useState(false);
+
   /*
    * Start camera + microphone
    */
@@ -60,20 +66,18 @@ export default function MeetingRoom({
         console.log("Requesting camera...");
 
         const mediaStream =
-          await navigator.mediaDevices.getUserMedia(
-            {
-              video: {
-                width: {
-                  ideal: 1280,
-                },
-                height: {
-                  ideal: 720,
-                },
-                facingMode: "user",
+          await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: {
+                ideal: 1920,
               },
-              audio: true,
+              height: {
+                ideal: 1080,
+              },
+              facingMode: "user",
             },
-          );
+            audio: true,
+          });
 
         console.log(
           "Camera stream received:",
@@ -93,9 +97,7 @@ export default function MeetingRoom({
         if (!mounted) {
           mediaStream
             .getTracks()
-            .forEach((track) =>
-              track.stop(),
-            );
+            .forEach((track) => track.stop());
 
           return;
         }
@@ -112,8 +114,7 @@ export default function MeetingRoom({
             track.enabled = true;
           });
 
-        streamRef.current =
-          mediaStream;
+        streamRef.current = mediaStream;
 
         setStream(mediaStream);
 
@@ -130,7 +131,7 @@ export default function MeetingRoom({
           err.name === "NotAllowedError"
         ) {
           setError(
-            "Camera or microphone permission was denied. Please allow access to localhost:3000.",
+            "Camera or microphone permission was denied. Please allow access to this site.",
           );
         } else if (
           err instanceof DOMException &&
@@ -166,15 +167,9 @@ export default function MeetingRoom({
       mounted = false;
 
       if (streamRef.current) {
-        console.log(
-          "Stopping media tracks",
-        );
-
         streamRef.current
           .getTracks()
-          .forEach((track) =>
-            track.stop(),
-          );
+          .forEach((track) => track.stop());
 
         streamRef.current = null;
       }
@@ -182,20 +177,14 @@ export default function MeetingRoom({
   }, []);
 
   /*
-   * Attach stream AFTER video element
-   * has been rendered.
+   * Attach camera stream after video mounts
    */
   useEffect(() => {
     if (!stream || !videoRef.current) {
       return;
     }
 
-    const video =
-      videoRef.current;
-
-    console.log(
-      "Attaching stream to video element...",
-    );
+    const video = videoRef.current;
 
     video.srcObject = stream;
     video.muted = true;
@@ -229,6 +218,50 @@ export default function MeetingRoom({
     };
   }, [stream]);
 
+  /*
+   * Fullscreen state
+   */
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(
+        document.fullscreenElement !== null,
+      );
+    }
+
+    document.addEventListener(
+      "fullscreenchange",
+      handleFullscreenChange,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "fullscreenchange",
+        handleFullscreenChange,
+      );
+    };
+  }, []);
+
+  /*
+   * Toggle fullscreen
+   */
+  async function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error(
+        "Fullscreen error:",
+        error,
+      );
+    }
+  }
+
+  /*
+   * Camera
+   */
   function toggleCamera() {
     const tracks =
       streamRef.current?.getVideoTracks();
@@ -247,6 +280,9 @@ export default function MeetingRoom({
     setCameraEnabled(nextState);
   }
 
+  /*
+   * Microphone
+   */
   function toggleMicrophone() {
     const tracks =
       streamRef.current?.getAudioTracks();
@@ -265,15 +301,24 @@ export default function MeetingRoom({
     setMicEnabled(nextState);
   }
 
-  function leaveMeeting() {
+  /*
+   * Leave meeting
+   */
+  async function leaveMeeting() {
     if (streamRef.current) {
       streamRef.current
         .getTracks()
-        .forEach((track) =>
-          track.stop(),
-        );
+        .forEach((track) => track.stop());
 
       streamRef.current = null;
+    }
+
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // Ignore fullscreen cleanup errors
+      }
     }
 
     window.location.href =
@@ -281,57 +326,107 @@ export default function MeetingRoom({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#111318] text-white">
-      {/* Header */}
+    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white">
+      {/* ===================================================== */}
+      {/* TOP BAR */}
+      {/* ===================================================== */}
 
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#17191F] px-6">
-        <div className="flex items-center gap-4">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-5 backdrop-blur-xl">
+        {/* Left */}
+
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
             onClick={() =>
               (window.location.href =
                 `/workspace/${slug}/meetings`)
             }
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
           >
             <ArrowLeft size={19} />
           </button>
 
-          <div>
-            <p className="text-sm font-semibold">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white">
               Meeting
             </p>
 
-            <p className="text-xs text-white/40">
+            <p className="truncate text-xs text-white/35">
               {meetingId}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/10 hover:text-white"
-        >
-          <Settings size={18} />
-        </button>
+        {/* Right */}
+
+        <div className="flex items-center gap-2">
+          {/* Participants */}
+
+          <button
+            type="button"
+            className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+          >
+            <Users size={16} />
+
+            <span className="hidden sm:inline">
+              1 participant
+            </span>
+          </button>
+
+          {/* Settings */}
+
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+          >
+            <Settings size={18} />
+          </button>
+
+          {/* Fullscreen */}
+
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={
+              isFullscreen
+                ? "Exit fullscreen"
+                : "Enter fullscreen"
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+          >
+            {isFullscreen ? (
+              <Minimize size={18} />
+            ) : (
+              <Maximize size={18} />
+            )}
+          </button>
+        </div>
       </header>
 
-      {/* Main */}
+      {/* ===================================================== */}
+      {/* VIDEO STAGE */}
+      {/* ===================================================== */}
 
-      <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
-        <div className="relative h-full w-full max-w-6xl overflow-hidden rounded-3xl bg-[#1B1E25]">
-          {loading ? (
-            <div className="flex h-full items-center justify-center">
+      <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
+        <div className="relative h-full w-full overflow-hidden rounded-3xl bg-[#171A20]">
+          {/* Loading */}
+
+          {loading && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
               <div className="text-center">
-                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
 
-                <p className="text-sm text-white/60">
+                <p className="text-sm text-white/50">
                   Starting camera...
                 </p>
               </div>
             </div>
-          ) : error ? (
-            <div className="flex h-full items-center justify-center px-6">
+          )}
+
+          {/* Error */}
+
+          {!loading && error && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
               <div className="max-w-md text-center">
                 <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
                   <CameraOff
@@ -344,7 +439,7 @@ export default function MeetingRoom({
                   Camera unavailable
                 </h2>
 
-                <p className="mt-2 text-sm leading-6 text-white/50">
+                <p className="mt-2 text-sm leading-6 text-white/45">
                   {error}
                 </p>
 
@@ -359,10 +454,12 @@ export default function MeetingRoom({
                 </button>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Video */}
+          )}
 
+          {/* Local video */}
+
+          {!error && (
+            <>
               <video
                 ref={videoRef}
                 autoPlay
@@ -375,19 +472,19 @@ export default function MeetingRoom({
                 }`}
               />
 
-              {/* Camera disabled */}
+              {/* Camera off */}
 
               {!cameraEnabled && (
-                <div className="flex h-full items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
                   <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
                     V
                   </div>
                 </div>
               )}
 
-              {/* Camera status */}
+              {/* Camera indicator */}
 
-              <div className="absolute left-5 top-5 flex items-center gap-2 rounded-xl bg-black/40 px-3 py-2 text-xs backdrop-blur-md">
+              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
                 <span
                   className={`h-2 w-2 rounded-full ${
                     cameraEnabled
@@ -400,23 +497,43 @@ export default function MeetingRoom({
                   ? "Camera on"
                   : "Camera off"}
               </div>
+
+              {/* Name */}
+
+              <div className="absolute bottom-4 left-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
+                You
+              </div>
             </>
           )}
+
+          {/* ================================================= */}
+          {/* FUTURE PARTICIPANT AREA */}
+          {/* ================================================= */}
+
+          {/* 
+              Later WebRTC participants will be rendered here.
+
+              Example:
+
+              <div className="absolute right-4 top-4 h-40 w-64">
+                remote participant
+              </div>
+          */}
         </div>
       </main>
 
-      {/* Controls */}
+      {/* ===================================================== */}
+      {/* BOTTOM CONTROLS */}
+      {/* ===================================================== */}
 
-      <footer className="flex h-24 shrink-0 items-center justify-center border-t border-white/10 bg-[#17191F]">
-        <div className="flex items-center gap-3">
+      <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
+        <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
           {/* Microphone */}
 
           <button
             type="button"
             onClick={toggleMicrophone}
-            disabled={
-              loading || !!error
-            }
+            disabled={loading || !!error}
             title={
               micEnabled
                 ? "Mute microphone"
@@ -424,7 +541,7 @@ export default function MeetingRoom({
             }
             className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
               micEnabled
-                ? "bg-white/10 text-white hover:bg-white/15"
+                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
                 : "bg-red-500 text-white hover:bg-red-600"
             } disabled:cursor-not-allowed disabled:opacity-40`}
           >
@@ -440,9 +557,7 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={toggleCamera}
-            disabled={
-              loading || !!error
-            }
+            disabled={loading || !!error}
             title={
               cameraEnabled
                 ? "Turn camera off"
@@ -450,7 +565,7 @@ export default function MeetingRoom({
             }
             className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
               cameraEnabled
-                ? "bg-white/10 text-white hover:bg-white/15"
+                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
                 : "bg-red-500 text-white hover:bg-red-600"
             } disabled:cursor-not-allowed disabled:opacity-40`}
           >
@@ -466,10 +581,13 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={leaveMeeting}
-            className="ml-3 flex h-12 items-center gap-2 rounded-2xl bg-red-500 px-5 text-sm font-medium text-white transition hover:bg-red-600"
+            className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium text-white transition hover:bg-[#DC2626]"
           >
-            <PhoneOff size={19} />
-            Leave
+            <PhoneOff size={18} />
+
+            <span className="hidden sm:inline">
+              Leave
+            </span>
           </button>
         </div>
       </footer>
