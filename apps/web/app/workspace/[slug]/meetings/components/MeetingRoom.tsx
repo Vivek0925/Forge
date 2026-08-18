@@ -31,6 +31,9 @@ export default function MeetingRoom({
   const streamRef =
     useRef<MediaStream | null>(null);
 
+  const [stream, setStream] =
+    useState<MediaStream | null>(null);
+
   const [cameraEnabled, setCameraEnabled] =
     useState(true);
 
@@ -43,6 +46,9 @@ export default function MeetingRoom({
   const [error, setError] =
     useState<string | null>(null);
 
+  /*
+   * Start camera + microphone
+   */
   useEffect(() => {
     let mounted = true;
 
@@ -51,16 +57,41 @@ export default function MeetingRoom({
         setLoading(true);
         setError(null);
 
-        const stream =
+        console.log("Requesting camera...");
+
+        const mediaStream =
           await navigator.mediaDevices.getUserMedia(
             {
-              video: true,
+              video: {
+                width: {
+                  ideal: 1280,
+                },
+                height: {
+                  ideal: 720,
+                },
+                facingMode: "user",
+              },
               audio: true,
             },
           );
 
+        console.log(
+          "Camera stream received:",
+          mediaStream,
+        );
+
+        console.log(
+          "Video tracks:",
+          mediaStream.getVideoTracks(),
+        );
+
+        console.log(
+          "Audio tracks:",
+          mediaStream.getAudioTracks(),
+        );
+
         if (!mounted) {
-          stream
+          mediaStream
             .getTracks()
             .forEach((track) =>
               track.stop(),
@@ -69,18 +100,28 @@ export default function MeetingRoom({
           return;
         }
 
-        streamRef.current = stream;
+        mediaStream
+          .getVideoTracks()
+          .forEach((track) => {
+            track.enabled = true;
+          });
 
-        if (videoRef.current) {
-          videoRef.current.srcObject =
-            stream;
-        }
+        mediaStream
+          .getAudioTracks()
+          .forEach((track) => {
+            track.enabled = true;
+          });
+
+        streamRef.current =
+          mediaStream;
+
+        setStream(mediaStream);
 
         setCameraEnabled(true);
         setMicEnabled(true);
       } catch (err) {
         console.error(
-          "Failed to access camera/microphone:",
+          "Media initialization failed:",
           err,
         );
 
@@ -89,18 +130,27 @@ export default function MeetingRoom({
           err.name === "NotAllowedError"
         ) {
           setError(
-            "Camera and microphone permission was denied. Please allow access and try again.",
+            "Camera or microphone permission was denied. Please allow access to localhost:3000.",
           );
         } else if (
           err instanceof DOMException &&
           err.name === "NotFoundError"
         ) {
           setError(
-            "No camera or microphone was found on this device.",
+            "No camera or microphone was found.",
+          );
+        } else if (
+          err instanceof DOMException &&
+          err.name === "NotReadableError"
+        ) {
+          setError(
+            "Your camera may already be in use by another application.",
           );
         } else {
           setError(
-            "Unable to access your camera or microphone.",
+            err instanceof Error
+              ? err.message
+              : "Unable to access camera and microphone.",
           );
         }
       } finally {
@@ -116,6 +166,10 @@ export default function MeetingRoom({
       mounted = false;
 
       if (streamRef.current) {
+        console.log(
+          "Stopping media tracks",
+        );
+
         streamRef.current
           .getTracks()
           .forEach((track) =>
@@ -127,36 +181,86 @@ export default function MeetingRoom({
     };
   }, []);
 
+  /*
+   * Attach stream AFTER video element
+   * has been rendered.
+   */
+  useEffect(() => {
+    if (!stream || !videoRef.current) {
+      return;
+    }
+
+    const video =
+      videoRef.current;
+
+    console.log(
+      "Attaching stream to video element...",
+    );
+
+    video.srcObject = stream;
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+
+        console.log(
+          "Video playback started",
+        );
+      } catch (err) {
+        console.error(
+          "Video playback failed:",
+          err,
+        );
+      }
+    };
+
+    if (video.readyState >= 1) {
+      playVideo();
+    } else {
+      video.onloadedmetadata =
+        playVideo;
+    }
+
+    return () => {
+      video.onloadedmetadata = null;
+    };
+  }, [stream]);
+
   function toggleCamera() {
-    const videoTracks =
+    const tracks =
       streamRef.current?.getVideoTracks();
 
-    if (!videoTracks?.length) return;
+    if (!tracks?.length) {
+      return;
+    }
 
-    const nextState = !cameraEnabled;
+    const nextState =
+      !cameraEnabled;
 
-    videoTracks.forEach(
-      (track) => {
-        track.enabled = nextState;
-      },
-    );
+    tracks.forEach((track) => {
+      track.enabled = nextState;
+    });
 
     setCameraEnabled(nextState);
   }
 
   function toggleMicrophone() {
-    const audioTracks =
+    const tracks =
       streamRef.current?.getAudioTracks();
 
-    if (!audioTracks?.length) return;
+    if (!tracks?.length) {
+      return;
+    }
 
-    const nextState = !micEnabled;
+    const nextState =
+      !micEnabled;
 
-    audioTracks.forEach(
-      (track) => {
-        track.enabled = nextState;
-      },
-    );
+    tracks.forEach((track) => {
+      track.enabled = nextState;
+    });
 
     setMicEnabled(nextState);
   }
@@ -172,7 +276,8 @@ export default function MeetingRoom({
       streamRef.current = null;
     }
 
-    window.location.href = `/workspace/${slug}/meetings`;
+    window.location.href =
+      `/workspace/${slug}/meetings`;
   }
 
   return (
@@ -184,7 +289,8 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={() =>
-              window.location.href = `/workspace/${slug}/meetings`
+              (window.location.href =
+                `/workspace/${slug}/meetings`)
             }
             className="flex h-9 w-9 items-center justify-center rounded-xl text-white/70 transition hover:bg-white/10 hover:text-white"
           >
@@ -214,8 +320,6 @@ export default function MeetingRoom({
 
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         <div className="relative h-full w-full max-w-6xl overflow-hidden rounded-3xl bg-[#1B1E25]">
-          {/* Camera preview */}
-
           {loading ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -257,6 +361,8 @@ export default function MeetingRoom({
             </div>
           ) : (
             <>
+              {/* Video */}
+
               <video
                 ref={videoRef}
                 autoPlay
@@ -264,10 +370,12 @@ export default function MeetingRoom({
                 playsInline
                 className={`h-full w-full object-cover ${
                   cameraEnabled
-                    ? ""
+                    ? "block"
                     : "hidden"
                 }`}
               />
+
+              {/* Camera disabled */}
 
               {!cameraEnabled && (
                 <div className="flex h-full items-center justify-center">
@@ -301,18 +409,20 @@ export default function MeetingRoom({
 
       <footer className="flex h-24 shrink-0 items-center justify-center border-t border-white/10 bg-[#17191F]">
         <div className="flex items-center gap-3">
-          {/* Mic */}
+          {/* Microphone */}
 
           <button
             type="button"
             onClick={toggleMicrophone}
-            disabled={loading || !!error}
+            disabled={
+              loading || !!error
+            }
             title={
               micEnabled
                 ? "Mute microphone"
                 : "Unmute microphone"
             }
-            className={`flex h-12 w-12 items-center bg-red-500 justify-center rounded-2xl transition ${
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
               micEnabled
                 ? "bg-white/10 text-white hover:bg-white/15"
                 : "bg-red-500 text-white hover:bg-red-600"
@@ -330,7 +440,9 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={toggleCamera}
-            disabled={loading || !!error}
+            disabled={
+              loading || !!error
+            }
             title={
               cameraEnabled
                 ? "Turn camera off"
@@ -354,12 +466,10 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={leaveMeeting}
-            title="Leave meeting"
             className="ml-3 flex h-12 items-center gap-2 rounded-2xl bg-red-500 px-5 text-sm font-medium text-white transition hover:bg-red-600"
           >
             <PhoneOff size={19} />
-
-            <span>Leave</span>
+            Leave
           </button>
         </div>
       </footer>
