@@ -40,7 +40,7 @@ export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
     : null;
 
   return (
-    <div className="rounded-3xl border border-[#E7E9EF] bg-white p-6 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)]">
+    <div className="rounded-3xl border border-[#E7E9EF] bg-green-50 p-6 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF1]">
@@ -118,7 +118,7 @@ export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
           <button
             type="button"
             onClick={() => onJoin(meeting.id)}
-            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-3 py-1.5 border border-[#ECEEF3]  text-sm font-medium text-black transition hover:bg-[#30333E]"
+            className="flex items-center gap-2 background-none rounded-xl  px-3 py-1.5 border border-[#ECEEF3]  text-sm font-medium text-black transition hover:bg-paper-700"
           >
             <Video size={16} />
 

@@ -177,14 +177,9 @@ export default function Meetings({
   }
 
   function handleJoin(meetingId: string) {
-    console.log(
-      "Join meeting:",
-      meetingId,
-    );
-
-    // Meeting lobby navigation
-    // will be added next.
-  }
+  window.location.href =
+    `/workspace/${slug}/meetings/${meetingId}`;
+}
 
   const activeMeetings = meetings.filter(
     (meeting) =>
@@ -197,7 +192,7 @@ export default function Meetings({
   );
 
   return (
-    <div className="flex h-full flex-col rounded-xl bg-white  ">
+    <div className="flex h-full flex-col background-none rounded-xl bg-white  ">
       {/* Header */}
 
       <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-6 py-4">
@@ -227,7 +222,7 @@ export default function Meetings({
             onClick={() =>
               setShowCreate(true)
             }
-            className="flex items-center gap-2 rounded-xl bg-[#20232D] px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]"
+            className="flex items-center gap-2 bg-none rounded-xl px-4 py-2.5 text-sm font-medium text-black transition hover:bg-green-50"
           >
             <Plus size={17} />
             New Meeting
@@ -272,7 +267,7 @@ export default function Meetings({
                 onClick={() =>
                   setShowCreate(true)
                 }
-                className="mt-6 flex items-center gap-2 rounded-xl bg-[#20232D] px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]"
+                className="mt-6 flex items-center gap-2 rounded-xl  px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]"
               >
                 <Plus size={17} />
                 New Meeting
@@ -453,7 +448,7 @@ export default function Meetings({
                     }
                     className={`rounded-2xl border px-4 py-4 text-left transition ${
                       mode === "scheduled"
-                        ? "border-[#9ADDBB] bg-[#F0FBF5]"
+                        ? "border-[#9ADDBB] "
                         : "border-[#E1E3EA] bg-white hover:bg-[#FAFAFB]"
                     }`}
                   >
@@ -514,7 +509,7 @@ export default function Meetings({
 
             {/* Actions */}
 
-            <div className="mt-7 flex justify-end gap-3">
+            <div className="mt-7 bg-none flex justify-end gap-3">
               <button
                 type="button"
                 onClick={closeModal}
@@ -533,7 +528,7 @@ export default function Meetings({
                   (mode === "scheduled" &&
                     !scheduledAt)
                 }
-                className="flex items-center gap-2 rounded-xl bg-[#20232D] px-5 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E] disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-xl  px-5 py-2.5 text-sm font-medium text-black transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Video size={16} />
 
