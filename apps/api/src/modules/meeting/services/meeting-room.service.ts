@@ -4,7 +4,6 @@ interface MeetingParticipant {
   socketId: string;
   userId: string;
   name: string;
-  avatar?: string | null;
 }
 
 @Injectable()
