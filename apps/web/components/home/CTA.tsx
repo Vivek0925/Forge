@@ -28,7 +28,7 @@ export default function CTA() {
             when nothing gets lost between tools.
           </p>
           <div className="relative mt-8 flex items-center justify-center gap-3">
-            <Button className="bg-[#FAFAF8] text-[#14141C] hover:bg-[#EDEEF3]">
+            <Button className=" text-[#14141C] hover:bg-white/10">
               Join the beta
             </Button>
             <Button variant="ghost" className="text-[#FAFAF8] hover:bg-white/10">
