@@ -3,9 +3,8 @@
 import { motion } from "framer-motion";
 
 const NODES = [
-  { label: "Chat", angle: -90 },
   { label: "Docs", angle: -18 },
-  { label: "Tasks", angle: 54 },
+  { label: "Chat", angle: 54 },
   { label: "Files", angle: 126 },
   { label: "AI Memory", angle: 198 },
   { label: "Meetings", angle: 270 },

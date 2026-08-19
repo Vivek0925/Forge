@@ -19,9 +19,16 @@ import {
   Users,
 } from "lucide-react";
 
+import { useMeeting } from "@/hooks/useMeeting";
+
 interface MeetingRoomProps {
   slug: string;
   meetingId: string;
+}
+
+interface RemoteVideoProps {
+  stream: MediaStream;
+  name: string;
 }
 
 export default function MeetingRoom({
@@ -52,6 +59,17 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] =
     useState(false);
 
+  const {
+    participants,
+    remoteStreams,
+  } = useMeeting({
+    meetingId,
+    stream,
+  });
+
+  const remoteParticipantCount =
+    Object.keys(remoteStreams).length;
+
   /*
    * Start camera + microphone
    */
@@ -63,21 +81,25 @@ export default function MeetingRoom({
         setLoading(true);
         setError(null);
 
-        console.log("Requesting camera...");
+        console.log(
+          "Requesting camera...",
+        );
 
         const mediaStream =
-          await navigator.mediaDevices.getUserMedia({
-            video: {
-              width: {
-                ideal: 1920,
+          await navigator.mediaDevices.getUserMedia(
+            {
+              video: {
+                width: {
+                  ideal: 1920,
+                },
+                height: {
+                  ideal: 1080,
+                },
+                facingMode: "user",
               },
-              height: {
-                ideal: 1080,
-              },
-              facingMode: "user",
+              audio: true,
             },
-            audio: true,
-          });
+          );
 
         console.log(
           "Camera stream received:",
@@ -97,7 +119,9 @@ export default function MeetingRoom({
         if (!mounted) {
           mediaStream
             .getTracks()
-            .forEach((track) => track.stop());
+            .forEach((track) =>
+              track.stop(),
+            );
 
           return;
         }
@@ -114,10 +138,10 @@ export default function MeetingRoom({
             track.enabled = true;
           });
 
-        streamRef.current = mediaStream;
+        streamRef.current =
+          mediaStream;
 
         setStream(mediaStream);
-
         setCameraEnabled(true);
         setMicEnabled(true);
       } catch (err) {
@@ -169,7 +193,9 @@ export default function MeetingRoom({
       if (streamRef.current) {
         streamRef.current
           .getTracks()
-          .forEach((track) => track.stop());
+          .forEach((track) =>
+            track.stop(),
+          );
 
         streamRef.current = null;
       }
@@ -177,14 +203,18 @@ export default function MeetingRoom({
   }, []);
 
   /*
-   * Attach camera stream after video mounts
+   * Attach local camera stream
    */
   useEffect(() => {
-    if (!stream || !videoRef.current) {
+    if (
+      !stream ||
+      !videoRef.current
+    ) {
       return;
     }
 
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
 
     video.srcObject = stream;
     video.muted = true;
@@ -214,7 +244,8 @@ export default function MeetingRoom({
     }
 
     return () => {
-      video.onloadedmetadata = null;
+      video.onloadedmetadata =
+        null;
     };
   }, [stream]);
 
@@ -224,7 +255,8 @@ export default function MeetingRoom({
   useEffect(() => {
     function handleFullscreenChange() {
       setIsFullscreen(
-        document.fullscreenElement !== null,
+        document.fullscreenElement !==
+          null,
       );
     }
 
@@ -242,7 +274,7 @@ export default function MeetingRoom({
   }, []);
 
   /*
-   * Toggle fullscreen
+   * Fullscreen
    */
   async function toggleFullscreen() {
     try {
@@ -308,7 +340,9 @@ export default function MeetingRoom({
     if (streamRef.current) {
       streamRef.current
         .getTracks()
-        .forEach((track) => track.stop());
+        .forEach((track) =>
+          track.stop(),
+        );
 
       streamRef.current = null;
     }
@@ -324,6 +358,26 @@ export default function MeetingRoom({
     window.location.href =
       `/workspace/${slug}/meetings`;
   }
+
+  /*
+   * Participant count.
+   *
+   * +1 represents the current user.
+   */
+  const participantCount =
+    participants.length + 1;
+
+  /*
+   * Grid layout.
+   */
+  const gridClass =
+    remoteParticipantCount === 0
+      ? "grid-cols-1"
+      : remoteParticipantCount === 1
+        ? "grid-cols-1 md:grid-cols-2"
+        : remoteParticipantCount <= 3
+          ? "grid-cols-1 md:grid-cols-2"
+          : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
     <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white">
@@ -362,22 +416,23 @@ export default function MeetingRoom({
         <div className="flex items-center gap-2">
           {/* Participants */}
 
-          <button
-            type="button"
-            className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
-          >
+          <div className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60">
             <Users size={16} />
 
-            <span className="hidden sm:inline">
-              1 participant
+            <span>
+              {participantCount}{" "}
+              {participantCount === 1
+                ? "participant"
+                : "participants"}
             </span>
-          </button>
+          </div>
 
           {/* Settings */}
 
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+            title="Settings"
           >
             <Settings size={18} />
           </button>
@@ -408,117 +463,142 @@ export default function MeetingRoom({
       {/* ===================================================== */}
 
       <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
-        <div className="relative h-full w-full overflow-hidden rounded-3xl bg-[#171A20]">
-          {/* Loading */}
+        <div
+          className={`grid h-full w-full ${gridClass} gap-3`}
+        >
+          {/* ================================================= */}
+          {/* LOCAL VIDEO */}
+          {/* ================================================= */}
 
-          {loading && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
-              <div className="text-center">
-                <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
+          <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+            {/* Loading */}
 
-                <p className="text-sm text-white/50">
-                  Starting camera...
-                </p>
-              </div>
-            </div>
-          )}
+            {loading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
 
-          {/* Error */}
-
-          {!loading && error && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
-              <div className="max-w-md text-center">
-                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
-                  <CameraOff
-                    size={24}
-                    className="text-red-400"
-                  />
+                  <p className="text-sm text-white/50">
+                    Starting camera...
+                  </p>
                 </div>
-
-                <h2 className="text-lg font-semibold">
-                  Camera unavailable
-                </h2>
-
-                <p className="mt-2 text-sm leading-6 text-white/45">
-                  {error}
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.location.reload()
-                  }
-                  className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-[#20232D] transition hover:bg-white/90"
-                >
-                  Try again
-                </button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Local video */}
+            {/* Error */}
 
-          {!error && (
-            <>
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className={`h-full w-full object-cover ${
-                  cameraEnabled
-                    ? "block"
-                    : "hidden"
-                }`}
-              />
-
-              {/* Camera off */}
-
-              {!cameraEnabled && (
-                <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
-                  <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-                    V
+            {!loading && error && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
+                <div className="max-w-md text-center">
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
+                    <CameraOff
+                      size={24}
+                      className="text-red-400"
+                    />
                   </div>
+
+                  <h2 className="text-lg font-semibold">
+                    Camera unavailable
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-white/45">
+                    {error}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.location.reload()
+                    }
+                    className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-[#20232D] transition hover:bg-white/90"
+                  >
+                    Try again
+                  </button>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Camera indicator */}
+            {/* Camera */}
 
-              <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
-                <span
-                  className={`h-2 w-2 rounded-full ${
+            {!error && (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={`h-full w-full object-cover ${
                     cameraEnabled
-                      ? "bg-[#52D88B]"
-                      : "bg-red-400"
+                      ? "block"
+                      : "hidden"
                   }`}
                 />
 
-                {cameraEnabled
-                  ? "Camera on"
-                  : "Camera off"}
-              </div>
+                {/* Camera off */}
 
-              {/* Name */}
+                {!cameraEnabled && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
+                    <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
+                      V
+                    </div>
+                  </div>
+                )}
 
-              <div className="absolute bottom-4 left-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
-                You
-              </div>
-            </>
+                {/* Camera indicator */}
+
+                <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      cameraEnabled
+                        ? "bg-[#52D88B]"
+                        : "bg-red-400"
+                    }`}
+                  />
+
+                  {cameraEnabled
+                    ? "Camera on"
+                    : "Camera off"}
+                </div>
+
+                {/* Name */}
+
+                <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+                  You
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ================================================= */}
+          {/* REMOTE PARTICIPANTS */}
+          {/* ================================================= */}
+
+          {Object.entries(
+            remoteStreams,
+          ).map(
+            ([
+              socketId,
+              remoteStream,
+            ]) => {
+              const participant =
+                participants.find(
+                  (item) =>
+                    item.socketId ===
+                    socketId,
+                );
+
+              return (
+                <RemoteVideo
+                  key={socketId}
+                  stream={remoteStream}
+                  name={
+                    participant?.name ??
+                    "Participant"
+                  }
+                />
+              );
+            },
           )}
-
-          {/* ================================================= */}
-          {/* FUTURE PARTICIPANT AREA */}
-          {/* ================================================= */}
-
-          {/* 
-              Later WebRTC participants will be rendered here.
-
-              Example:
-
-              <div className="absolute right-4 top-4 h-40 w-64">
-                remote participant
-              </div>
-          */}
         </div>
       </main>
 
@@ -533,7 +613,9 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={toggleMicrophone}
-            disabled={loading || !!error}
+            disabled={
+              loading || !!error
+            }
             title={
               micEnabled
                 ? "Mute microphone"
@@ -557,7 +639,9 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={toggleCamera}
-            disabled={loading || !!error}
+            disabled={
+              loading || !!error
+            }
             title={
               cameraEnabled
                 ? "Turn camera off"
@@ -591,6 +675,63 @@ export default function MeetingRoom({
           </button>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* REMOTE VIDEO */
+/* ========================================================= */
+
+function RemoteVideo({
+  stream,
+  name,
+}: RemoteVideoProps) {
+  const videoRef =
+    useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoRef.current) {
+      return;
+    }
+
+    const video =
+      videoRef.current;
+
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    video
+      .play()
+      .catch((error) => {
+        console.error(
+          "Failed to play remote video:",
+          error,
+        );
+      });
+
+    return () => {
+      video.srcObject = null;
+    };
+  }, [stream]);
+
+  return (
+    <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className="h-full w-full object-cover"
+      />
+
+      <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
+        Connected
+      </div>
+
+      <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+        {name}
+      </div>
     </div>
   );
 }

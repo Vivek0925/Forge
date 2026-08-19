@@ -4,11 +4,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { socket } from "@/lib/socket";
 
-interface Participant {
+export interface MeetingParticipant {
   socketId: string;
   userId: string;
   name: string;
-  avatar?: string | null;
 }
 
 interface UseMeetingOptions {
@@ -21,37 +20,54 @@ export function useMeeting({
   stream,
 }: UseMeetingOptions) {
   const [participants, setParticipants] =
-    useState<Participant[]>([]);
+    useState<MeetingParticipant[]>([]);
 
   const [remoteStreams, setRemoteStreams] =
-    useState<
-      Record<string, MediaStream>
-    >({});
+    useState<Record<string, MediaStream>>({});
 
   const peerConnections =
-    useRef<
-      Record<
-        string,
-        RTCPeerConnection
-      >
-    >({});
+    useRef<Record<string, RTCPeerConnection>>({});
 
   const streamRef =
-    useRef<MediaStream | null>(
-      stream,
-    );
+    useRef<MediaStream | null>(stream);
 
   useEffect(() => {
     streamRef.current = stream;
+
+    /*
+     * If a stream becomes available after a
+     * peer connection was already created,
+     * add the tracks to that connection.
+     */
+    if (!stream) {
+      return;
+    }
+
+    Object.values(peerConnections.current).forEach(
+      (peer) => {
+        const existingSenders =
+          peer.getSenders();
+
+        stream.getTracks().forEach((track) => {
+          const alreadyAdded =
+            existingSenders.some(
+              (sender) =>
+                sender.track?.kind === track.kind,
+            );
+
+          if (!alreadyAdded) {
+            peer.addTrack(track, stream);
+          }
+        });
+      },
+    );
   }, [stream]);
 
-  const createPeerConnection = (
+  function createPeerConnection(
     socketId: string,
-  ) => {
+  ) {
     const existing =
-      peerConnections.current[
-        socketId
-      ];
+      peerConnections.current[socketId];
 
     if (existing) {
       return existing;
@@ -70,43 +86,45 @@ export function useMeeting({
       });
 
     /*
-     * Add our camera + microphone.
+     * Add local camera + microphone.
      */
-    streamRef.current
-      ?.getTracks()
-      .forEach((track) => {
-        peer.addTrack(
-          track,
-          streamRef.current!,
-        );
-      });
+    if (streamRef.current) {
+      streamRef.current
+        .getTracks()
+        .forEach((track) => {
+          peer.addTrack(
+            track,
+            streamRef.current!,
+          );
+        });
+    }
 
     /*
-     * Receive remote camera/audio.
+     * Remote camera + microphone.
      */
     peer.ontrack = (event) => {
-      const [remoteStream] =
-        event.streams;
+      const remoteStream =
+        event.streams[0];
 
       if (!remoteStream) {
         return;
       }
 
-      setRemoteStreams(
-        (prev) => ({
-          ...prev,
-          [socketId]:
-            remoteStream,
-        }),
+      console.log(
+        "Received remote stream:",
+        socketId,
       );
+
+      setRemoteStreams((prev) => ({
+        ...prev,
+        [socketId]: remoteStream,
+      }));
     };
 
     /*
      * ICE candidates.
      */
-    peer.onicecandidate = (
-      event,
-    ) => {
+    peer.onicecandidate = (event) => {
       if (!event.candidate) {
         return;
       }
@@ -121,38 +139,110 @@ export function useMeeting({
       );
     };
 
+    peer.onconnectionstatechange =
+      () => {
+        console.log(
+          `WebRTC connection ${socketId}:`,
+          peer.connectionState,
+        );
+
+        if (
+          peer.connectionState ===
+            "failed" ||
+          peer.connectionState ===
+            "closed"
+        ) {
+          cleanupPeer(socketId);
+        }
+      };
+
     peerConnections.current[
       socketId
     ] = peer;
 
     return peer;
-  };
+  }
+
+  function cleanupPeer(
+    socketId: string,
+  ) {
+    const peer =
+      peerConnections.current[
+        socketId
+      ];
+
+    if (peer) {
+      peer.close();
+
+      delete peerConnections.current[
+        socketId
+      ];
+    }
+
+    setRemoteStreams((prev) => {
+      const next = {
+        ...prev,
+      };
+
+      delete next[socketId];
+
+      return next;
+    });
+
+    setParticipants((prev) =>
+      prev.filter(
+        (participant) =>
+          participant.socketId !==
+          socketId,
+      ),
+    );
+  }
 
   useEffect(() => {
     if (!meetingId) {
       return;
     }
 
+    /*
+     * Existing participants when we join.
+     */
     function handleParticipants(data: {
-      participants: Participant[];
+      participants: MeetingParticipant[];
     }) {
+      console.log(
+        "Existing meeting participants:",
+        data.participants,
+      );
+
       setParticipants(
         data.participants,
       );
     }
 
+    /*
+     * Someone else joined.
+     *
+     * We are already inside the meeting,
+     * so we create the offer.
+     */
     async function handleParticipantJoined(
       data: {
-        participant: Participant;
+        participant: MeetingParticipant;
       },
     ) {
-      const socketId =
-        data.participant.socketId;
+      const participant =
+        data.participant;
+
+      console.log(
+        "Participant joined:",
+        participant,
+      );
 
       setParticipants((prev) => {
         const exists = prev.some(
-          (p) =>
-            p.socketId === socketId,
+          (item) =>
+            item.socketId ===
+            participant.socketId,
         );
 
         if (exists) {
@@ -161,88 +251,130 @@ export function useMeeting({
 
         return [
           ...prev,
-          data.participant,
+          participant,
         ];
       });
 
-      /*
-       * Existing users create the offer.
-       */
       const peer =
         createPeerConnection(
-          socketId,
+          participant.socketId,
         );
 
-      const offer =
-        await peer.createOffer();
+      try {
+        const offer =
+          await peer.createOffer();
 
-      await peer.setLocalDescription(
-        offer,
-      );
-
-      socket.emit(
-        "webrtc:offer",
-        {
-          targetSocketId: socketId,
+        await peer.setLocalDescription(
           offer,
-        },
-      );
+        );
+
+        socket.emit(
+          "webrtc:offer",
+          {
+            targetSocketId:
+              participant.socketId,
+            offer,
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Failed to create WebRTC offer:",
+          error,
+        );
+      }
     }
 
+    /*
+     * We receive an offer from an
+     * existing participant.
+     */
     async function handleOffer(data: {
       senderSocketId: string;
       offer: RTCSessionDescriptionInit;
     }) {
+      console.log(
+        "Received WebRTC offer from:",
+        data.senderSocketId,
+      );
+
       const peer =
         createPeerConnection(
           data.senderSocketId,
         );
 
-      await peer.setRemoteDescription(
-        new RTCSessionDescription(
-          data.offer,
-        ),
-      );
+      try {
+        await peer.setRemoteDescription(
+          new RTCSessionDescription(
+            data.offer,
+          ),
+        );
 
-      const answer =
-        await peer.createAnswer();
+        const answer =
+          await peer.createAnswer();
 
-      await peer.setLocalDescription(
-        answer,
-      );
-
-      socket.emit(
-        "webrtc:answer",
-        {
-          targetSocketId:
-            data.senderSocketId,
+        await peer.setLocalDescription(
           answer,
-        },
-      );
+        );
+
+        socket.emit(
+          "webrtc:answer",
+          {
+            targetSocketId:
+              data.senderSocketId,
+            answer,
+          },
+        );
+      } catch (error) {
+        console.error(
+          "Failed to handle WebRTC offer:",
+          error,
+        );
+      }
     }
 
-    async function handleAnswer(
-      data: {
-        senderSocketId: string;
-        answer: RTCSessionDescriptionInit;
-      },
-    ) {
+    /*
+     * We receive an answer to our offer.
+     */
+    async function handleAnswer(data: {
+      senderSocketId: string;
+      answer: RTCSessionDescriptionInit;
+    }) {
+      console.log(
+        "Received WebRTC answer from:",
+        data.senderSocketId,
+      );
+
       const peer =
         peerConnections.current[
           data.senderSocketId
         ];
 
       if (!peer) {
+        console.warn(
+          "No peer connection for answer:",
+          data.senderSocketId,
+        );
+
         return;
       }
 
-      await peer.setRemoteDescription(
-        new RTCSessionDescription(
-          data.answer,
-        ),
-      );
+      try {
+        await peer.setRemoteDescription(
+          new RTCSessionDescription(
+            data.answer,
+          ),
+        );
+      } catch (error) {
+        console.error(
+          "Failed to set remote answer:",
+          error,
+        );
+      }
     }
 
+    /*
+     * ICE candidate.
+     */
     async function handleICECandidate(
       data: {
         senderSocketId: string;
@@ -255,6 +387,11 @@ export function useMeeting({
         ];
 
       if (!peer) {
+        console.warn(
+          "No peer connection for ICE candidate:",
+          data.senderSocketId,
+        );
+
         return;
       }
 
@@ -266,60 +403,35 @@ export function useMeeting({
         );
       } catch (error) {
         console.error(
-          "Failed to add ICE candidate",
+          "Failed to add ICE candidate:",
           error,
         );
       }
     }
 
-    function handleParticipantLeft(
-      data: {
-        socketId: string;
-        userId: string;
-      },
-    ) {
-      const peer =
-        peerConnections.current[
-          data.socketId
-        ];
-
-      if (peer) {
-        peer.close();
-
-        delete peerConnections.current[
-          data.socketId
-        ];
-      }
-
-      setParticipants(
-        (prev) =>
-          prev.filter(
-            (participant) =>
-              participant.socketId !==
-              data.socketId,
-          ),
+    /*
+     * Someone left.
+     */
+    function handleParticipantLeft(data: {
+      socketId: string;
+      userId: string;
+    }) {
+      console.log(
+        "Participant left:",
+        data.socketId,
       );
 
-      setRemoteStreams(
-        (prev) => {
-          const next = {
-            ...prev,
-          };
-
-          delete next[
-            data.socketId
-          ];
-
-          return next;
-        },
+      cleanupPeer(
+        data.socketId,
       );
     }
 
-    function handleMeetingError(
-      data: {
-        message: string;
-      },
-    ) {
+    /*
+     * Meeting error.
+     */
+    function handleMeetingError(data: {
+      message: string;
+    }) {
       console.error(
         "Meeting error:",
         data.message,
@@ -361,20 +473,17 @@ export function useMeeting({
       handleMeetingError,
     );
 
-    socket.emit(
-      "meeting:join",
-      {
-        meetingId,
-      },
-    );
+    /*
+     * Join meeting.
+     */
+    socket.emit("meeting:join", {
+      meetingId,
+    });
 
     return () => {
-      socket.emit(
-        "meeting:leave",
-        {
-          meetingId,
-        },
-      );
+      socket.emit("meeting:leave", {
+        meetingId,
+      });
 
       socket.off(
         "meeting:participants",
@@ -413,11 +522,14 @@ export function useMeeting({
 
       Object.values(
         peerConnections.current,
-      ).forEach((peer) =>
-        peer.close(),
-      );
+      ).forEach((peer) => {
+        peer.close();
+      });
 
       peerConnections.current = {};
+
+      setRemoteStreams({});
+      setParticipants([]);
     };
   }, [meetingId]);
 
