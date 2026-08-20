@@ -7,16 +7,23 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from "@nestjs/websockets";
+
 import { Logger } from "@nestjs/common";
+
 import { Server } from "socket.io";
 
 import { PresenceService } from "../services/presence.service";
 import { SocketAuthService } from "../services/socket-auth.service";
+
 import type { AuthenticatedSocket } from "../interfaces/authenticated-socket.interface";
+
 import { JoinWorkspaceDto } from "../dto/join-workspace.dto";
+
 import { PrismaService } from "../../../database/prisma.service";
+
 import { ChatService } from "../../chat/services/chat.service";
 import { SendMessageDto } from "../../chat/dto/send-message.dto";
+
 import { MeetingRoomService } from "../../meeting/services/meeting-room.service";
 
 @WebSocketGateway({
@@ -26,19 +33,27 @@ import { MeetingRoomService } from "../../meeting/services/meeting-room.service"
   },
 })
 export class RealtimeGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements
+    OnGatewayConnection,
+    OnGatewayDisconnect
 {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger =
-    new Logger(RealtimeGateway.name);
+    new Logger(
+      RealtimeGateway.name,
+    );
 
   constructor(
     private readonly socketAuthService: SocketAuthService,
+
     private readonly presenceService: PresenceService,
+
     private readonly prisma: PrismaService,
+
     private readonly chatService: ChatService,
+
     private readonly meetingRoomService: MeetingRoomService,
   ) {}
 
@@ -77,10 +92,6 @@ export class RealtimeGateway
   handleDisconnect(
     socket: AuthenticatedSocket,
   ) {
-    /*
-     * If the socket is inside a meeting,
-     * remove it from that meeting first.
-     */
     const meetingId =
       this.meetingRoomService.getMeetingForSocket(
         socket.id,
@@ -93,9 +104,6 @@ export class RealtimeGateway
       );
     }
 
-    /*
-     * Existing workspace presence logic.
-     */
     const onlineUser =
       this.presenceService.getUser(
         socket.id,
@@ -131,7 +139,9 @@ export class RealtimeGateway
 
   @SubscribeMessage("workspace:join")
   async handleWorkspaceJoin(
-    @MessageBody() dto: JoinWorkspaceDto,
+    @MessageBody()
+    dto: JoinWorkspaceDto,
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -156,11 +166,15 @@ export class RealtimeGateway
 
     this.presenceService.addUser({
       socketId: socket.id,
+
       workspaceId: workspace.id,
+
       userId:
         socket.data.currentUser.id,
+
       name:
         socket.data.currentUser.name,
+
       email:
         socket.data.currentUser.email,
     });
@@ -175,10 +189,6 @@ export class RealtimeGateway
             workspace.id,
           ),
       });
-
-    this.logger.log(
-      `${socket.data.currentUser.name} joined workspace ${workspace.slug}`,
-    );
   }
 
   // =========================================================
@@ -187,7 +197,9 @@ export class RealtimeGateway
 
   @SubscribeMessage("workspace:leave")
   async handleWorkspaceLeave(
-    @MessageBody() dto: JoinWorkspaceDto,
+    @MessageBody()
+    dto: JoinWorkspaceDto,
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -220,10 +232,6 @@ export class RealtimeGateway
             workspace.id,
           ),
       });
-
-    this.logger.log(
-      `${socket.data.currentUser.name} left workspace ${workspace.slug}`,
-    );
   }
 
   // =========================================================
@@ -232,7 +240,9 @@ export class RealtimeGateway
 
   @SubscribeMessage("chat:send")
   async handleChatSend(
-    @MessageBody() dto: SendMessageDto,
+    @MessageBody()
+    dto: SendMessageDto,
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -246,7 +256,10 @@ export class RealtimeGateway
       .to(
         `workspace:${message.workspaceId}`,
       )
-      .emit("chat:new", message);
+      .emit(
+        "chat:new",
+        message,
+      );
 
     return message;
   }
@@ -261,6 +274,7 @@ export class RealtimeGateway
     data: {
       meetingId: string;
     },
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -272,31 +286,79 @@ export class RealtimeGateway
       });
 
     if (!meeting) {
-      socket.emit("meeting:error", {
-        message: "Meeting not found",
-      });
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "Meeting not found",
+        },
+      );
 
       return;
     }
 
     if (
-      meeting.status === "ENDED" ||
-      meeting.status === "CANCELLED"
+      meeting.status ===
+        "ENDED" ||
+      meeting.status ===
+        "CANCELLED"
     ) {
-      socket.emit("meeting:error", {
-        message:
-          "This meeting is no longer active",
-      });
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "This meeting is no longer active",
+        },
+      );
 
       return;
+    }
+
+    /*
+     * A scheduled meeting becomes active
+     * when the first person actually joins.
+     */
+    if (
+      meeting.status ===
+      "SCHEDULED"
+    ) {
+      await this.prisma.meeting.update({
+        where: {
+          id: meeting.id,
+        },
+
+        data: {
+          status: "ACTIVE",
+          startedAt:
+            new Date(),
+        },
+      });
+
+      this.server
+        .to(
+          `workspace:${meeting.workspaceId}`,
+        )
+        .emit(
+          "meeting:status",
+          {
+            meetingId:
+              meeting.id,
+
+            status:
+              "ACTIVE",
+
+            startedAt:
+              new Date().toISOString(),
+          },
+        );
     }
 
     const currentUser =
       socket.data.currentUser;
 
     /*
-     * Get users already inside the meeting
-     * BEFORE adding the new participant.
+     * Get existing participants
+     * BEFORE adding current user.
      */
     const existingParticipants =
       this.meetingRoomService.getParticipants(
@@ -304,14 +366,22 @@ export class RealtimeGateway
       );
 
     /*
-     * Add current user.
+     * Add current participant.
      */
     this.meetingRoomService.join(
       data.meetingId,
       {
         socketId: socket.id,
-        userId: currentUser.id,
-        name: currentUser.name,
+
+        userId:
+          currentUser.id,
+
+        name:
+          currentUser.name,
+
+        micEnabled: true,
+
+        cameraEnabled: true,
       },
     );
 
@@ -323,8 +393,8 @@ export class RealtimeGateway
     );
 
     /*
-     * Tell joining user who is already
-     * inside the meeting.
+     * Send existing participants
+     * to the new participant.
      */
     socket.emit(
       "meeting:participants",
@@ -335,8 +405,7 @@ export class RealtimeGateway
     );
 
     /*
-     * Tell everyone else that a new user
-     * has joined.
+     * Notify everyone already in room.
      */
     socket
       .to(
@@ -346,10 +415,18 @@ export class RealtimeGateway
         "meeting:participant-joined",
         {
           participant: {
-            socketId: socket.id,
-            userId: currentUser.id,
-            name: currentUser.name,
-          
+            socketId:
+              socket.id,
+
+            userId:
+              currentUser.id,
+
+            name:
+              currentUser.name,
+
+            micEnabled: true,
+
+            cameraEnabled: true,
           },
         },
       );
@@ -369,6 +446,7 @@ export class RealtimeGateway
     data: {
       meetingId: string;
     },
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -379,11 +457,67 @@ export class RealtimeGateway
   }
 
   // =========================================================
-  // REMOVE MEETING PARTICIPANT
+  // PARTICIPANT STATE
+  // =========================================================
+
+  @SubscribeMessage(
+    "meeting:participant-state",
+  )
+  handleParticipantState(
+    @MessageBody()
+    data: {
+      meetingId: string;
+
+      micEnabled?: boolean;
+
+      cameraEnabled?: boolean;
+    },
+
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
+  ) {
+    const participant =
+      this.meetingRoomService.updateParticipantState(
+        data.meetingId,
+
+        socket.id,
+
+        {
+          micEnabled:
+            data.micEnabled,
+
+          cameraEnabled:
+            data.cameraEnabled,
+        },
+      );
+
+    if (!participant) {
+      return;
+    }
+
+    /*
+     * Send updated state to everyone
+     * else in the meeting.
+     */
+    socket
+      .to(
+        `meeting:${data.meetingId}`,
+      )
+      .emit(
+        "meeting:participant-state",
+        {
+          participant,
+        },
+      );
+  }
+
+  // =========================================================
+  // REMOVE PARTICIPANT
   // =========================================================
 
   private removeMeetingParticipant(
     meetingId: string,
+
     socket: AuthenticatedSocket,
   ) {
     const participant =
@@ -405,15 +539,16 @@ export class RealtimeGateway
       `meeting:${meetingId}`,
     );
 
-    /*
-     * Tell remaining participants.
-     */
     socket
-      .to(`meeting:${meetingId}`)
+      .to(
+        `meeting:${meetingId}`,
+      )
       .emit(
         "meeting:participant-left",
         {
-          socketId: socket.id,
+          socketId:
+            socket.id,
+
           userId:
             participant.userId,
         },
@@ -421,6 +556,132 @@ export class RealtimeGateway
 
     this.logger.log(
       `${participant.name} left meeting ${meetingId}`,
+    );
+  }
+
+  // =========================================================
+  // END MEETING
+  // =========================================================
+
+  @SubscribeMessage("meeting:end")
+  async handleMeetingEnd(
+    @MessageBody()
+    data: {
+      meetingId: string;
+    },
+
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
+  ) {
+    const meeting =
+      await this.prisma.meeting.findUnique({
+        where: {
+          id: data.meetingId,
+        },
+      });
+
+    if (!meeting) {
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "Meeting not found",
+        },
+      );
+
+      return;
+    }
+
+    /*
+     * Only the creator can end
+     * the meeting.
+     */
+    if (
+      meeting.createdById !==
+      socket.data.currentUser.id
+    ) {
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "Only the meeting host can end the meeting",
+        },
+      );
+
+      return;
+    }
+
+    if (
+      meeting.status ===
+        "ENDED" ||
+      meeting.status ===
+        "CANCELLED"
+    ) {
+      return;
+    }
+
+    const endedAt =
+      new Date();
+
+    await this.prisma.meeting.update({
+      where: {
+        id: data.meetingId,
+      },
+
+      data: {
+        status: "ENDED",
+
+        endedAt,
+      },
+    });
+
+    /*
+     * Tell everyone before removing
+     * them from the Socket.IO room.
+     */
+    this.server
+      .to(
+        `meeting:${data.meetingId}`,
+      )
+      .emit(
+        "meeting:ended",
+        {
+          meetingId:
+            data.meetingId,
+
+          endedAt:
+            endedAt.toISOString(),
+        },
+      );
+
+    /*
+     * Remove all participants from
+     * the in-memory room.
+     */
+    const participants =
+      this.meetingRoomService.getParticipants(
+        data.meetingId,
+      );
+
+    for (const participant of participants) {
+      const participantSocket =
+        this.server.sockets.sockets.get(
+          participant.socketId,
+        );
+
+      if (participantSocket) {
+        participantSocket.leave(
+          `meeting:${data.meetingId}`,
+        );
+      }
+    }
+
+    this.meetingRoomService.clearMeeting(
+      data.meetingId,
+    );
+
+    this.logger.log(
+      `${socket.data.currentUser.name} ended meeting ${data.meetingId}`,
     );
   }
 
@@ -433,18 +694,26 @@ export class RealtimeGateway
     @MessageBody()
     data: {
       targetSocketId: string;
-      offer: RTCSessionDescriptionInit;
+
+      offer:
+        RTCSessionDescriptionInit;
     },
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
     this.server
       .to(data.targetSocketId)
-      .emit("webrtc:offer", {
-        senderSocketId:
-          socket.id,
-        offer: data.offer,
-      });
+      .emit(
+        "webrtc:offer",
+        {
+          senderSocketId:
+            socket.id,
+
+          offer:
+            data.offer,
+        },
+      );
   }
 
   // =========================================================
@@ -456,22 +725,30 @@ export class RealtimeGateway
     @MessageBody()
     data: {
       targetSocketId: string;
-      answer: RTCSessionDescriptionInit;
+
+      answer:
+        RTCSessionDescriptionInit;
     },
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
     this.server
       .to(data.targetSocketId)
-      .emit("webrtc:answer", {
-        senderSocketId:
-          socket.id,
-        answer: data.answer,
-      });
+      .emit(
+        "webrtc:answer",
+        {
+          senderSocketId:
+            socket.id,
+
+          answer:
+            data.answer,
+        },
+      );
   }
 
   // =========================================================
-  // WEBRTC ICE CANDIDATE
+  // WEBRTC ICE
   // =========================================================
 
   @SubscribeMessage(
@@ -481,8 +758,11 @@ export class RealtimeGateway
     @MessageBody()
     data: {
       targetSocketId: string;
-      candidate: RTCIceCandidateInit;
+
+      candidate:
+        RTCIceCandidateInit;
     },
+
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
@@ -493,6 +773,7 @@ export class RealtimeGateway
         {
           senderSocketId:
             socket.id,
+
           candidate:
             data.candidate,
         },

@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
 
-interface MeetingParticipant {
+export interface MeetingParticipant {
   socketId: string;
   userId: string;
   name: string;
+  micEnabled: boolean;
+  cameraEnabled: boolean;
 }
 
 @Injectable()
@@ -24,7 +26,8 @@ export class MeetingRoomService {
       );
     }
 
-    const room = this.rooms.get(meetingId)!;
+    const room =
+      this.rooms.get(meetingId)!;
 
     room.set(
       participant.socketId,
@@ -60,6 +63,41 @@ export class MeetingRoomService {
     );
   }
 
+  updateParticipantState(
+    meetingId: string,
+    socketId: string,
+    state: {
+      micEnabled?: boolean;
+      cameraEnabled?: boolean;
+    },
+  ) {
+    const room =
+      this.rooms.get(meetingId);
+
+    if (!room) {
+      return undefined;
+    }
+
+    const participant =
+      room.get(socketId);
+
+    if (!participant) {
+      return undefined;
+    }
+
+    const updatedParticipant = {
+      ...participant,
+      ...state,
+    };
+
+    room.set(
+      socketId,
+      updatedParticipant,
+    );
+
+    return updatedParticipant;
+  }
+
   getParticipants(
     meetingId: string,
   ) {
@@ -70,7 +108,9 @@ export class MeetingRoomService {
       return [];
     }
 
-    return Array.from(room.values());
+    return Array.from(
+      room.values(),
+    );
   }
 
   getParticipant(
@@ -95,5 +135,11 @@ export class MeetingRoomService {
     }
 
     return undefined;
+  }
+
+  clearMeeting(
+    meetingId: string,
+  ) {
+    this.rooms.delete(meetingId);
   }
 }
