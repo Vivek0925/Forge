@@ -269,172 +269,157 @@ export class RealtimeGateway
   // =========================================================
 
   @SubscribeMessage("meeting:join")
-  async handleMeetingJoin(
-    @MessageBody()
-    data: {
-      meetingId: string;
-    },
+async handleMeetingJoin(
+  @MessageBody()
+  data: {
+    meetingId: string;
+  },
 
-    @ConnectedSocket()
-    socket: AuthenticatedSocket,
+  @ConnectedSocket()
+  socket: AuthenticatedSocket,
+) {
+  const meeting =
+    await this.prisma.meeting.findUnique({
+      where: {
+        id: data.meetingId,
+      },
+    });
+
+  if (!meeting) {
+    socket.emit("meeting:error", {
+      message: "Meeting not found",
+    });
+
+    return;
+  }
+
+  if (
+    meeting.status === "ENDED" ||
+    meeting.status === "CANCELLED"
   ) {
-    const meeting =
-      await this.prisma.meeting.findUnique({
-        where: {
-          id: data.meetingId,
-        },
+    socket.emit("meeting:error", {
+      message:
+        "This meeting is no longer active",
+    });
+
+    return;
+  }
+
+  /*
+   * Scheduled meeting becomes active
+   * when somebody actually joins.
+   */
+  if (meeting.status === "SCHEDULED") {
+    const startedAt = new Date();
+
+    await this.prisma.meeting.update({
+      where: {
+        id: meeting.id,
+      },
+
+      data: {
+        status: "ACTIVE",
+        startedAt,
+      },
+    });
+
+    this.server
+      .to(`workspace:${meeting.workspaceId}`)
+      .emit("meeting:status", {
+        meetingId: meeting.id,
+        status: "ACTIVE",
+        startedAt: startedAt.toISOString(),
       });
+  }
 
-    if (!meeting) {
-      socket.emit(
-        "meeting:error",
-        {
-          message:
-            "Meeting not found",
-        },
-      );
+  const currentUser =
+    socket.data.currentUser;
 
-      return;
-    }
-
-    if (
-      meeting.status ===
-        "ENDED" ||
-      meeting.status ===
-        "CANCELLED"
-    ) {
-      socket.emit(
-        "meeting:error",
-        {
-          message:
-            "This meeting is no longer active",
-        },
-      );
-
-      return;
-    }
-
-    /*
-     * A scheduled meeting becomes active
-     * when the first person actually joins.
-     */
-    if (
-      meeting.status ===
-      "SCHEDULED"
-    ) {
-      await this.prisma.meeting.update({
-        where: {
-          id: meeting.id,
-        },
-
-        data: {
-          status: "ACTIVE",
-          startedAt:
-            new Date(),
-        },
-      });
-
-      this.server
-        .to(
-          `workspace:${meeting.workspaceId}`,
-        )
-        .emit(
-          "meeting:status",
-          {
-            meetingId:
-              meeting.id,
-
-            status:
-              "ACTIVE",
-
-            startedAt:
-              new Date().toISOString(),
-          },
-        );
-    }
-
-    const currentUser =
-      socket.data.currentUser;
-
-    /*
-     * Get existing participants
-     * BEFORE adding current user.
-     */
-    const existingParticipants =
-      this.meetingRoomService.getParticipants(
-        data.meetingId,
-      );
-
-    /*
-     * Add current participant.
-     */
-    this.meetingRoomService.join(
+  /*
+   * IMPORTANT:
+   *
+   * Get existing participants before
+   * adding the current user.
+   *
+   * We need this for WebRTC so the
+   * existing users know who just joined.
+   */
+  const existingParticipants =
+    this.meetingRoomService.getParticipants(
       data.meetingId,
-      {
+    );
+
+  /*
+   * Add current participant.
+   */
+  this.meetingRoomService.join(
+    data.meetingId,
+    {
+      socketId: socket.id,
+      userId: currentUser.id,
+      name: currentUser.name,
+      micEnabled: true,
+      cameraEnabled: true,
+    },
+  );
+
+  /*
+   * Join Socket.IO meeting room.
+   */
+  socket.join(
+    `meeting:${data.meetingId}`,
+  );
+
+  /*
+   * Get the COMPLETE participant list
+   * AFTER adding the new participant.
+   */
+  const allParticipants =
+    this.meetingRoomService.getParticipants(
+      data.meetingId,
+    );
+
+  /*
+   * IMPORTANT FIX:
+   *
+   * Broadcast the complete participant
+   * list to EVERYONE in the meeting.
+   *
+   * So:
+   *
+   * A joins → A gets [A]
+   *
+   * B joins → A + B both get [A, B]
+   */
+  this.server
+    .to(`meeting:${data.meetingId}`)
+    .emit("meeting:participants", {
+      participants: allParticipants,
+    });
+
+  /*
+   * Tell existing participants that a
+   * new WebRTC peer has joined.
+   *
+   * We keep this event because the
+   * frontend uses it to create the offer.
+   */
+  socket
+    .to(`meeting:${data.meetingId}`)
+    .emit("meeting:participant-joined", {
+      participant: {
         socketId: socket.id,
-
-        userId:
-          currentUser.id,
-
-        name:
-          currentUser.name,
-
+        userId: currentUser.id,
+        name: currentUser.name,
         micEnabled: true,
-
         cameraEnabled: true,
       },
-    );
+    });
 
-    /*
-     * Join Socket.IO room.
-     */
-    socket.join(
-      `meeting:${data.meetingId}`,
-    );
-
-    /*
-     * Send existing participants
-     * to the new participant.
-     */
-    socket.emit(
-      "meeting:participants",
-      {
-        participants:
-          existingParticipants,
-      },
-    );
-
-    /*
-     * Notify everyone already in room.
-     */
-    socket
-      .to(
-        `meeting:${data.meetingId}`,
-      )
-      .emit(
-        "meeting:participant-joined",
-        {
-          participant: {
-            socketId:
-              socket.id,
-
-            userId:
-              currentUser.id,
-
-            name:
-              currentUser.name,
-
-            micEnabled: true,
-
-            cameraEnabled: true,
-          },
-        },
-      );
-
-    this.logger.log(
-      `${currentUser.name} joined meeting ${data.meetingId}`,
-    );
-  }
+  this.logger.log(
+    `${currentUser.name} joined meeting ${data.meetingId}`,
+  );
+}
 
   // =========================================================
   // MEETING LEAVE
@@ -516,48 +501,75 @@ export class RealtimeGateway
   // =========================================================
 
   private removeMeetingParticipant(
-    meetingId: string,
-
-    socket: AuthenticatedSocket,
-  ) {
-    const participant =
-      this.meetingRoomService.getParticipant(
-        meetingId,
-        socket.id,
-      );
-
-    if (!participant) {
-      return;
-    }
-
-    this.meetingRoomService.leave(
+  meetingId: string,
+  socket: AuthenticatedSocket,
+) {
+  const participant =
+    this.meetingRoomService.getParticipant(
       meetingId,
       socket.id,
     );
 
-    socket.leave(
-      `meeting:${meetingId}`,
-    );
-
-    socket
-      .to(
-        `meeting:${meetingId}`,
-      )
-      .emit(
-        "meeting:participant-left",
-        {
-          socketId:
-            socket.id,
-
-          userId:
-            participant.userId,
-        },
-      );
-
-    this.logger.log(
-      `${participant.name} left meeting ${meetingId}`,
-    );
+  if (!participant) {
+    return;
   }
+
+  /*
+   * Remove participant from our
+   * in-memory meeting room.
+   */
+  this.meetingRoomService.leave(
+    meetingId,
+    socket.id,
+  );
+
+  /*
+   * Leave Socket.IO room.
+   */
+  socket.leave(
+    `meeting:${meetingId}`,
+  );
+
+  /*
+   * Get the NEW complete participant
+   * list after removal.
+   */
+  const remainingParticipants =
+    this.meetingRoomService.getParticipants(
+      meetingId,
+    );
+
+  /*
+   * Broadcast the new complete list
+   * to everyone still inside.
+   */
+  this.server
+    .to(`meeting:${meetingId}`)
+    .emit("meeting:participants", {
+      participants:
+        remainingParticipants,
+    });
+
+  /*
+   * Also tell clients specifically
+   * who left.
+   *
+   * WebRTC cleanup uses this.
+   */
+  this.server
+    .to(`meeting:${meetingId}`)
+    .emit(
+      "meeting:participant-left",
+      {
+        socketId: socket.id,
+        userId: participant.userId,
+      },
+    );
+
+  this.logger.log(
+    `${participant.name} left meeting ${meetingId}`,
+  );
+}
 
   // =========================================================
   // END MEETING

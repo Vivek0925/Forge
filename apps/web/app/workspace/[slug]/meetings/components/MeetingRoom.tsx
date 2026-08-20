@@ -439,7 +439,7 @@ export default function MeetingRoom({
    * participants.length + 1
    */
   const participantCount =
-    participants.length;
+    participants.length +1;
 
   /*
    * Remote participants are represented
