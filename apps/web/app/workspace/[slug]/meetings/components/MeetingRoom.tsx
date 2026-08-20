@@ -59,13 +59,15 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] =
     useState(false);
 
-  const {
-    participants,
-    remoteStreams,
-  } = useMeeting({
-    meetingId,
-    stream,
-  });
+const {
+  participants,
+  remoteStreams,
+} = useMeeting({
+  meetingId,
+  stream,
+  micEnabled,
+  cameraEnabled,
+});
 
   const remoteParticipantCount =
     Object.keys(remoteStreams).length;
