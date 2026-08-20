@@ -35,23 +35,50 @@ export function useMeeting({
   const [remoteStreams, setRemoteStreams] =
     useState<Record<string, MediaStream>>({});
 
-  const peerConnections =
-    useRef<Record<string, RTCPeerConnection>>({});
-
+  /*
+   * Keep the latest values available to
+   * socket/WebRTC callbacks.
+   */
   const streamRef =
     useRef<MediaStream | null>(stream);
 
+  const micEnabledRef =
+    useRef(micEnabled);
+
+  const cameraEnabledRef =
+    useRef(cameraEnabled);
+
+  const peerConnections =
+    useRef<Record<string, RTCPeerConnection>>({});
+
+  const joinedRef =
+    useRef(false);
+
   /*
-   * Keep latest stream available to WebRTC callbacks.
+   * Keep refs synchronized.
    */
+
   useEffect(() => {
     streamRef.current = stream;
   }, [stream]);
 
+  useEffect(() => {
+    micEnabledRef.current =
+      micEnabled;
+  }, [micEnabled]);
+
+  useEffect(() => {
+    cameraEnabledRef.current =
+      cameraEnabled;
+  }, [cameraEnabled]);
+
   /*
    * Create peer connection.
    */
-  function createPeerConnection(socketId: string) {
+
+  function createPeerConnection(
+    socketId: string,
+  ) {
     const existing =
       peerConnections.current[socketId];
 
@@ -74,6 +101,7 @@ export function useMeeting({
     /*
      * Add local tracks.
      */
+
     if (streamRef.current) {
       streamRef.current
         .getTracks()
@@ -86,8 +114,9 @@ export function useMeeting({
     }
 
     /*
-     * Receive remote stream.
+     * Remote tracks.
      */
+
     peer.ontrack = (event) => {
       const remoteStream =
         event.streams[0];
@@ -105,6 +134,7 @@ export function useMeeting({
     /*
      * ICE candidates.
      */
+
     peer.onicecandidate = (event) => {
       if (!event.candidate) {
         return;
@@ -120,28 +150,42 @@ export function useMeeting({
       );
     };
 
-    peer.onconnectionstatechange = () => {
-      if (
-        peer.connectionState === "failed" ||
-        peer.connectionState === "closed" ||
-        peer.connectionState === "disconnected"
-      ) {
-        cleanupPeer(socketId);
-      }
-    };
+    /*
+     * Connection state.
+     */
 
-    peerConnections.current[socketId] =
-      peer;
+    peer.onconnectionstatechange =
+      () => {
+        if (
+          peer.connectionState ===
+            "failed" ||
+          peer.connectionState ===
+            "closed" ||
+          peer.connectionState ===
+            "disconnected"
+        ) {
+          cleanupPeer(socketId);
+        }
+      };
+
+    peerConnections.current[
+      socketId
+    ] = peer;
 
     return peer;
   }
 
   /*
-   * Cleanup peer.
+   * Cleanup a single participant.
    */
-  function cleanupPeer(socketId: string) {
+
+  function cleanupPeer(
+    socketId: string,
+  ) {
     const peer =
-      peerConnections.current[socketId];
+      peerConnections.current[
+        socketId
+      ];
 
     if (peer) {
       peer.close();
@@ -171,12 +215,29 @@ export function useMeeting({
   }
 
   /*
-   * Join meeting + WebRTC listeners.
+   * Join meeting and register
+   * all socket/WebRTC listeners.
    */
+
   useEffect(() => {
     if (!meetingId) {
       return;
     }
+
+    /*
+     * Prevent duplicate joins.
+     */
+
+    if (joinedRef.current) {
+      return;
+    }
+
+    joinedRef.current = true;
+
+    /*
+     * Server sends the complete
+     * participant list.
+     */
 
     function handleParticipants(data: {
       participants: MeetingParticipant[];
@@ -187,18 +248,29 @@ export function useMeeting({
 
       /*
        * IMPORTANT:
-       * Send our current state AFTER
-       * the server has registered us.
+       *
+       * Do NOT use captured micEnabled /
+       * cameraEnabled here.
+       *
+       * Use refs containing the latest
+       * state.
        */
+
       socket.emit(
         "meeting:participant-state",
         {
           meetingId,
-          micEnabled,
-          cameraEnabled,
+          micEnabled:
+            micEnabledRef.current,
+          cameraEnabled:
+            cameraEnabledRef.current,
         },
       );
     }
+
+    /*
+     * A new participant joined.
+     */
 
     async function handleParticipantJoined(
       data: {
@@ -207,6 +279,11 @@ export function useMeeting({
     ) {
       const participant =
         data.participant;
+
+      /*
+       * Add participant if not already
+       * present.
+       */
 
       setParticipants((prev) => {
         const exists =
@@ -225,6 +302,10 @@ export function useMeeting({
           participant,
         ];
       });
+
+      /*
+       * Create WebRTC connection.
+       */
 
       const peer =
         createPeerConnection(
@@ -256,6 +337,10 @@ export function useMeeting({
       }
     }
 
+    /*
+     * Participant changed mic/camera.
+     */
+
     function handleParticipantState(data: {
       participant: MeetingParticipant;
     }) {
@@ -263,11 +348,23 @@ export function useMeeting({
         prev.map((participant) =>
           participant.socketId ===
           data.participant.socketId
-            ? data.participant
+            ? {
+                ...participant,
+                micEnabled:
+                  data.participant
+                    .micEnabled,
+                cameraEnabled:
+                  data.participant
+                    .cameraEnabled,
+              }
             : participant,
         ),
       );
     }
+
+    /*
+     * WebRTC offer.
+     */
 
     async function handleOffer(data: {
       senderSocketId: string;
@@ -309,6 +406,10 @@ export function useMeeting({
       }
     }
 
+    /*
+     * WebRTC answer.
+     */
+
     async function handleAnswer(data: {
       senderSocketId: string;
       answer: RTCSessionDescriptionInit;
@@ -336,10 +437,16 @@ export function useMeeting({
       }
     }
 
-    async function handleICECandidate(data: {
-      senderSocketId: string;
-      candidate: RTCIceCandidateInit;
-    }) {
+    /*
+     * ICE candidate.
+     */
+
+    async function handleICECandidate(
+      data: {
+        senderSocketId: string;
+        candidate: RTCIceCandidateInit;
+      },
+    ) {
       const peer =
         peerConnections.current[
           data.senderSocketId
@@ -363,21 +470,32 @@ export function useMeeting({
       }
     }
 
-    function handleParticipantLeft(data: {
-      socketId: string;
-      userId: string;
-    }) {
+    /*
+     * Participant left.
+     */
+
+    function handleParticipantLeft(
+      data: {
+        socketId: string;
+        userId: string;
+      },
+    ) {
       cleanupPeer(
         data.socketId,
       );
     }
+
+    /*
+     * Meeting ended.
+     */
 
     function handleMeetingEnded(data: {
       meetingId: string;
       endedAt: string;
     }) {
       if (
-        data.meetingId !== meetingId
+        data.meetingId !==
+        meetingId
       ) {
         return;
       }
@@ -394,6 +512,10 @@ export function useMeeting({
       setParticipants([]);
     }
 
+    /*
+     * Meeting error.
+     */
+
     function handleMeetingError(data: {
       message: string;
     }) {
@@ -402,6 +524,10 @@ export function useMeeting({
         data.message,
       );
     }
+
+    /*
+     * Register listeners.
+     */
 
     socket.on(
       "meeting:participants",
@@ -449,8 +575,9 @@ export function useMeeting({
     );
 
     /*
-     * JOIN FIRST.
+     * JOIN.
      */
+
     socket.emit(
       "meeting:join",
       {
@@ -458,7 +585,13 @@ export function useMeeting({
       },
     );
 
+    /*
+     * Cleanup.
+     */
+
     return () => {
+      joinedRef.current = false;
+
       socket.emit(
         "meeting:leave",
         {
@@ -525,11 +658,18 @@ export function useMeeting({
   }, [meetingId]);
 
   /*
-   * Send state whenever local
-   * mic/camera changes.
+   * Broadcast local mic/camera state.
+   *
+   * This runs whenever the user clicks
+   * mute/unmute or camera on/off.
    */
+
   useEffect(() => {
     if (!meetingId) {
+      return;
+    }
+
+    if (!joinedRef.current) {
       return;
     }
 
@@ -546,6 +686,10 @@ export function useMeeting({
     micEnabled,
     cameraEnabled,
   ]);
+
+  /*
+   * Return meeting state.
+   */
 
   return {
     participants,
