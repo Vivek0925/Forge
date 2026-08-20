@@ -29,6 +29,59 @@ interface MeetingRoomProps {
 interface RemoteVideoProps {
   stream: MediaStream;
   name: string;
+  cameraEnabled: boolean;
+  micEnabled: boolean;
+}
+
+interface SavedMeetingSettings {
+  cameraEnabled: boolean;
+  micEnabled: boolean;
+}
+
+function getSavedSettings(
+  meetingId: string,
+): SavedMeetingSettings {
+  if (typeof window === "undefined") {
+    return {
+      cameraEnabled: true,
+      micEnabled: true,
+    };
+  }
+
+  try {
+    const saved = localStorage.getItem(
+      `meeting-settings-${meetingId}`,
+    );
+
+    if (!saved) {
+      return {
+        cameraEnabled: true,
+        micEnabled: true,
+      };
+    }
+
+    const settings =
+      JSON.parse(saved);
+
+    return {
+      cameraEnabled:
+        typeof settings.cameraEnabled ===
+        "boolean"
+          ? settings.cameraEnabled
+          : true,
+
+      micEnabled:
+        typeof settings.micEnabled ===
+        "boolean"
+          ? settings.micEnabled
+          : true,
+    };
+  } catch {
+    return {
+      cameraEnabled: true,
+      micEnabled: true,
+    };
+  }
 }
 
 export default function MeetingRoom({
@@ -41,14 +94,21 @@ export default function MeetingRoom({
   const streamRef =
     useRef<MediaStream | null>(null);
 
+  const savedSettings =
+    getSavedSettings(meetingId);
+
   const [stream, setStream] =
     useState<MediaStream | null>(null);
 
   const [cameraEnabled, setCameraEnabled] =
-    useState(true);
+    useState(
+      savedSettings.cameraEnabled,
+    );
 
   const [micEnabled, setMicEnabled] =
-    useState(true);
+    useState(
+      savedSettings.micEnabled,
+    );
 
   const [loading, setLoading] =
     useState(true);
@@ -59,21 +119,35 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] =
     useState(false);
 
-const {
-  participants,
-  remoteStreams,
-} = useMeeting({
-  meetingId,
-  stream,
-  micEnabled,
-  cameraEnabled,
-});
-
-  const remoteParticipantCount =
-    Object.keys(remoteStreams).length;
+  const {
+    participants,
+    remoteStreams,
+  } = useMeeting({
+    meetingId,
+    stream,
+    micEnabled,
+    cameraEnabled,
+  });
 
   /*
-   * Start camera + microphone
+   * Save camera + microphone settings.
+   */
+  useEffect(() => {
+    localStorage.setItem(
+      `meeting-settings-${meetingId}`,
+      JSON.stringify({
+        cameraEnabled,
+        micEnabled,
+      }),
+    );
+  }, [
+    meetingId,
+    cameraEnabled,
+    micEnabled,
+  ]);
+
+  /*
+   * Start camera + microphone.
    */
   useEffect(() => {
     let mounted = true;
@@ -103,21 +177,6 @@ const {
             },
           );
 
-        console.log(
-          "Camera stream received:",
-          mediaStream,
-        );
-
-        console.log(
-          "Video tracks:",
-          mediaStream.getVideoTracks(),
-        );
-
-        console.log(
-          "Audio tracks:",
-          mediaStream.getAudioTracks(),
-        );
-
         if (!mounted) {
           mediaStream
             .getTracks()
@@ -128,24 +187,42 @@ const {
           return;
         }
 
+        /*
+         * IMPORTANT:
+         * Restore the user's previous
+         * camera/mic state.
+         */
         mediaStream
           .getVideoTracks()
           .forEach((track) => {
-            track.enabled = true;
+            track.enabled =
+              savedSettings.cameraEnabled;
           });
 
         mediaStream
           .getAudioTracks()
           .forEach((track) => {
-            track.enabled = true;
+            track.enabled =
+              savedSettings.micEnabled;
           });
 
         streamRef.current =
           mediaStream;
 
         setStream(mediaStream);
-        setCameraEnabled(true);
-        setMicEnabled(true);
+
+        setCameraEnabled(
+          savedSettings.cameraEnabled,
+        );
+
+        setMicEnabled(
+          savedSettings.micEnabled,
+        );
+
+        console.log(
+          "Camera stream received:",
+          mediaStream,
+        );
       } catch (err) {
         console.error(
           "Media initialization failed:",
@@ -202,10 +279,10 @@ const {
         streamRef.current = null;
       }
     };
-  }, []);
+  }, [meetingId]);
 
   /*
-   * Attach local camera stream
+   * Attach local camera stream.
    */
   useEffect(() => {
     if (
@@ -226,10 +303,6 @@ const {
     const playVideo = async () => {
       try {
         await video.play();
-
-        console.log(
-          "Video playback started",
-        );
       } catch (err) {
         console.error(
           "Video playback failed:",
@@ -238,21 +311,15 @@ const {
       }
     };
 
-    if (video.readyState >= 1) {
-      playVideo();
-    } else {
-      video.onloadedmetadata =
-        playVideo;
-    }
+    playVideo();
 
     return () => {
-      video.onloadedmetadata =
-        null;
+      video.srcObject = null;
     };
   }, [stream]);
 
   /*
-   * Fullscreen state
+   * Fullscreen state.
    */
   useEffect(() => {
     function handleFullscreenChange() {
@@ -276,7 +343,7 @@ const {
   }, []);
 
   /*
-   * Fullscreen
+   * Fullscreen.
    */
   async function toggleFullscreen() {
     try {
@@ -294,7 +361,7 @@ const {
   }
 
   /*
-   * Camera
+   * Camera.
    */
   function toggleCamera() {
     const tracks =
@@ -315,7 +382,7 @@ const {
   }
 
   /*
-   * Microphone
+   * Microphone.
    */
   function toggleMicrophone() {
     const tracks =
@@ -336,7 +403,7 @@ const {
   }
 
   /*
-   * Leave meeting
+   * Leave meeting.
    */
   async function leaveMeeting() {
     if (streamRef.current) {
@@ -353,7 +420,7 @@ const {
       try {
         await document.exitFullscreen();
       } catch {
-        // Ignore fullscreen cleanup errors
+        // Ignore fullscreen cleanup errors.
       }
     }
 
@@ -362,12 +429,24 @@ const {
   }
 
   /*
-   * Participant count.
+   * IMPORTANT:
    *
-   * +1 represents the current user.
+   * participants already contains
+   * the current user.
+   *
+   * Therefore DON'T do:
+   *
+   * participants.length + 1
    */
   const participantCount =
-    participants.length + 1;
+    participants.length;
+
+  /*
+   * Remote participants are represented
+   * by remote streams.
+   */
+  const remoteParticipantCount =
+    Object.keys(remoteStreams).length;
 
   /*
    * Grid layout.
@@ -383,13 +462,11 @@ const {
 
   return (
     <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white">
-      {/* ===================================================== */}
+      {/* ================================================= */}
       {/* TOP BAR */}
-      {/* ===================================================== */}
+      {/* ================================================= */}
 
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-5 backdrop-blur-xl">
-        {/* Left */}
-
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -412,8 +489,6 @@ const {
             </p>
           </div>
         </div>
-
-        {/* Right */}
 
         <div className="flex items-center gap-2">
           {/* Participants */}
@@ -460,9 +535,9 @@ const {
         </div>
       </header>
 
-      {/* ===================================================== */}
+      {/* ================================================= */}
       {/* VIDEO STAGE */}
-      {/* ===================================================== */}
+      {/* ================================================= */}
 
       <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
         <div
@@ -473,8 +548,6 @@ const {
           {/* ================================================= */}
 
           <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
-            {/* Loading */}
-
             {loading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
                 <div className="text-center">
@@ -486,8 +559,6 @@ const {
                 </div>
               </div>
             )}
-
-            {/* Error */}
 
             {!loading && error && (
               <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
@@ -520,8 +591,6 @@ const {
               </div>
             )}
 
-            {/* Camera */}
-
             {!error && (
               <>
                 <video
@@ -536,8 +605,6 @@ const {
                   }`}
                 />
 
-                {/* Camera off */}
-
                 {!cameraEnabled && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
                     <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
@@ -545,8 +612,6 @@ const {
                     </div>
                   </div>
                 )}
-
-                {/* Camera indicator */}
 
                 <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
                   <span
@@ -562,11 +627,15 @@ const {
                     : "Camera off"}
                 </div>
 
-                {/* Name */}
-
                 <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
                   You
                 </div>
+
+                {!micEnabled && (
+                  <div className="absolute bottom-4 right-4 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+                    🔇 Muted
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -597,6 +666,14 @@ const {
                     participant?.name ??
                     "Participant"
                   }
+                  cameraEnabled={
+                    participant?.cameraEnabled ??
+                    true
+                  }
+                  micEnabled={
+                    participant?.micEnabled ??
+                    true
+                  }
                 />
               );
             },
@@ -604,9 +681,9 @@ const {
         </div>
       </main>
 
-      {/* ===================================================== */}
-      {/* BOTTOM CONTROLS */}
-      {/* ===================================================== */}
+      {/* ================================================= */}
+      {/* CONTROLS */}
+      {/* ================================================= */}
 
       <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
         <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
@@ -688,6 +765,8 @@ const {
 function RemoteVideo({
   stream,
   name,
+  cameraEnabled,
+  micEnabled,
 }: RemoteVideoProps) {
   const videoRef =
     useRef<HTMLVideoElement>(null);
@@ -720,20 +799,44 @@ function RemoteVideo({
 
   return (
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        className="h-full w-full object-cover"
-      />
+      {/* Remote camera */}
+
+      {cameraEnabled ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
+            {name.charAt(0).toUpperCase()}
+          </div>
+        </div>
+      )}
+
+      {/* Connection */}
 
       <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
-        Connected
+        {cameraEnabled
+          ? "Connected"
+          : "Camera off"}
       </div>
+
+      {/* Name */}
 
       <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
         {name}
       </div>
+
+      {/* Mic */}
+
+      {!micEnabled && (
+        <div className="absolute bottom-4 right-4 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+          🔇 Muted
+        </div>
+      )}
     </div>
   );
 }
