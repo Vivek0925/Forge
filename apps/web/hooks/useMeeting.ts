@@ -35,10 +35,6 @@ export function useMeeting({
   const [remoteStreams, setRemoteStreams] =
     useState<Record<string, MediaStream>>({});
 
-  /*
-   * Keep the latest values available to
-   * socket/WebRTC callbacks.
-   */
   const streamRef =
     useRef<MediaStream | null>(stream);
 
@@ -55,7 +51,8 @@ export function useMeeting({
     useRef(false);
 
   /*
-   * Keep refs synchronized.
+   * Keep latest values available to
+   * socket/WebRTC callbacks.
    */
 
   useEffect(() => {
@@ -63,17 +60,15 @@ export function useMeeting({
   }, [stream]);
 
   useEffect(() => {
-    micEnabledRef.current =
-      micEnabled;
+    micEnabledRef.current = micEnabled;
   }, [micEnabled]);
 
   useEffect(() => {
-    cameraEnabledRef.current =
-      cameraEnabled;
+    cameraEnabledRef.current = cameraEnabled;
   }, [cameraEnabled]);
 
   /*
-   * Create peer connection.
+   * Create WebRTC peer connection.
    */
 
   function createPeerConnection(
@@ -99,7 +94,7 @@ export function useMeeting({
       });
 
     /*
-     * Add local tracks.
+     * Add local media tracks.
      */
 
     if (streamRef.current) {
@@ -114,7 +109,7 @@ export function useMeeting({
     }
 
     /*
-     * Remote tracks.
+     * Remote media.
      */
 
     peer.ontrack = (event) => {
@@ -151,18 +146,34 @@ export function useMeeting({
     };
 
     /*
-     * Connection state.
+     * WebRTC connection state.
+     *
+     * IMPORTANT:
+     *
+     * Do NOT remove the participant here.
+     *
+     * A WebRTC connection can temporarily
+     * become disconnected while the user
+     * is still inside the meeting.
      */
 
     peer.onconnectionstatechange =
       () => {
+        console.log(
+          `[WebRTC] ${socketId} connection state:`,
+          peer.connectionState,
+        );
+
         if (
           peer.connectionState ===
-            "failed" ||
+          "failed"
+        ) {
+          cleanupPeer(socketId);
+        }
+
+        if (
           peer.connectionState ===
-            "closed" ||
-          peer.connectionState ===
-            "disconnected"
+          "closed"
         ) {
           cleanupPeer(socketId);
         }
@@ -176,7 +187,9 @@ export function useMeeting({
   }
 
   /*
-   * Cleanup a single participant.
+   * Clean up ONLY WebRTC state.
+   *
+   * Do NOT remove the participant.
    */
 
   function cleanupPeer(
@@ -188,7 +201,11 @@ export function useMeeting({
       ];
 
     if (peer) {
-      peer.close();
+      try {
+        peer.close();
+      } catch {
+        // Ignore already-closed peer.
+      }
 
       delete peerConnections.current[
         socketId
@@ -204,6 +221,19 @@ export function useMeeting({
 
       return next;
     });
+  }
+
+  /*
+   * Remove a participant from the UI.
+   *
+   * This should ONLY happen when the
+   * server explicitly says they left.
+   */
+
+  function removeParticipant(
+    socketId: string,
+  ) {
+    cleanupPeer(socketId);
 
     setParticipants((prev) =>
       prev.filter(
@@ -215,18 +245,13 @@ export function useMeeting({
   }
 
   /*
-   * Join meeting and register
-   * all socket/WebRTC listeners.
+   * Meeting socket listeners.
    */
 
   useEffect(() => {
     if (!meetingId) {
       return;
     }
-
-    /*
-     * Prevent duplicate joins.
-     */
 
     if (joinedRef.current) {
       return;
@@ -235,8 +260,10 @@ export function useMeeting({
     joinedRef.current = true;
 
     /*
-     * Server sends the complete
-     * participant list.
+     * COMPLETE participant list.
+     *
+     * This is the authoritative meeting
+     * participant state.
      */
 
     function handleParticipants(data: {
@@ -244,27 +271,6 @@ export function useMeeting({
     }) {
       setParticipants(
         data.participants,
-      );
-
-      /*
-       * IMPORTANT:
-       *
-       * Do NOT use captured micEnabled /
-       * cameraEnabled here.
-       *
-       * Use refs containing the latest
-       * state.
-       */
-
-      socket.emit(
-        "meeting:participant-state",
-        {
-          meetingId,
-          micEnabled:
-            micEnabledRef.current,
-          cameraEnabled:
-            cameraEnabledRef.current,
-        },
       );
     }
 
@@ -281,8 +287,8 @@ export function useMeeting({
         data.participant;
 
       /*
-       * Add participant if not already
-       * present.
+       * Add participant if they aren't
+       * already present.
        */
 
       setParticipants((prev) => {
@@ -325,7 +331,6 @@ export function useMeeting({
           {
             targetSocketId:
               participant.socketId,
-
             offer,
           },
         );
@@ -338,7 +343,7 @@ export function useMeeting({
     }
 
     /*
-     * Participant changed mic/camera.
+     * Participant mic/camera state.
      */
 
     function handleParticipantState(data: {
@@ -359,6 +364,65 @@ export function useMeeting({
               }
             : participant,
         ),
+      );
+    }
+
+    /*
+     * Participant actually left.
+     */
+
+    function handleParticipantLeft(
+      data: {
+        socketId: string;
+        userId: string;
+      },
+    ) {
+      removeParticipant(
+        data.socketId,
+      );
+    }
+
+    /*
+     * Meeting ended.
+     */
+
+    function handleMeetingEnded(data: {
+      meetingId: string;
+      endedAt: string;
+    }) {
+      if (
+        data.meetingId !==
+        meetingId
+      ) {
+        return;
+      }
+
+      Object.values(
+        peerConnections.current,
+      ).forEach((peer) => {
+        try {
+          peer.close();
+        } catch {
+          // Ignore.
+        }
+      });
+
+      peerConnections.current = {};
+
+      setRemoteStreams({});
+      setParticipants([]);
+    }
+
+    /*
+     * Meeting error.
+     */
+
+    function handleMeetingError(data: {
+      message: string;
+    }) {
+      console.error(
+        "Meeting error:",
+        data.message,
       );
     }
 
@@ -394,7 +458,6 @@ export function useMeeting({
           {
             targetSocketId:
               data.senderSocketId,
-
             answer,
           },
         );
@@ -471,61 +534,6 @@ export function useMeeting({
     }
 
     /*
-     * Participant left.
-     */
-
-    function handleParticipantLeft(
-      data: {
-        socketId: string;
-        userId: string;
-      },
-    ) {
-      cleanupPeer(
-        data.socketId,
-      );
-    }
-
-    /*
-     * Meeting ended.
-     */
-
-    function handleMeetingEnded(data: {
-      meetingId: string;
-      endedAt: string;
-    }) {
-      if (
-        data.meetingId !==
-        meetingId
-      ) {
-        return;
-      }
-
-      Object.values(
-        peerConnections.current,
-      ).forEach((peer) => {
-        peer.close();
-      });
-
-      peerConnections.current = {};
-
-      setRemoteStreams({});
-      setParticipants([]);
-    }
-
-    /*
-     * Meeting error.
-     */
-
-    function handleMeetingError(data: {
-      message: string;
-    }) {
-      console.error(
-        "Meeting error:",
-        data.message,
-      );
-    }
-
-    /*
      * Register listeners.
      */
 
@@ -575,7 +583,7 @@ export function useMeeting({
     );
 
     /*
-     * JOIN.
+     * Join meeting.
      */
 
     socket.emit(
@@ -647,7 +655,11 @@ export function useMeeting({
       Object.values(
         peerConnections.current,
       ).forEach((peer) => {
-        peer.close();
+        try {
+          peer.close();
+        } catch {
+          // Ignore.
+        }
       });
 
       peerConnections.current = {};
@@ -659,9 +671,6 @@ export function useMeeting({
 
   /*
    * Broadcast local mic/camera state.
-   *
-   * This runs whenever the user clicks
-   * mute/unmute or camera on/off.
    */
 
   useEffect(() => {
@@ -686,10 +695,6 @@ export function useMeeting({
     micEnabled,
     cameraEnabled,
   ]);
-
-  /*
-   * Return meeting state.
-   */
 
   return {
     participants,

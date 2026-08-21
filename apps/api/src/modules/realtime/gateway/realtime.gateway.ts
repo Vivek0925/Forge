@@ -411,7 +411,7 @@ async handleMeetingJoin(
   // =========================================================
 
   @SubscribeMessage("meeting:leave")
-handleMeetingLeave(
+  async handleMeetingLeave(
   @MessageBody()
   data: {
     meetingId: string;
@@ -419,7 +419,7 @@ handleMeetingLeave(
   @ConnectedSocket()
   socket: AuthenticatedSocket,
 ) {
-  this.removeMeetingParticipant(
+  await this.removeMeetingParticipant(
     data.meetingId,
     socket,
   );
@@ -484,7 +484,7 @@ handleMeetingLeave(
   // REMOVE PARTICIPANT
   // =========================================================
 
-  private removeMeetingParticipant(
+private async removeMeetingParticipant(
   meetingId: string,
   socket: AuthenticatedSocket,
 ) {
@@ -495,60 +495,40 @@ handleMeetingLeave(
     );
 
   if (!participant) {
+    socket.leave(`meeting:${meetingId}`);
     return;
   }
 
-  /*
-   * Remove participant from our
-   * in-memory meeting room.
-   */
-  this.meetingRoomService.leave(
-    meetingId,
-    socket.id,
-  );
-
-  /*
-   * Leave Socket.IO room.
-   */
-  socket.leave(
-    `meeting:${meetingId}`,
-  );
-
-  /*
-   * Get the NEW complete participant
-   * list after removal.
-   */
-  const remainingParticipants =
-    this.meetingRoomService.getParticipants(
+  const participants =
+    this.meetingRoomService.leave(
       meetingId,
+      socket.id,
     );
 
+  socket.leave(`meeting:${meetingId}`);
+
   /*
-   * Broadcast the new complete list
-   * to everyone still inside.
+   * Tell everyone who remains in the meeting
+   * about the participant leaving.
+   */
+  this.server
+    .to(`meeting:${meetingId}`)
+    .emit("meeting:participant-left", {
+      socketId: socket.id,
+      userId: participant.userId,
+    });
+
+  /*
+   * IMPORTANT:
+   *
+   * Also send the complete authoritative
+   * participant list.
    */
   this.server
     .to(`meeting:${meetingId}`)
     .emit("meeting:participants", {
-      participants:
-        remainingParticipants,
+      participants,
     });
-
-  /*
-   * Also tell clients specifically
-   * who left.
-   *
-   * WebRTC cleanup uses this.
-   */
-  this.server
-    .to(`meeting:${meetingId}`)
-    .emit(
-      "meeting:participant-left",
-      {
-        socketId: socket.id,
-        userId: participant.userId,
-      },
-    );
 
   this.logger.log(
     `${participant.name} left meeting ${meetingId}`,
