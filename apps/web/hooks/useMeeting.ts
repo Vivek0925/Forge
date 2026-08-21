@@ -34,19 +34,19 @@ export function useMeeting({
     useState<MeetingParticipant[]>([]);
 
   const [remoteStreams, setRemoteStreams] =
-    useState<
-      Record<string, MediaStream>
-    >({});
+    useState<Record<string, MediaStream>>({});
+
+  const [localSocketId, setLocalSocketId] =
+    useState<string | null>(
+      socket.id ?? null,
+    );
 
   const streamRef =
     useRef<MediaStream | null>(stream);
 
   const peerConnections =
     useRef<
-      Record<
-        string,
-        RTCPeerConnection
-      >
+      Record<string, RTCPeerConnection>
     >({});
 
   const pendingIceCandidates =
@@ -57,28 +57,21 @@ export function useMeeting({
       >
     >({});
 
-  const joinedMeetingRef =
+  const joinedRef =
     useRef(false);
 
-  const micEnabledRef =
-    useRef(micEnabled);
+  const mountedRef =
+    useRef(false);
 
-  const cameraEnabledRef =
-    useRef(cameraEnabled);
+  /*
+   * =========================================================
+   * KEEP LATEST STREAM
+   * =========================================================
+   */
 
   useEffect(() => {
     streamRef.current = stream;
   }, [stream]);
-
-  useEffect(() => {
-    micEnabledRef.current =
-      micEnabled;
-  }, [micEnabled]);
-
-  useEffect(() => {
-    cameraEnabledRef.current =
-      cameraEnabled;
-  }, [cameraEnabled]);
 
   /*
    * =========================================================
@@ -133,7 +126,56 @@ export function useMeeting({
 
   /*
    * =========================================================
-   * CREATE PEER
+   * ADD LOCAL TRACKS TO PEER
+   * =========================================================
+   */
+
+  const addLocalTracksToPeer =
+    useCallback(
+      (
+        peer: RTCPeerConnection,
+      ) => {
+        const localStream =
+          streamRef.current;
+
+        if (!localStream) {
+          return;
+        }
+
+        const existingTrackIds =
+          new Set(
+            peer
+              .getSenders()
+              .map(
+                (sender) =>
+                  sender.track?.id,
+              )
+              .filter(Boolean),
+          );
+
+        localStream
+          .getTracks()
+          .forEach((track) => {
+            if (
+              existingTrackIds.has(
+                track.id,
+              )
+            ) {
+              return;
+            }
+
+            peer.addTrack(
+              track,
+              localStream,
+            );
+          });
+      },
+      [],
+    );
+
+  /*
+   * =========================================================
+   * CREATE PEER CONNECTION
    * =========================================================
    */
 
@@ -146,6 +188,16 @@ export function useMeeting({
           ];
 
         if (existing) {
+          /*
+           * Important:
+           * If the peer was created before
+           * media became available, add the
+           * tracks now.
+           */
+          addLocalTracksToPeer(
+            existing,
+          );
+
           return existing;
         }
 
@@ -162,25 +214,13 @@ export function useMeeting({
           });
 
         /*
-         * Add local tracks.
+         * Add local camera + microphone.
          */
 
-        const localStream =
-          streamRef.current;
-
-        if (localStream) {
-          localStream
-            .getTracks()
-            .forEach((track) => {
-              peer.addTrack(
-                track,
-                localStream,
-              );
-            });
-        }
+        addLocalTracksToPeer(peer);
 
         /*
-         * Remote tracks.
+         * Remote media.
          */
 
         peer.ontrack = (event) => {
@@ -192,7 +232,7 @@ export function useMeeting({
           }
 
           console.log(
-            "[WebRTC] Remote stream received:",
+            "[WebRTC] Remote stream received from:",
             socketId,
           );
 
@@ -230,25 +270,29 @@ export function useMeeting({
 
         /*
          * Connection state.
-         *
-         * IMPORTANT:
-         *
-         * A temporary "disconnected"
-         * state does NOT mean the user
-         * left the meeting.
          */
 
         peer.onconnectionstatechange =
           () => {
             console.log(
-              `[WebRTC] ${socketId}:`,
-              peer.connectionState,
+              `[WebRTC] ${socketId}: ${peer.connectionState}`,
             );
+
+            /*
+             * Don't remove participants
+             * just because WebRTC temporarily
+             * disconnects.
+             */
 
             if (
               peer.connectionState ===
               "failed"
             ) {
+              console.warn(
+                "[WebRTC] connection failed:",
+                socketId,
+              );
+
               cleanupPeer(
                 socketId,
               );
@@ -270,7 +314,10 @@ export function useMeeting({
 
         return peer;
       },
-      [cleanupPeer],
+      [
+        addLocalTracksToPeer,
+        cleanupPeer,
+      ],
     );
 
   /*
@@ -310,7 +357,7 @@ export function useMeeting({
             );
           } catch (error) {
             console.error(
-              "[WebRTC] Failed queued ICE candidate:",
+              "[WebRTC] queued ICE failed:",
               error,
             );
           }
@@ -321,20 +368,62 @@ export function useMeeting({
 
   /*
    * =========================================================
-   * MEETING SOCKET
+   * ADD TRACKS WHEN STREAM BECOMES AVAILABLE
    * =========================================================
    */
 
   useEffect(() => {
-    if (!meetingId) {
+    if (!stream) {
       return;
     }
+
+    streamRef.current =
+      stream;
+
+    /*
+     * If a peer already exists,
+     * make sure it gets our tracks.
+     */
+
+    Object.values(
+      peerConnections.current,
+    ).forEach((peer) => {
+      addLocalTracksToPeer(peer);
+    });
+  }, [
+    stream,
+    addLocalTracksToPeer,
+  ]);
+
+  /*
+   * =========================================================
+   * JOIN / SOCKET LISTENERS
+   * =========================================================
+   */
+
+  useEffect(() => {
+    /*
+     * CRITICAL:
+     *
+     * Don't join until we have camera
+     * and microphone tracks.
+     */
+
+    if (
+      !meetingId ||
+      !stream
+    ) {
+      return;
+    }
+
+    mountedRef.current =
+      true;
 
     function handleParticipants(data: {
       participants: MeetingParticipant[];
     }) {
       console.log(
-        "[Meeting] participants:",
+        "[Meeting] authoritative participants:",
         data.participants,
       );
 
@@ -344,10 +433,8 @@ export function useMeeting({
     }
 
     /*
-     * Existing participant receives
-     * this when somebody new joins.
-     *
-     * Existing participant creates offer.
+     * Existing user receives this
+     * when a new user joins.
      */
 
     async function handleParticipantJoined(
@@ -359,7 +446,7 @@ export function useMeeting({
         data.participant;
 
       console.log(
-        "[Meeting] new participant:",
+        "[Meeting] participant joined:",
         participant,
       );
 
@@ -380,6 +467,11 @@ export function useMeeting({
           participant,
         ];
       });
+
+      /*
+       * Existing participant creates
+       * the offer.
+       */
 
       const peer =
         createPeerConnection(
@@ -405,14 +497,14 @@ export function useMeeting({
         );
       } catch (error) {
         console.error(
-          "[WebRTC] Failed to create offer:",
+          "[WebRTC] offer creation failed:",
           error,
         );
       }
     }
 
     /*
-     * Participant state.
+     * MIC / CAMERA STATE
      */
 
     function handleParticipantState(
@@ -420,6 +512,11 @@ export function useMeeting({
         participant: MeetingParticipant;
       },
     ) {
+      console.log(
+        "[Meeting] participant state:",
+        data.participant,
+      );
+
       setParticipants((prev) =>
         prev.map((participant) =>
           participant.socketId ===
@@ -427,9 +524,11 @@ export function useMeeting({
             .socketId
             ? {
                 ...participant,
+
                 micEnabled:
                   data.participant
                     .micEnabled,
+
                 cameraEnabled:
                   data.participant
                     .cameraEnabled,
@@ -440,7 +539,7 @@ export function useMeeting({
     }
 
     /*
-     * Participant left.
+     * PARTICIPANT LEFT
      */
 
     function handleParticipantLeft(
@@ -468,7 +567,7 @@ export function useMeeting({
     }
 
     /*
-     * Meeting ended.
+     * MEETING ENDED
      */
 
     function handleMeetingEnded(
@@ -492,12 +591,12 @@ export function useMeeting({
 
       setParticipants([]);
 
-      joinedMeetingRef.current =
+      joinedRef.current =
         false;
     }
 
     /*
-     * Meeting error.
+     * ERROR
      */
 
     function handleMeetingError(
@@ -517,14 +616,12 @@ export function useMeeting({
      * =========================================================
      */
 
-    async function handleOffer(
-      data: {
-        senderSocketId: string;
-        offer: RTCSessionDescriptionInit;
-      },
-    ) {
+    async function handleOffer(data: {
+      senderSocketId: string;
+      offer: RTCSessionDescriptionInit;
+    }) {
       console.log(
-        "[WebRTC] offer received:",
+        "[WebRTC] offer received from:",
         data.senderSocketId,
       );
 
@@ -563,7 +660,7 @@ export function useMeeting({
         );
       } catch (error) {
         console.error(
-          "[WebRTC] Failed to handle offer:",
+          "[WebRTC] offer handling failed:",
           error,
         );
       }
@@ -575,14 +672,12 @@ export function useMeeting({
      * =========================================================
      */
 
-    async function handleAnswer(
-      data: {
-        senderSocketId: string;
-        answer: RTCSessionDescriptionInit;
-      },
-    ) {
+    async function handleAnswer(data: {
+      senderSocketId: string;
+      answer: RTCSessionDescriptionInit;
+    }) {
       console.log(
-        "[WebRTC] answer received:",
+        "[WebRTC] answer received from:",
         data.senderSocketId,
       );
 
@@ -593,7 +688,7 @@ export function useMeeting({
 
       if (!peer) {
         console.warn(
-          "[WebRTC] No peer for answer:",
+          "[WebRTC] no peer for answer:",
           data.senderSocketId,
         );
 
@@ -613,7 +708,7 @@ export function useMeeting({
         );
       } catch (error) {
         console.error(
-          "[WebRTC] Failed to set answer:",
+          "[WebRTC] answer handling failed:",
           error,
         );
       }
@@ -635,6 +730,13 @@ export function useMeeting({
         peerConnections.current[
           data.senderSocketId
         ];
+
+      /*
+       * Candidate can arrive before
+       * remote description.
+       *
+       * Queue it.
+       */
 
       if (
         !peer ||
@@ -667,7 +769,7 @@ export function useMeeting({
         );
       } catch (error) {
         console.error(
-          "[WebRTC] Failed to add ICE candidate:",
+          "[WebRTC] ICE failed:",
           error,
         );
       }
@@ -730,46 +832,51 @@ export function useMeeting({
      * =========================================================
      */
 
-    function joinMeeting() {
-      if (
-        socket.connected ||
-        !joinedMeetingRef.current
-      ) {
-        console.log(
-          "[Meeting] joining:",
+    if (
+      !joinedRef.current
+    ) {
+      console.log(
+        "[Meeting] joining with media:",
+        meetingId,
+        stream.getTracks().length,
+      );
+
+      socket.emit(
+        "meeting:join",
+        {
           meetingId,
-        );
+        },
+      );
 
-        socket.emit(
-          "meeting:join",
-          {
-            meetingId,
-          },
-        );
-
-        joinedMeetingRef.current =
-          true;
-      }
+      joinedRef.current =
+        true;
     }
 
     /*
-     * Initial join.
-     */
-
-    joinMeeting();
-
-    /*
-     * If Socket.IO reconnects,
-     * rejoin the meeting.
+     * =========================================================
+     * SOCKET RECONNECT
+     * =========================================================
      */
 
     const handleSocketConnect =
       () => {
+        setLocalSocketId(
+          socket.id ?? null,
+        );
+
         console.log(
           "[Socket] connected:",
           socket.id,
         );
 
+        /*
+         * Socket.IO creates a new
+         * socket id after reconnect.
+         *
+         * The server therefore needs
+         * a fresh meeting join.
+         */
+
         socket.emit(
           "meeting:join",
           {
@@ -777,7 +884,7 @@ export function useMeeting({
           },
         );
 
-        joinedMeetingRef.current =
+        joinedRef.current =
           true;
       };
 
@@ -787,10 +894,15 @@ export function useMeeting({
     );
 
     /*
-     * Cleanup.
+     * =========================================================
+     * CLEANUP
+     * =========================================================
      */
 
     return () => {
+      mountedRef.current =
+        false;
+
       socket.off(
         "meeting:participants",
         handleParticipants,
@@ -842,28 +954,12 @@ export function useMeeting({
       );
 
       /*
-       * IMPORTANT:
+       * Don't send leave during every
+       * React effect cleanup.
        *
-       * The hook is leaving the meeting
-       * because the meeting component
-       * itself is being destroyed.
-       *
-       * This keeps the server room accurate.
+       * The component may simply be
+       * re-rendering.
        */
-
-      if (
-        joinedMeetingRef.current
-      ) {
-        socket.emit(
-          "meeting:leave",
-          {
-            meetingId,
-          },
-        );
-      }
-
-      joinedMeetingRef.current =
-        false;
 
       Object.keys(
         peerConnections.current,
@@ -875,6 +971,7 @@ export function useMeeting({
     };
   }, [
     meetingId,
+    stream,
     createPeerConnection,
     cleanupPeer,
     flushIceCandidates,
@@ -882,14 +979,14 @@ export function useMeeting({
 
   /*
    * =========================================================
-   * LOCAL STATE SYNC
+   * MIC / CAMERA STATE SYNC
    * =========================================================
    */
 
   useEffect(() => {
     if (
       !meetingId ||
-      !joinedMeetingRef.current
+      !joinedRef.current
     ) {
       return;
     }
@@ -910,51 +1007,50 @@ export function useMeeting({
 
   /*
    * =========================================================
-   * EXPLICIT LEAVE
+   * LEAVE
    * =========================================================
    */
 
-  const leaveMeeting = useCallback(() => {
-    if (!meetingId) {
-      return;
-    }
+  const leaveMeeting =
+    useCallback(() => {
+      if (
+        !meetingId ||
+        !joinedRef.current
+      ) {
+        return;
+      }
 
-    if (
-      !joinedMeetingRef.current
-    ) {
-      return;
-    }
-
-    console.log(
-      "[Meeting] leaving:",
-      meetingId,
-    );
-
-    socket.emit(
-      "meeting:leave",
-      {
+      console.log(
+        "[Meeting] leaving:",
         meetingId,
-      },
-    );
+      );
 
-    joinedMeetingRef.current =
-      false;
+      socket.emit(
+        "meeting:leave",
+        {
+          meetingId,
+        },
+      );
 
-    Object.keys(
-      peerConnections.current,
-    ).forEach((socketId) => {
-      cleanupPeer(socketId);
-    });
+      joinedRef.current =
+        false;
 
-    setParticipants([]);
-  }, [
-    meetingId,
-    cleanupPeer,
-  ]);
+      Object.keys(
+        peerConnections.current,
+      ).forEach((socketId) => {
+        cleanupPeer(socketId);
+      });
+
+      setParticipants([]);
+    }, [
+      meetingId,
+      cleanupPeer,
+    ]);
 
   return {
     participants,
     remoteStreams,
+    localSocketId,
     leaveMeeting,
   };
 }
