@@ -482,43 +482,48 @@ export default function MeetingRoom({
    * =========================================================
    */
 
-  const participantCount =
-    participants.length;
+ /*
+ * =========================================================
+ * CLEAN PARTICIPANT LIST
+ * =========================================================
+ *
+ * A user should only appear once.
+ *
+ * Socket IDs can change after reconnect.
+ * Therefore deduplicate by userId.
+ */
 
-  /*
-   * =========================================================
-   * REMOTE PARTICIPANTS
-   * =========================================================
-   *
-   * IMPORTANT:
-   *
-   * Use localSocketId to remove OUR
-   * participant from the remote list.
-   *
-   * Do NOT use participant name.
-   */
+const uniqueParticipants =
+  Array.from(
+    new Map(
+      participants.map(
+        (participant) => [
+          participant.userId,
+          participant,
+        ],
+      ),
+    ).values(),
+  );
 
-  const remoteParticipants =
-    participants.filter(
-      (participant) =>
-        participant.socketId !==
-        localSocketId,
-    );
+/*
+ * Never render our own socket as remote.
+ */
+const remoteParticipants =
+  uniqueParticipants.filter(
+    (participant) =>
+      participant.socketId !==
+      localSocketId,
+  );
 
-  /*
-   * =========================================================
-   * GRID
-   * =========================================================
-   *
-   * The grid is based on PARTICIPANTS,
-   * not remoteStreams.
-   *
-   * That means a participant gets a tile
-   * immediately, even while WebRTC is connecting.
-   */
+/*
+ * The participant count should represent
+ * actual users in the meeting.
+ */
+const participantCount =
+  uniqueParticipants.length;
 
-  const totalVideoTiles =
-    1 + remoteParticipants.length;
+const totalVideoTiles =
+  1 + remoteParticipants.length;
 
   const gridClass =
     totalVideoTiles === 1
@@ -713,48 +718,38 @@ export default function MeetingRoom({
           {/* ============================================= */}
 
           {remoteParticipants.map(
-            (participant) => {
-              const remoteStream =
-                remoteStreams[
-                  participant.socketId
-                ];
+  (participant) => {
+    const remoteStream =
+      remoteStreams[
+        participant.socketId
+      ];
 
-              /*
-               * IMPORTANT:
-               *
-               * Participant exists but WebRTC
-               * stream hasn't arrived yet.
-               *
-               * Render a waiting tile instead
-               * of making the participant disappear.
-               */
+    if (!remoteStream) {
+      return (
+        <RemoteWaitingTile
+          key={
+            participant.userId
+          }
+          participant={
+            participant
+          }
+        />
+      );
+    }
 
-              if (!remoteStream) {
-                return (
-                  <RemoteWaitingTile
-                    key={
-                      participant.socketId
-                    }
-                    participant={
-                      participant
-                    }
-                  />
-                );
-              }
-
-              return (
-                <RemoteVideo
-                  key={
-                    participant.socketId
-                  }
-                  stream={remoteStream}
-                  participant={
-                    participant
-                  }
-                />
-              );
-            },
-          )}
+    return (
+      <RemoteVideo
+        key={
+          participant.userId
+        }
+        stream={remoteStream}
+        participant={
+          participant
+        }
+      />
+    );
+  },
+)}
         </div>
       </main>
 
