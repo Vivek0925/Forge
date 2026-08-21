@@ -60,8 +60,7 @@ function getSavedSettings(
       };
     }
 
-    const settings =
-      JSON.parse(saved);
+    const settings = JSON.parse(saved);
 
     return {
       cameraEnabled:
@@ -122,6 +121,7 @@ export default function MeetingRoom({
   const {
     participants,
     remoteStreams,
+    leaveMeeting: leaveMeetingFromHook,
   } = useMeeting({
     meetingId,
     stream,
@@ -132,6 +132,7 @@ export default function MeetingRoom({
   /*
    * Save camera + microphone settings.
    */
+
   useEffect(() => {
     localStorage.setItem(
       `meeting-settings-${meetingId}`,
@@ -149,6 +150,7 @@ export default function MeetingRoom({
   /*
    * Start camera + microphone.
    */
+
   useEffect(() => {
     let mounted = true;
 
@@ -158,7 +160,7 @@ export default function MeetingRoom({
         setError(null);
 
         console.log(
-          "Requesting camera...",
+          "[MeetingRoom] Requesting camera...",
         );
 
         const mediaStream =
@@ -188,16 +190,19 @@ export default function MeetingRoom({
         }
 
         /*
-         * IMPORTANT:
-         * Restore the user's previous
-         * camera/mic state.
+         * Restore saved camera state.
          */
+
         mediaStream
           .getVideoTracks()
           .forEach((track) => {
             track.enabled =
               savedSettings.cameraEnabled;
           });
+
+        /*
+         * Restore saved microphone state.
+         */
 
         mediaStream
           .getAudioTracks()
@@ -220,12 +225,11 @@ export default function MeetingRoom({
         );
 
         console.log(
-          "Camera stream received:",
-          mediaStream,
+          "[MeetingRoom] Camera stream received",
         );
       } catch (err) {
         console.error(
-          "Media initialization failed:",
+          "[MeetingRoom] Media initialization failed:",
           err,
         );
 
@@ -284,6 +288,7 @@ export default function MeetingRoom({
   /*
    * Attach local camera stream.
    */
+
   useEffect(() => {
     if (
       !stream ||
@@ -305,7 +310,7 @@ export default function MeetingRoom({
         await video.play();
       } catch (err) {
         console.error(
-          "Video playback failed:",
+          "[MeetingRoom] Video playback failed:",
           err,
         );
       }
@@ -321,6 +326,7 @@ export default function MeetingRoom({
   /*
    * Fullscreen state.
    */
+
   useEffect(() => {
     function handleFullscreenChange() {
       setIsFullscreen(
@@ -345,6 +351,7 @@ export default function MeetingRoom({
   /*
    * Fullscreen.
    */
+
   async function toggleFullscreen() {
     try {
       if (!document.fullscreenElement) {
@@ -354,7 +361,7 @@ export default function MeetingRoom({
       }
     } catch (error) {
       console.error(
-        "Fullscreen error:",
+        "[MeetingRoom] Fullscreen error:",
         error,
       );
     }
@@ -363,6 +370,7 @@ export default function MeetingRoom({
   /*
    * Camera.
    */
+
   function toggleCamera() {
     const tracks =
       streamRef.current?.getVideoTracks();
@@ -384,6 +392,7 @@ export default function MeetingRoom({
   /*
    * Microphone.
    */
+
   function toggleMicrophone() {
     const tracks =
       streamRef.current?.getAudioTracks();
@@ -404,28 +413,39 @@ export default function MeetingRoom({
 
   /*
    * Leave meeting.
+   *
+   * IMPORTANT:
+   *
+   * This explicitly calls the hook's
+   * leaveMeeting() so the backend receives
+   * meeting:leave.
    */
-  async function leaveMeeting() {
-    if (streamRef.current) {
-      streamRef.current
-        .getTracks()
-        .forEach((track) =>
-          track.stop(),
-        );
 
-      streamRef.current = null;
-    }
+  async function handleLeaveMeeting() {
+    try {
+      leaveMeetingFromHook();
 
-    if (document.fullscreenElement) {
-      try {
-        await document.exitFullscreen();
-      } catch {
-        // Ignore fullscreen cleanup errors.
+      if (streamRef.current) {
+        streamRef.current
+          .getTracks()
+          .forEach((track) =>
+            track.stop(),
+          );
+
+        streamRef.current = null;
       }
-    }
 
-    window.location.href =
-      `/workspace/${slug}/meetings`;
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch {
+          // Ignore fullscreen cleanup errors.
+        }
+      }
+    } finally {
+      window.location.href =
+        `/workspace/${slug}/meetings`;
+    }
   }
 
   /*
@@ -434,23 +454,24 @@ export default function MeetingRoom({
    * participants already contains
    * the current user.
    *
-   * Therefore DON'T do:
-   *
-   * participants.length + 1
+   * Therefore DO NOT add +1.
    */
+
   const participantCount =
-    participants.length +1;
+    participants.length+1;
 
   /*
    * Remote participants are represented
    * by remote streams.
    */
+
   const remoteParticipantCount =
     Object.keys(remoteStreams).length;
 
   /*
    * Grid layout.
    */
+
   const gridClass =
     remoteParticipantCount === 0
       ? "grid-cols-1"
@@ -743,7 +764,7 @@ export default function MeetingRoom({
 
           <button
             type="button"
-            onClick={leaveMeeting}
+            onClick={handleLeaveMeeting}
             className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium text-white transition hover:bg-[#DC2626]"
           >
             <PhoneOff size={18} />
@@ -799,8 +820,6 @@ function RemoteVideo({
 
   return (
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
-      {/* Remote camera */}
-
       {cameraEnabled ? (
         <video
           ref={videoRef}
@@ -816,21 +835,15 @@ function RemoteVideo({
         </div>
       )}
 
-      {/* Connection */}
-
       <div className="absolute left-4 top-4 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
         {cameraEnabled
           ? "Connected"
           : "Camera off"}
       </div>
 
-      {/* Name */}
-
       <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
         {name}
       </div>
-
-      {/* Mic */}
 
       {!micEnabled && (
         <div className="absolute bottom-4 right-4 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">

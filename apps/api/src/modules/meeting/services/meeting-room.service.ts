@@ -18,16 +18,20 @@ export class MeetingRoomService {
   join(
     meetingId: string,
     participant: MeetingParticipant,
-  ) {
-    if (!this.rooms.has(meetingId)) {
+  ): MeetingParticipant[] {
+    let room = this.rooms.get(meetingId);
+
+    if (!room) {
+      room = new Map<
+        string,
+        MeetingParticipant
+      >();
+
       this.rooms.set(
         meetingId,
-        new Map(),
+        room,
       );
     }
-
-    const room =
-      this.rooms.get(meetingId)!;
 
     room.set(
       participant.socketId,
@@ -42,7 +46,7 @@ export class MeetingRoomService {
   leave(
     meetingId: string,
     socketId: string,
-  ) {
+  ): MeetingParticipant[] {
     const room =
       this.rooms.get(meetingId);
 
@@ -63,6 +67,17 @@ export class MeetingRoomService {
     );
   }
 
+  hasParticipant(
+    meetingId: string,
+    socketId: string,
+  ): boolean {
+    return (
+      this.rooms
+        .get(meetingId)
+        ?.has(socketId) ?? false
+    );
+  }
+
   updateParticipantState(
     meetingId: string,
     socketId: string,
@@ -70,7 +85,7 @@ export class MeetingRoomService {
       micEnabled?: boolean;
       cameraEnabled?: boolean;
     },
-  ) {
+  ): MeetingParticipant | undefined {
     const room =
       this.rooms.get(meetingId);
 
@@ -85,10 +100,11 @@ export class MeetingRoomService {
       return undefined;
     }
 
-    const updatedParticipant = {
-      ...participant,
-      ...state,
-    };
+    const updatedParticipant: MeetingParticipant =
+      {
+        ...participant,
+        ...state,
+      };
 
     room.set(
       socketId,
@@ -100,7 +116,7 @@ export class MeetingRoomService {
 
   getParticipants(
     meetingId: string,
-  ) {
+  ): MeetingParticipant[] {
     const room =
       this.rooms.get(meetingId);
 
@@ -116,7 +132,7 @@ export class MeetingRoomService {
   getParticipant(
     meetingId: string,
     socketId: string,
-  ) {
+  ): MeetingParticipant | undefined {
     return this.rooms
       .get(meetingId)
       ?.get(socketId);
@@ -124,7 +140,7 @@ export class MeetingRoomService {
 
   getMeetingForSocket(
     socketId: string,
-  ) {
+  ): string | undefined {
     for (const [
       meetingId,
       room,
@@ -139,7 +155,7 @@ export class MeetingRoomService {
 
   clearMeeting(
     meetingId: string,
-  ) {
+  ): void {
     this.rooms.delete(meetingId);
   }
 }

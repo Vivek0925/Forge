@@ -47,13 +47,9 @@ export class RealtimeGateway
 
   constructor(
     private readonly socketAuthService: SocketAuthService,
-
     private readonly presenceService: PresenceService,
-
     private readonly prisma: PrismaService,
-
     private readonly chatService: ChatService,
-
     private readonly meetingRoomService: MeetingRoomService,
   ) {}
 
@@ -89,7 +85,7 @@ export class RealtimeGateway
   // DISCONNECT
   // =========================================================
 
-  handleDisconnect(
+  async handleDisconnect(
     socket: AuthenticatedSocket,
   ) {
     const meetingId =
@@ -98,7 +94,7 @@ export class RealtimeGateway
       );
 
     if (meetingId) {
-      this.removeMeetingParticipant(
+      await this.removeMeetingParticipant(
         meetingId,
         socket,
       );
@@ -153,10 +149,6 @@ export class RealtimeGateway
       });
 
     if (!workspace) {
-      this.logger.warn(
-        `Workspace not found: ${dto.workspaceSlug}`,
-      );
-
       return;
     }
 
@@ -166,15 +158,11 @@ export class RealtimeGateway
 
     this.presenceService.addUser({
       socketId: socket.id,
-
       workspaceId: workspace.id,
-
       userId:
         socket.data.currentUser.id,
-
       name:
         socket.data.currentUser.name,
-
       email:
         socket.data.currentUser.email,
     });
@@ -268,143 +256,175 @@ export class RealtimeGateway
   // MEETING JOIN
   // =========================================================
 
- @SubscribeMessage("meeting:join")
-async handleMeetingJoin(
-  @MessageBody()
-  data: {
-    meetingId: string;
-  },
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  const meeting = await this.prisma.meeting.findUnique({
-    where: {
-      id: data.meetingId,
+  @SubscribeMessage("meeting:join")
+  async handleMeetingJoin(
+    @MessageBody()
+    data: {
+      meetingId: string;
     },
-  });
 
-  if (!meeting) {
-    socket.emit("meeting:error", {
-      message: "Meeting not found",
-    });
-
-    return;
-  }
-
-  if (
-    meeting.status === "ENDED" ||
-    meeting.status === "CANCELLED"
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
   ) {
-    socket.emit("meeting:error", {
-      message: "This meeting is no longer active",
-    });
+    const meeting =
+      await this.prisma.meeting.findUnique({
+        where: {
+          id: data.meetingId,
+        },
+      });
 
-    return;
-  }
+    if (!meeting) {
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "Meeting not found",
+        },
+      );
 
-  /*
-   * Scheduled meeting becomes active
-   * when somebody actually joins.
-   */
-  if (meeting.status === "SCHEDULED") {
-    const startedAt = new Date();
+      return;
+    }
 
-    await this.prisma.meeting.update({
-      where: {
-        id: meeting.id,
-      },
-      data: {
-        status: "ACTIVE",
-        startedAt,
-      },
-    });
+    if (
+      meeting.status === "ENDED" ||
+      meeting.status === "CANCELLED"
+    ) {
+      socket.emit(
+        "meeting:error",
+        {
+          message:
+            "This meeting is no longer active",
+        },
+      );
+
+      return;
+    }
+
+    /*
+     * Start scheduled meeting when
+     * first participant joins.
+     */
+
+    if (
+      meeting.status ===
+      "SCHEDULED"
+    ) {
+      const startedAt =
+        new Date();
+
+      await this.prisma.meeting.update({
+        where: {
+          id: meeting.id,
+        },
+
+        data: {
+          status: "ACTIVE",
+          startedAt,
+        },
+      });
+
+      this.server
+        .to(
+          `workspace:${meeting.workspaceId}`,
+        )
+        .emit(
+          "meeting:status",
+          {
+            meetingId:
+              meeting.id,
+            status: "ACTIVE",
+            startedAt:
+              startedAt.toISOString(),
+          },
+        );
+    }
+
+    const currentUser =
+      socket.data.currentUser;
+
+    const alreadyJoined =
+      this.meetingRoomService.hasParticipant(
+        data.meetingId,
+        socket.id,
+      );
+
+    /*
+     * Add participant only once.
+     */
+
+    if (!alreadyJoined) {
+      this.meetingRoomService.join(
+        data.meetingId,
+        {
+          socketId: socket.id,
+          userId: currentUser.id,
+          name: currentUser.name,
+          micEnabled: true,
+          cameraEnabled: true,
+        },
+      );
+    }
+
+    /*
+     * Join Socket.IO room FIRST.
+     */
+
+    socket.join(
+      `meeting:${data.meetingId}`,
+    );
+
+    const participants =
+      this.meetingRoomService.getParticipants(
+        data.meetingId,
+      );
+
+    /*
+     * Authoritative participant state.
+     */
 
     this.server
-      .to(`workspace:${meeting.workspaceId}`)
-      .emit("meeting:status", {
-        meetingId: meeting.id,
-        status: "ACTIVE",
-        startedAt: startedAt.toISOString(),
-      });
+      .to(
+        `meeting:${data.meetingId}`,
+      )
+      .emit(
+        "meeting:participants",
+        {
+          participants,
+        },
+      );
+
+    /*
+     * Only notify existing participants
+     * when this is a genuinely new join.
+     */
+
+    if (!alreadyJoined) {
+      socket
+        .to(
+          `meeting:${data.meetingId}`,
+        )
+        .emit(
+          "meeting:participant-joined",
+          {
+            participant: {
+              socketId:
+                socket.id,
+              userId:
+                currentUser.id,
+              name:
+                currentUser.name,
+              micEnabled: true,
+              cameraEnabled:
+                true,
+            },
+          },
+        );
+    }
+
+    this.logger.log(
+      `${currentUser.name} joined meeting ${data.meetingId} (${socket.id})`,
+    );
   }
-
-  const currentUser = socket.data.currentUser;
-
-  /*
-   * Prevent the same socket from being added twice.
-   */
-  const existingParticipant =
-    this.meetingRoomService.getParticipant(
-      data.meetingId,
-      socket.id,
-    );
-
-  if (!existingParticipant) {
-    this.meetingRoomService.join(
-      data.meetingId,
-      {
-        socketId: socket.id,
-        userId: currentUser.id,
-        name: currentUser.name,
-        micEnabled: true,
-        cameraEnabled: true,
-      },
-    );
-  }
-
-  /*
-   * IMPORTANT:
-   * Join the Socket.IO room BEFORE broadcasting.
-   */
-  socket.join(`meeting:${data.meetingId}`);
-
-  /*
-   * Get the complete current participant list.
-   */
-  const participants =
-    this.meetingRoomService.getParticipants(
-      data.meetingId,
-    );
-
-  /*
-   * Send the complete participant list
-   * to EVERYONE currently in the meeting.
-   *
-   * A joins:
-   *   A → [A]
-   *
-   * B joins:
-   *   A → [A, B]
-   *   B → [A, B]
-   */
-  this.server
-    .to(`meeting:${data.meetingId}`)
-    .emit("meeting:participants", {
-      participants,
-    });
-
-  /*
-   * Only tell EXISTING peers that a new
-   * WebRTC peer has arrived.
-   *
-   * The current socket does not receive this.
-   */
-  socket
-    .to(`meeting:${data.meetingId}`)
-    .emit("meeting:participant-joined", {
-      participant: {
-        socketId: socket.id,
-        userId: currentUser.id,
-        name: currentUser.name,
-        micEnabled: true,
-        cameraEnabled: true,
-      },
-    });
-
-  this.logger.log(
-    `${currentUser.name} joined meeting ${data.meetingId} (${socket.id})`,
-  );
-}
 
   // =========================================================
   // MEETING LEAVE
@@ -412,18 +432,19 @@ async handleMeetingJoin(
 
   @SubscribeMessage("meeting:leave")
   async handleMeetingLeave(
-  @MessageBody()
-  data: {
-    meetingId: string;
-  },
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  await this.removeMeetingParticipant(
-    data.meetingId,
-    socket,
-  );
-}
+    @MessageBody()
+    data: {
+      meetingId: string;
+    },
+
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
+  ) {
+    await this.removeMeetingParticipant(
+      data.meetingId,
+      socket,
+    );
+  }
 
   // =========================================================
   // PARTICIPANT STATE
@@ -436,9 +457,7 @@ async handleMeetingJoin(
     @MessageBody()
     data: {
       meetingId: string;
-
       micEnabled?: boolean;
-
       cameraEnabled?: boolean;
     },
 
@@ -448,13 +467,10 @@ async handleMeetingJoin(
     const participant =
       this.meetingRoomService.updateParticipantState(
         data.meetingId,
-
         socket.id,
-
         {
           micEnabled:
             data.micEnabled,
-
           cameraEnabled:
             data.cameraEnabled,
         },
@@ -464,10 +480,6 @@ async handleMeetingJoin(
       return;
     }
 
-    /*
-     * Send updated state to everyone
-     * else in the meeting.
-     */
     socket
       .to(
         `meeting:${data.meetingId}`,
@@ -484,56 +496,70 @@ async handleMeetingJoin(
   // REMOVE PARTICIPANT
   // =========================================================
 
-private async removeMeetingParticipant(
-  meetingId: string,
-  socket: AuthenticatedSocket,
-) {
-  const participant =
-    this.meetingRoomService.getParticipant(
-      meetingId,
-      socket.id,
+  private async removeMeetingParticipant(
+    meetingId: string,
+    socket: AuthenticatedSocket,
+  ) {
+    const participant =
+      this.meetingRoomService.getParticipant(
+        meetingId,
+        socket.id,
+      );
+
+    if (!participant) {
+      socket.leave(
+        `meeting:${meetingId}`,
+      );
+
+      return;
+    }
+
+    const participants =
+      this.meetingRoomService.leave(
+        meetingId,
+        socket.id,
+      );
+
+    socket.leave(
+      `meeting:${meetingId}`,
     );
 
-  if (!participant) {
-    socket.leave(`meeting:${meetingId}`);
-    return;
+    /*
+     * Notify remaining users.
+     */
+
+    this.server
+      .to(
+        `meeting:${meetingId}`,
+      )
+      .emit(
+        "meeting:participant-left",
+        {
+          socketId: socket.id,
+          userId:
+            participant.userId,
+        },
+      );
+
+    /*
+     * Send authoritative list.
+     */
+
+    this.server
+      .to(
+        `meeting:${meetingId}`,
+      )
+      .emit(
+        "meeting:participants",
+        {
+          participants,
+        },
+      );
+
+    this.logger.log(
+      `${participant.name} left meeting ${meetingId}`,
+    );
   }
-
-  const participants =
-    this.meetingRoomService.leave(
-      meetingId,
-      socket.id,
-    );
-
-  socket.leave(`meeting:${meetingId}`);
-
-  /*
-   * Tell everyone who remains in the meeting
-   * about the participant leaving.
-   */
-  this.server
-    .to(`meeting:${meetingId}`)
-    .emit("meeting:participant-left", {
-      socketId: socket.id,
-      userId: participant.userId,
-    });
-
-  /*
-   * IMPORTANT:
-   *
-   * Also send the complete authoritative
-   * participant list.
-   */
-  this.server
-    .to(`meeting:${meetingId}`)
-    .emit("meeting:participants", {
-      participants,
-    });
-
-  this.logger.log(
-    `${participant.name} left meeting ${meetingId}`,
-  );
-}
 
   // =========================================================
   // END MEETING
@@ -568,10 +594,6 @@ private async removeMeetingParticipant(
       return;
     }
 
-    /*
-     * Only the creator can end
-     * the meeting.
-     */
     if (
       meeting.createdById !==
       socket.data.currentUser.id
@@ -588,10 +610,8 @@ private async removeMeetingParticipant(
     }
 
     if (
-      meeting.status ===
-        "ENDED" ||
-      meeting.status ===
-        "CANCELLED"
+      meeting.status === "ENDED" ||
+      meeting.status === "CANCELLED"
     ) {
       return;
     }
@@ -606,15 +626,10 @@ private async removeMeetingParticipant(
 
       data: {
         status: "ENDED",
-
         endedAt,
       },
     });
 
-    /*
-     * Tell everyone before removing
-     * them from the Socket.IO room.
-     */
     this.server
       .to(
         `meeting:${data.meetingId}`,
@@ -624,16 +639,11 @@ private async removeMeetingParticipant(
         {
           meetingId:
             data.meetingId,
-
           endedAt:
             endedAt.toISOString(),
         },
       );
 
-    /*
-     * Remove all participants from
-     * the in-memory room.
-     */
     const participants =
       this.meetingRoomService.getParticipants(
         data.meetingId,
@@ -670,9 +680,7 @@ private async removeMeetingParticipant(
     @MessageBody()
     data: {
       targetSocketId: string;
-
-      offer:
-        RTCSessionDescriptionInit;
+      offer: RTCSessionDescriptionInit;
     },
 
     @ConnectedSocket()
@@ -685,7 +693,6 @@ private async removeMeetingParticipant(
         {
           senderSocketId:
             socket.id,
-
           offer:
             data.offer,
         },
@@ -701,9 +708,7 @@ private async removeMeetingParticipant(
     @MessageBody()
     data: {
       targetSocketId: string;
-
-      answer:
-        RTCSessionDescriptionInit;
+      answer: RTCSessionDescriptionInit;
     },
 
     @ConnectedSocket()
@@ -716,7 +721,6 @@ private async removeMeetingParticipant(
         {
           senderSocketId:
             socket.id,
-
           answer:
             data.answer,
         },
@@ -734,9 +738,7 @@ private async removeMeetingParticipant(
     @MessageBody()
     data: {
       targetSocketId: string;
-
-      candidate:
-        RTCIceCandidateInit;
+      candidate: RTCIceCandidateInit;
     },
 
     @ConnectedSocket()
@@ -749,7 +751,6 @@ private async removeMeetingParticipant(
         {
           senderSocketId:
             socket.id,
-
           candidate:
             data.candidate,
         },
