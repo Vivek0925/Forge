@@ -268,22 +268,20 @@ export class RealtimeGateway
   // MEETING JOIN
   // =========================================================
 
-  @SubscribeMessage("meeting:join")
+ @SubscribeMessage("meeting:join")
 async handleMeetingJoin(
   @MessageBody()
   data: {
     meetingId: string;
   },
-
   @ConnectedSocket()
   socket: AuthenticatedSocket,
 ) {
-  const meeting =
-    await this.prisma.meeting.findUnique({
-      where: {
-        id: data.meetingId,
-      },
-    });
+  const meeting = await this.prisma.meeting.findUnique({
+    where: {
+      id: data.meetingId,
+    },
+  });
 
   if (!meeting) {
     socket.emit("meeting:error", {
@@ -298,8 +296,7 @@ async handleMeetingJoin(
     meeting.status === "CANCELLED"
   ) {
     socket.emit("meeting:error", {
-      message:
-        "This meeting is no longer active",
+      message: "This meeting is no longer active",
     });
 
     return;
@@ -316,7 +313,6 @@ async handleMeetingJoin(
       where: {
         id: meeting.id,
       },
-
       data: {
         status: "ACTIVE",
         startedAt,
@@ -332,77 +328,66 @@ async handleMeetingJoin(
       });
   }
 
-  const currentUser =
-    socket.data.currentUser;
+  const currentUser = socket.data.currentUser;
+
+  /*
+   * Prevent the same socket from being added twice.
+   */
+  const existingParticipant =
+    this.meetingRoomService.getParticipant(
+      data.meetingId,
+      socket.id,
+    );
+
+  if (!existingParticipant) {
+    this.meetingRoomService.join(
+      data.meetingId,
+      {
+        socketId: socket.id,
+        userId: currentUser.id,
+        name: currentUser.name,
+        micEnabled: true,
+        cameraEnabled: true,
+      },
+    );
+  }
 
   /*
    * IMPORTANT:
-   *
-   * Get existing participants before
-   * adding the current user.
-   *
-   * We need this for WebRTC so the
-   * existing users know who just joined.
+   * Join the Socket.IO room BEFORE broadcasting.
    */
-  const existingParticipants =
+  socket.join(`meeting:${data.meetingId}`);
+
+  /*
+   * Get the complete current participant list.
+   */
+  const participants =
     this.meetingRoomService.getParticipants(
       data.meetingId,
     );
 
   /*
-   * Add current participant.
-   */
-  this.meetingRoomService.join(
-    data.meetingId,
-    {
-      socketId: socket.id,
-      userId: currentUser.id,
-      name: currentUser.name,
-      micEnabled: true,
-      cameraEnabled: true,
-    },
-  );
-
-  /*
-   * Join Socket.IO meeting room.
-   */
-  socket.join(
-    `meeting:${data.meetingId}`,
-  );
-
-  /*
-   * Get the COMPLETE participant list
-   * AFTER adding the new participant.
-   */
-  const allParticipants =
-    this.meetingRoomService.getParticipants(
-      data.meetingId,
-    );
-
-  /*
-   * IMPORTANT FIX:
+   * Send the complete participant list
+   * to EVERYONE currently in the meeting.
    *
-   * Broadcast the complete participant
-   * list to EVERYONE in the meeting.
+   * A joins:
+   *   A → [A]
    *
-   * So:
-   *
-   * A joins → A gets [A]
-   *
-   * B joins → A + B both get [A, B]
+   * B joins:
+   *   A → [A, B]
+   *   B → [A, B]
    */
   this.server
     .to(`meeting:${data.meetingId}`)
     .emit("meeting:participants", {
-      participants: allParticipants,
+      participants,
     });
 
   /*
-   * Tell existing participants that a
-   * new WebRTC peer has joined.
+   * Only tell EXISTING peers that a new
+   * WebRTC peer has arrived.
    *
-   * We keep this event because the
-   * frontend uses it to create the offer.
+   * The current socket does not receive this.
    */
   socket
     .to(`meeting:${data.meetingId}`)
@@ -417,7 +402,7 @@ async handleMeetingJoin(
     });
 
   this.logger.log(
-    `${currentUser.name} joined meeting ${data.meetingId}`,
+    `${currentUser.name} joined meeting ${data.meetingId} (${socket.id})`,
   );
 }
 
@@ -426,20 +411,19 @@ async handleMeetingJoin(
   // =========================================================
 
   @SubscribeMessage("meeting:leave")
-  handleMeetingLeave(
-    @MessageBody()
-    data: {
-      meetingId: string;
-    },
-
-    @ConnectedSocket()
-    socket: AuthenticatedSocket,
-  ) {
-    this.removeMeetingParticipant(
-      data.meetingId,
-      socket,
-    );
-  }
+handleMeetingLeave(
+  @MessageBody()
+  data: {
+    meetingId: string;
+  },
+  @ConnectedSocket()
+  socket: AuthenticatedSocket,
+) {
+  this.removeMeetingParticipant(
+    data.meetingId,
+    socket,
+  );
+}
 
   // =========================================================
   // PARTICIPANT STATE
