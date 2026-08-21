@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   ArrowLeft,
@@ -26,90 +22,99 @@ interface MeetingRoomProps {
   meetingId: string;
 }
 
-interface RemoteVideoProps {
-  stream?: MediaStream;
+interface Participant {
+  socketId: string;
+  userId: string;
   name: string;
-  cameraEnabled: boolean;
   micEnabled: boolean;
+  cameraEnabled: boolean;
 }
 
-interface SavedMeetingSettings {
-  cameraEnabled: boolean;
-  micEnabled: boolean;
-}
-
-function getSavedSettings(
-  meetingId: string,
-): SavedMeetingSettings {
-  if (typeof window === "undefined") {
-    return {
-      cameraEnabled: true,
-      micEnabled: true,
-    };
-  }
-
-  try {
-    const saved =
-      localStorage.getItem(
-        `meeting-settings-${meetingId}`,
-      );
-
-    if (!saved) {
-      return {
-        cameraEnabled: true,
-        micEnabled: true,
-      };
-    }
-
-    const settings =
-      JSON.parse(saved);
-
-    return {
-      cameraEnabled:
-        typeof settings.cameraEnabled ===
-        "boolean"
-          ? settings.cameraEnabled
-          : true,
-
-      micEnabled:
-        typeof settings.micEnabled ===
-        "boolean"
-          ? settings.micEnabled
-          : true,
-    };
-  } catch {
-    return {
-      cameraEnabled: true,
-      micEnabled: true,
-    };
-  }
+interface RemoteVideoProps {
+  stream: MediaStream | undefined;
+  participant: Participant;
 }
 
 export default function MeetingRoom({
   slug,
   meetingId,
 }: MeetingRoomProps) {
+  const containerRef =
+    useRef<HTMLDivElement>(null);
+
   const videoRef =
     useRef<HTMLVideoElement>(null);
 
   const streamRef =
     useRef<MediaStream | null>(null);
 
-  const savedSettings =
-    getSavedSettings(meetingId);
+  /*
+   * =========================================================
+   * MEDIA SETTINGS
+   * =========================================================
+   *
+   * Read saved settings synchronously.
+   *
+   * This fixes the race where getUserMedia()
+   * could start before the restore useEffect.
+   */
+
+  const [cameraEnabled, setCameraEnabled] =
+    useState<boolean>(() => {
+      if (typeof window === "undefined") {
+        return true;
+      }
+
+      try {
+        const saved =
+          localStorage.getItem(
+            `meeting-settings-${meetingId}`,
+          );
+
+        if (!saved) {
+          return true;
+        }
+
+        const settings = JSON.parse(saved);
+
+        return typeof settings.cameraEnabled ===
+          "boolean"
+          ? settings.cameraEnabled
+          : true;
+      } catch {
+        return true;
+      }
+    });
+
+  const [micEnabled, setMicEnabled] =
+    useState<boolean>(() => {
+      if (typeof window === "undefined") {
+        return true;
+      }
+
+      try {
+        const saved =
+          localStorage.getItem(
+            `meeting-settings-${meetingId}`,
+          );
+
+        if (!saved) {
+          return true;
+        }
+
+        const settings = JSON.parse(saved);
+
+        return typeof settings.micEnabled ===
+          "boolean"
+          ? settings.micEnabled
+          : true;
+      } catch {
+        return true;
+      }
+    });
 
   const [stream, setStream] =
     useState<MediaStream | null>(null);
-
-  const [cameraEnabled, setCameraEnabled] =
-    useState(
-      savedSettings.cameraEnabled,
-    );
-
-  const [micEnabled, setMicEnabled] =
-    useState(
-      savedSettings.micEnabled,
-    );
 
   const [loading, setLoading] =
     useState(true);
@@ -119,17 +124,6 @@ export default function MeetingRoom({
 
   const [isFullscreen, setIsFullscreen] =
     useState(false);
-
-  const {
-    participants,
-    remoteStreams,
-    leaveMeeting,
-  } = useMeeting({
-    meetingId,
-    stream,
-    micEnabled,
-    cameraEnabled,
-  });
 
   /*
    * =========================================================
@@ -153,7 +147,25 @@ export default function MeetingRoom({
 
   /*
    * =========================================================
-   * MEDIA
+   * MEETING HOOK
+   * =========================================================
+   */
+
+  const {
+    participants,
+    remoteStreams,
+    localSocketId,
+    leaveMeeting: leaveSocketMeeting,
+  } = useMeeting({
+    meetingId,
+    stream,
+    micEnabled,
+    cameraEnabled,
+  });
+
+  /*
+   * =========================================================
+   * START CAMERA + MICROPHONE
    * =========================================================
    */
 
@@ -166,35 +178,42 @@ export default function MeetingRoom({
         setError(null);
 
         const mediaStream =
-          await navigator.mediaDevices.getUserMedia(
-            {
-              video: true,
-              audio: true,
+          await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: {
+                ideal: 1920,
+              },
+              height: {
+                ideal: 1080,
+              },
+              facingMode: "user",
             },
-          );
+            audio: true,
+          });
 
         if (!mounted) {
           mediaStream
             .getTracks()
-            .forEach((track) =>
-              track.stop(),
-            );
+            .forEach((track) => track.stop());
 
           return;
         }
 
+        /*
+         * Apply the saved/current state
+         * immediately to the tracks.
+         */
+
         mediaStream
           .getVideoTracks()
           .forEach((track) => {
-            track.enabled =
-              savedSettings.cameraEnabled;
+            track.enabled = cameraEnabled;
           });
 
         mediaStream
           .getAudioTracks()
           .forEach((track) => {
-            track.enabled =
-              savedSettings.micEnabled;
+            track.enabled = micEnabled;
           });
 
         streamRef.current =
@@ -202,24 +221,57 @@ export default function MeetingRoom({
 
         setStream(mediaStream);
 
-        setCameraEnabled(
-          savedSettings.cameraEnabled,
-        );
-
-        setMicEnabled(
-          savedSettings.micEnabled,
+        console.log(
+          "[Meeting] local media initialized",
+          {
+            cameraEnabled,
+            micEnabled,
+            tracks:
+              mediaStream
+                .getTracks()
+                .map(
+                  (track) =>
+                    `${track.kind}:${track.enabled}`,
+                ),
+          },
         );
       } catch (err) {
         console.error(
-          "[MeetingRoom] media error:",
+          "[Meeting] media initialization failed:",
           err,
         );
 
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to access camera and microphone.",
-        );
+        if (
+          err instanceof DOMException &&
+          err.name ===
+            "NotAllowedError"
+        ) {
+          setError(
+            "Camera or microphone permission was denied. Please allow access to this site.",
+          );
+        } else if (
+          err instanceof DOMException &&
+          err.name ===
+            "NotFoundError"
+        ) {
+          setError(
+            "No camera or microphone was found.",
+          );
+        } else if (
+          err instanceof DOMException &&
+          err.name ===
+            "NotReadableError"
+        ) {
+          setError(
+            "Your camera or microphone may already be in use by another application.",
+          );
+        } else {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to access camera and microphone.",
+          );
+        }
       } finally {
         if (mounted) {
           setLoading(false);
@@ -242,32 +294,61 @@ export default function MeetingRoom({
         streamRef.current = null;
       }
     };
+
+    // Media should only initialize when entering
+    // a meeting / changing meeting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meetingId]);
 
   /*
    * =========================================================
-   * LOCAL VIDEO
+   * KEEP LOCAL VIDEO ATTACHED
    * =========================================================
    */
 
   useEffect(() => {
-    if (
-      !stream ||
-      !videoRef.current
-    ) {
-      return;
-    }
-
     const video =
       videoRef.current;
 
-    video.srcObject = stream;
-    video.muted = true;
+    if (!video || !stream) {
+      return;
+    }
 
-    video.play().catch(() => {});
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch (err) {
+        if (
+          err instanceof DOMException &&
+          err.name ===
+            "AbortError"
+        ) {
+          return;
+        }
+
+        console.error(
+          "[Meeting] local video playback failed:",
+          err,
+        );
+      }
+    };
+
+    void playVideo();
 
     return () => {
-      video.srcObject = null;
+      /*
+       * DO NOT clear srcObject here.
+       *
+       * The stream itself is still valid.
+       */
     };
   }, [stream]);
 
@@ -280,8 +361,8 @@ export default function MeetingRoom({
   useEffect(() => {
     function handleFullscreenChange() {
       setIsFullscreen(
-        document.fullscreenElement !==
-          null,
+        document.fullscreenElement ===
+          containerRef.current,
       );
     }
 
@@ -300,17 +381,15 @@ export default function MeetingRoom({
 
   async function toggleFullscreen() {
     try {
-      if (
-        !document.fullscreenElement
-      ) {
-        await document.documentElement.requestFullscreen();
+      if (!document.fullscreenElement) {
+        await containerRef.current?.requestFullscreen();
       } else {
         await document.exitFullscreen();
       }
-    } catch (error) {
+    } catch (err) {
       console.error(
         "Fullscreen error:",
-        error,
+        err,
       );
     }
   }
@@ -333,8 +412,7 @@ export default function MeetingRoom({
       !cameraEnabled;
 
     tracks.forEach((track) => {
-      track.enabled =
-        nextState;
+      track.enabled = nextState;
     });
 
     setCameraEnabled(nextState);
@@ -358,8 +436,7 @@ export default function MeetingRoom({
       !micEnabled;
 
     tracks.forEach((track) => {
-      track.enabled =
-        nextState;
+      track.enabled = nextState;
     });
 
     setMicEnabled(nextState);
@@ -371,8 +448,11 @@ export default function MeetingRoom({
    * =========================================================
    */
 
-  async function handleLeaveMeeting() {
-    leaveMeeting();
+  async function leaveMeeting() {
+    /*
+     * Tell the socket layer first.
+     */
+    leaveSocketMeeting();
 
     if (streamRef.current) {
       streamRef.current
@@ -388,7 +468,7 @@ export default function MeetingRoom({
       try {
         await document.exitFullscreen();
       } catch {
-        // Ignore.
+        // Ignore fullscreen cleanup.
       }
     }
 
@@ -398,7 +478,7 @@ export default function MeetingRoom({
 
   /*
    * =========================================================
-   * PARTICIPANTS
+   * PARTICIPANT COUNT
    * =========================================================
    */
 
@@ -406,46 +486,59 @@ export default function MeetingRoom({
     participants.length;
 
   /*
-   * Exclude current user's socket.
+   * =========================================================
+   * REMOTE PARTICIPANTS
+   * =========================================================
    *
-   * We identify the local participant
-   * by whether a participant does NOT
-   * have a remote stream.
+   * IMPORTANT:
    *
-   * The local video is rendered separately.
+   * Use localSocketId to remove OUR
+   * participant from the remote list.
+   *
+   * Do NOT use participant name.
    */
 
   const remoteParticipants =
     participants.filter(
       (participant) =>
-        remoteStreams[
-          participant.socketId
-        ] ||
         participant.socketId !==
-          participants[0]?.socketId,
+        localSocketId,
     );
 
   /*
    * =========================================================
    * GRID
    * =========================================================
+   *
+   * The grid is based on PARTICIPANTS,
+   * not remoteStreams.
+   *
+   * That means a participant gets a tile
+   * immediately, even while WebRTC is connecting.
    */
 
-  const totalTiles =
+  const totalVideoTiles =
     1 + remoteParticipants.length;
 
   const gridClass =
-    totalTiles <= 1
+    totalVideoTiles === 1
       ? "grid-cols-1"
-      : totalTiles === 2
+      : totalVideoTiles === 2
         ? "grid-cols-1 md:grid-cols-2"
-        : totalTiles <= 4
+        : totalVideoTiles <= 4
           ? "grid-cols-1 md:grid-cols-2"
           : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
   return (
-    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-5 backdrop-blur-xl">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+    >
+      {/* ================================================= */}
+      {/* TOP BAR */}
+      {/* ================================================= */}
+
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-4 backdrop-blur-xl sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -454,12 +547,13 @@ export default function MeetingRoom({
                 `/workspace/${slug}/meetings`)
             }
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+            title="Back to meetings"
           >
             <ArrowLeft size={19} />
           </button>
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">
+            <p className="truncate text-sm font-semibold text-white">
               Meeting
             </p>
 
@@ -483,7 +577,8 @@ export default function MeetingRoom({
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/[0.08] hover:text-white"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+            title="Settings"
           >
             <Settings size={18} />
           </button>
@@ -491,7 +586,12 @@ export default function MeetingRoom({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 hover:bg-white/[0.08] hover:text-white"
+            title={
+              isFullscreen
+                ? "Exit fullscreen"
+                : "Enter fullscreen"
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
           >
             {isFullscreen ? (
               <Minimize size={18} />
@@ -502,87 +602,184 @@ export default function MeetingRoom({
         </div>
       </header>
 
+      {/* ================================================= */}
+      {/* VIDEO STAGE */}
+      {/* ================================================= */}
+
       <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
         <div
-          className={`grid h-full w-full ${gridClass} gap-3`}
+          className={`grid h-full min-h-0 w-full ${gridClass} gap-3`}
         >
-          {/* LOCAL */}
+          {/* ============================================= */}
+          {/* LOCAL VIDEO */}
+          {/* ============================================= */}
 
           <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
-            {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
-              </div>
-            ) : cameraEnabled ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-                  V
+            {loading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
+
+                  <p className="text-sm text-white/50">
+                    Starting camera...
+                  </p>
                 </div>
               </div>
             )}
 
-            <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs backdrop-blur-md">
-              You
-            </div>
+            {!loading && error && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
+                <div className="max-w-md text-center">
+                  <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
+                    <CameraOff
+                      size={24}
+                      className="text-red-400"
+                    />
+                  </div>
 
-            {!micEnabled && (
-              <div className="absolute bottom-4 right-4 rounded-xl bg-red-500/80 px-3 py-2 text-xs">
-                🔇 Muted
+                  <h2 className="text-lg font-semibold">
+                    Camera unavailable
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-white/45">
+                    {error}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      window.location.reload()
+                    }
+                    className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-[#20232D] transition hover:bg-white/90"
+                  >
+                    Try again
+                  </button>
+                </div>
               </div>
+            )}
+
+            {!error && (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className={`h-full w-full object-cover ${
+                    cameraEnabled
+                      ? "block"
+                      : "hidden"
+                  }`}
+                />
+
+                {!cameraEnabled && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
+                    <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
+                      V
+                    </div>
+                  </div>
+                )}
+
+                <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      cameraEnabled
+                        ? "bg-[#52D88B]"
+                        : "bg-red-400"
+                    }`}
+                  />
+
+                  {cameraEnabled
+                    ? "Camera on"
+                    : "Camera off"}
+                </div>
+
+                {!micEnabled && (
+                  <div className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+                    <MicOff size={13} />
+                    Muted
+                  </div>
+                )}
+
+                <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+                  You
+                </div>
+              </>
             )}
           </div>
 
+          {/* ============================================= */}
           {/* REMOTE PARTICIPANTS */}
+          {/* ============================================= */}
 
           {remoteParticipants.map(
-            (participant) => (
-              <RemoteVideo
-                key={
+            (participant) => {
+              const remoteStream =
+                remoteStreams[
                   participant.socketId
-                }
-                stream={
-                  remoteStreams[
+                ];
+
+              /*
+               * IMPORTANT:
+               *
+               * Participant exists but WebRTC
+               * stream hasn't arrived yet.
+               *
+               * Render a waiting tile instead
+               * of making the participant disappear.
+               */
+
+              if (!remoteStream) {
+                return (
+                  <RemoteWaitingTile
+                    key={
+                      participant.socketId
+                    }
+                    participant={
+                      participant
+                    }
+                  />
+                );
+              }
+
+              return (
+                <RemoteVideo
+                  key={
                     participant.socketId
-                  ]
-                }
-                name={
-                  participant.name
-                }
-                cameraEnabled={
-                  participant.cameraEnabled
-                }
-                micEnabled={
-                  participant.micEnabled
-                }
-              />
-            ),
+                  }
+                  stream={remoteStream}
+                  participant={
+                    participant
+                  }
+                />
+              );
+            },
           )}
         </div>
       </main>
+
+      {/* ================================================= */}
+      {/* CONTROLS */}
+      {/* ================================================= */}
 
       <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
         <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
           <button
             type="button"
-            onClick={
-              toggleMicrophone
-            }
+            onClick={toggleMicrophone}
             disabled={
               loading || !!error
             }
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+            title={
               micEnabled
-                ? "bg-white/[0.07]"
-                : "bg-red-500"
-            }`}
+                ? "Mute microphone"
+                : "Unmute microphone"
+            }
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+              micEnabled
+                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+                : "bg-red-500 text-white hover:bg-red-600"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
           >
             {micEnabled ? (
               <Mic size={20} />
@@ -597,11 +794,16 @@ export default function MeetingRoom({
             disabled={
               loading || !!error
             }
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+            title={
               cameraEnabled
-                ? "bg-white/[0.07]"
-                : "bg-red-500"
-            }`}
+                ? "Turn camera off"
+                : "Turn camera on"
+            }
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+              cameraEnabled
+                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+                : "bg-red-500 text-white hover:bg-red-600"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
           >
             {cameraEnabled ? (
               <Camera size={20} />
@@ -612,10 +814,8 @@ export default function MeetingRoom({
 
           <button
             type="button"
-            onClick={
-              handleLeaveMeeting
-            }
-            className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium"
+            onClick={leaveMeeting}
+            className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium text-white transition hover:bg-[#DC2626]"
           >
             <PhoneOff size={18} />
 
@@ -635,67 +835,276 @@ export default function MeetingRoom({
 
 function RemoteVideo({
   stream,
-  name,
-  cameraEnabled,
-  micEnabled,
+  participant,
 }: RemoteVideoProps) {
   const videoRef =
     useRef<HTMLVideoElement>(null);
 
+  /*
+   * =========================================================
+   * ATTACH STREAM
+   * =========================================================
+   *
+   * THE IMPORTANT FIX:
+   *
+   * The <video> element NEVER gets
+   * unmounted when cameraEnabled changes.
+   *
+   * We only hide/show it.
+   */
+
   useEffect(() => {
-    if (!videoRef.current) {
+    const video =
+      videoRef.current;
+
+    if (!video || !stream) {
+      return;
+    }
+
+    /*
+     * Don't unnecessarily replace
+     * the MediaStream.
+     */
+
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+
+    video.autoplay = true;
+    video.playsInline = true;
+    video.muted = true;
+
+    const playVideo = async () => {
+      try {
+        await video.play();
+      } catch (error) {
+        /*
+         * Chrome can throw AbortError when
+         * play() is interrupted by another
+         * media operation.
+         */
+
+        if (
+          error instanceof DOMException &&
+          error.name ===
+            "AbortError"
+        ) {
+          return;
+        }
+
+        console.error(
+          "[WebRTC] remote video playback failed:",
+          error,
+        );
+      }
+    };
+
+    /*
+     * Try immediately.
+     */
+
+    void playVideo();
+
+    /*
+     * Also try when metadata becomes
+     * available.
+     */
+
+    const handleLoadedMetadata =
+      () => {
+        void playVideo();
+      };
+
+    video.addEventListener(
+      "loadedmetadata",
+      handleLoadedMetadata,
+    );
+
+    /*
+     * DO NOT:
+     *
+     * video.srcObject = null
+     *
+     * during cleanup.
+     *
+     * The same MediaStream must remain
+     * attached when the camera is toggled.
+     */
+
+    return () => {
+      video.removeEventListener(
+        "loadedmetadata",
+        handleLoadedMetadata,
+      );
+    };
+  }, [stream]);
+
+  /*
+   * =========================================================
+   * CAMERA STATE CHANGED
+   * =========================================================
+   *
+   * When camera turns back ON,
+   * explicitly ask the existing video
+   * element to play again.
+   */
+
+  useEffect(() => {
+    if (
+      !participant.cameraEnabled
+    ) {
       return;
     }
 
     const video =
       videoRef.current;
 
-    if (stream) {
-      video.srcObject = stream;
-
-      video.play().catch(() => {});
+    if (!video || !stream) {
+      return;
     }
 
-    return () => {
-      video.srcObject = null;
+    const resumeVideo = async () => {
+      try {
+        if (
+          video.srcObject !== stream
+        ) {
+          video.srcObject = stream;
+        }
+
+        await video.play();
+      } catch (error) {
+        if (
+          error instanceof DOMException &&
+          error.name ===
+            "AbortError"
+        ) {
+          return;
+        }
+
+        console.error(
+          "[WebRTC] failed to resume remote video:",
+          error,
+        );
+      }
     };
-  }, [stream]);
+
+    void resumeVideo();
+  }, [
+    participant.cameraEnabled,
+    stream,
+  ]);
 
   return (
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
-      {stream &&
-      cameraEnabled ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-            {name
-              .charAt(0)
-              .toUpperCase()}
-          </div>
+      {/* ================================================= */}
+      {/* VIDEO */}
+      {/* ================================================= */}
 
-          {!stream && (
-            <p className="mt-4 text-xs text-white/35">
-              Connecting...
-            </p>
-          )}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={`h-full w-full object-cover ${
+          participant.cameraEnabled
+            ? "block"
+            : "hidden"
+        }`}
+      />
+
+      {/* ================================================= */}
+      {/* CAMERA OFF AVATAR */}
+      {/* ================================================= */}
+
+      {!participant.cameraEnabled && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
+            {participant.name
+              ?.charAt(0)
+              .toUpperCase() ?? "?"}
+          </div>
         </div>
       )}
 
-      <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs backdrop-blur-md">
-        {name}
+      {/* ================================================= */}
+      {/* CAMERA STATUS */}
+      {/* ================================================= */}
+
+      <div
+        className={`absolute left-4 top-4 flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white backdrop-blur-md ${
+          participant.cameraEnabled
+            ? "bg-black/45"
+            : "bg-red-500/80"
+        }`}
+      >
+        <span
+          className={`h-2 w-2 rounded-full ${
+            participant.cameraEnabled
+              ? "bg-[#52D88B]"
+              : "bg-red-300"
+          }`}
+        />
+
+        {participant.cameraEnabled
+          ? "Camera on"
+          : "Camera off"}
       </div>
 
-      {!micEnabled && (
-        <div className="absolute bottom-4 right-4 rounded-xl bg-red-500/80 px-3 py-2 text-xs">
-          🔇 Muted
+      {/* ================================================= */}
+      {/* MIC STATUS */}
+      {/* ================================================= */}
+
+      {!participant.micEnabled && (
+        <div className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+          <MicOff size={13} />
+          Muted
         </div>
       )}
+
+      {/* ================================================= */}
+      {/* NAME */}
+      {/* ================================================= */}
+
+      <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+        {participant.name}
+      </div>
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* REMOTE WAITING TILE */
+/* ========================================================= */
+
+function RemoteWaitingTile({
+  participant,
+}: {
+  participant: Participant;
+}) {
+  return (
+    <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#E7F8EF] text-3xl font-semibold text-[#1E8E5A]">
+          {participant.name
+            ?.charAt(0)
+            .toUpperCase() ?? "?"}
+        </div>
+
+        <p className="mt-4 text-sm text-white/50">
+          Connecting...
+        </p>
+      </div>
+
+      {!participant.micEnabled && (
+        <div className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+          <MicOff size={13} />
+          Muted
+        </div>
+      )}
+
+      <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+        {participant.name}
+      </div>
     </div>
   );
 }

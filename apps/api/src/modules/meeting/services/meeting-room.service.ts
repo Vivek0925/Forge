@@ -15,6 +15,9 @@ export class MeetingRoomService {
     Map<string, MeetingParticipant>
   >();
 
+  /**
+   * Add a participant to a meeting.
+   */
   join(
     meetingId: string,
     participant: MeetingParticipant,
@@ -22,33 +25,23 @@ export class MeetingRoomService {
     let room = this.rooms.get(meetingId);
 
     if (!room) {
-      room = new Map<
-        string,
-        MeetingParticipant
-      >();
-
-      this.rooms.set(
-        meetingId,
-        room,
-      );
+      room = new Map<string, MeetingParticipant>();
+      this.rooms.set(meetingId, room);
     }
 
-    room.set(
-      participant.socketId,
-      participant,
-    );
+    room.set(participant.socketId, participant);
 
-    return this.getParticipants(
-      meetingId,
-    );
+    return this.getParticipants(meetingId);
   }
 
+  /**
+   * Remove a participant from a meeting.
+   */
   leave(
     meetingId: string,
     socketId: string,
   ): MeetingParticipant[] {
-    const room =
-      this.rooms.get(meetingId);
+    const room = this.rooms.get(meetingId);
 
     if (!room) {
       return [];
@@ -58,26 +51,15 @@ export class MeetingRoomService {
 
     if (room.size === 0) {
       this.rooms.delete(meetingId);
-
       return [];
     }
 
-    return this.getParticipants(
-      meetingId,
-    );
+    return this.getParticipants(meetingId);
   }
 
-  hasParticipant(
-    meetingId: string,
-    socketId: string,
-  ): boolean {
-    return (
-      this.rooms
-        .get(meetingId)
-        ?.has(socketId) ?? false
-    );
-  }
-
+  /**
+   * Update microphone/camera state.
+   */
   updateParticipantState(
     meetingId: string,
     socketId: string,
@@ -86,49 +68,51 @@ export class MeetingRoomService {
       cameraEnabled?: boolean;
     },
   ): MeetingParticipant | undefined {
-    const room =
-      this.rooms.get(meetingId);
+    const room = this.rooms.get(meetingId);
 
     if (!room) {
       return undefined;
     }
 
-    const participant =
-      room.get(socketId);
+    const participant = room.get(socketId);
 
     if (!participant) {
       return undefined;
     }
 
-    const updatedParticipant: MeetingParticipant =
-      {
-        ...participant,
-        ...state,
-      };
+    const updatedParticipant: MeetingParticipant = {
+      ...participant,
+      ...(state.micEnabled !== undefined && {
+        micEnabled: state.micEnabled,
+      }),
+      ...(state.cameraEnabled !== undefined && {
+        cameraEnabled: state.cameraEnabled,
+      }),
+    };
 
-    room.set(
-      socketId,
-      updatedParticipant,
-    );
+    room.set(socketId, updatedParticipant);
 
     return updatedParticipant;
   }
 
+  /**
+   * Get every participant in a meeting.
+   */
   getParticipants(
     meetingId: string,
   ): MeetingParticipant[] {
-    const room =
-      this.rooms.get(meetingId);
+    const room = this.rooms.get(meetingId);
 
     if (!room) {
       return [];
     }
 
-    return Array.from(
-      room.values(),
-    );
+    return Array.from(room.values());
   }
 
+  /**
+   * Get a specific participant.
+   */
   getParticipant(
     meetingId: string,
     socketId: string,
@@ -138,6 +122,9 @@ export class MeetingRoomService {
       ?.get(socketId);
   }
 
+  /**
+   * Find which meeting a socket currently belongs to.
+   */
   getMeetingForSocket(
     socketId: string,
   ): string | undefined {
@@ -153,9 +140,56 @@ export class MeetingRoomService {
     return undefined;
   }
 
+  /**
+   * Check whether a socket is already inside
+   * a specific meeting.
+   */
+  hasParticipant(
+    meetingId: string,
+    socketId: string,
+  ): boolean {
+    return (
+      this.rooms
+        .get(meetingId)
+        ?.has(socketId) ?? false
+    );
+  }
+
+  /**
+   * Remove the entire meeting room.
+   */
   clearMeeting(
     meetingId: string,
   ): void {
     this.rooms.delete(meetingId);
+  }
+
+  /**
+   * Remove a socket from every meeting.
+   *
+   * Useful as a safety net when a browser refreshes
+   * or the socket disconnects unexpectedly.
+   */
+  removeSocket(
+    socketId: string,
+  ): string | undefined {
+    for (const [
+      meetingId,
+      room,
+    ] of this.rooms.entries()) {
+      if (!room.has(socketId)) {
+        continue;
+      }
+
+      room.delete(socketId);
+
+      if (room.size === 0) {
+        this.rooms.delete(meetingId);
+      }
+
+      return meetingId;
+    }
+
+    return undefined;
   }
 }
