@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Container from "../ui/Container";
 import Button from "../ui/Button";
+import Link from "next/dist/client/link";
 
 export default function CTA() {
   return (
@@ -28,12 +29,17 @@ export default function CTA() {
             when nothing gets lost between tools.
           </p>
           <div className="relative mt-8 flex items-center justify-center gap-3">
-            <Button className=" text-[#14141C] hover:bg-white/10">
-              Join the beta
-            </Button>
-            <Button variant="ghost" className="text-[#FAFAF8] hover:bg-white/10">
-              Talk to the team
-            </Button>
+            <Link href="/login">
+              <Button className=" text-[#14141C] hover:bg-white/10">
+                Join the beta
+              </Button>
+            </Link>
+
+            <Link href="/contact">
+              <Button variant="ghost" className="text-[#FAFAF8] hover:bg-white/10">
+                Talk to the team
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </Container>

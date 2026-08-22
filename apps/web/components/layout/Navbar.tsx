@@ -60,7 +60,9 @@ export default function Navbar() {
             Log in
           </Link>
           {/* `size` isn't defined on ButtonProps in this codebase; cast to any to pass through for now */}
-          <Button {...({ size: "sm" } as any)}>Join beta</Button>
+          <Link href="/login">
+            <Button {...({ size: "sm" } as any)}>Join beta</Button>
+          </Link>
         </div>
       </Container>
     </header>

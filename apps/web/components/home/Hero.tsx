@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Container from "../ui/Container";
 import Button from "../ui/Button";
+import Link from "next/dist/client/link";
 
 const NODES = [
   { label: "Chat", angle: -90 },
@@ -143,8 +144,12 @@ export default function Hero() {
           </p>
 
           <div className="flex items-center gap-3 pt-2">
-            <Button>Join the beta</Button>
-            <Button variant="ghost">See how it works</Button>
+            <Link href="/login">
+              <Button>Join the beta</Button>
+            </Link>
+            <Link href="/demo">
+              <Button variant="ghost">See how it works</Button>
+            </Link>
           </div>
         </div>
 
