@@ -12,6 +12,7 @@ export default async function WorkspaceLayout({
 
   return (
     <>
+    
       <WorkspaceSocket workspaceSlug={slug} />
 
       <WorkspaceShell>
