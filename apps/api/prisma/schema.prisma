@@ -26,7 +26,8 @@ model User {
   sentInvitations      WorkspaceInvitation[]
 
   // Chat
-  messages Message[]
+  messages        Message[]
+  meetingMessages MeetingMessage[]
 
   meetingsCreated     Meeting[]            @relation("MeetingCreator")
   meetingParticipants MeetingParticipant[]
@@ -167,7 +168,8 @@ model Meeting {
   startedAt   DateTime?
   endedAt     DateTime?
 
-  participants MeetingParticipant[]
+  participants    MeetingParticipant[]
+  meetingMessages MeetingMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -196,6 +198,24 @@ model MeetingParticipant {
   @@index([meetingId])
   @@index([userId])
   @@map("meeting_participants")
+}
+
+model MeetingMessage {
+  id String @id @default(cuid())
+
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now())
+
+  @@index([meetingId, createdAt])
+  @@index([senderId])
+  @@map("meeting_messages")
 }
 
 enum MeetingStatus {
