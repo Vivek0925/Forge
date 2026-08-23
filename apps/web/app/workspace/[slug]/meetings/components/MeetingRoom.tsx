@@ -125,6 +125,16 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
 
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState<MeetingChatMessage[]>([]);
+
+  const [chatInput, setChatInput] = useState("");
+
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
+
   const screenStreamRef = useRef<MediaStream | null>(null);
 
   const cameraTrackRef = useRef<MediaStreamTrack | null>(null);
@@ -163,6 +173,129 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
     micEnabled,
     cameraEnabled,
   });
+
+  /*
+ * =========================================================
+ * MEETING CHAT
+ * =========================================================
+ */
+
+useEffect(() => {
+  function handleChatMessage(
+    message: MeetingChatMessage,
+  ) {
+    if (
+      message.meetingId !== meetingId
+    ) {
+      return;
+    }
+
+    setChatMessages((previous) => {
+      /*
+       * Prevent duplicate messages.
+       */
+      if (
+        previous.some(
+          (item) =>
+            item.id === message.id,
+        )
+      ) {
+        return previous;
+      }
+
+      return [
+        ...previous,
+        message,
+      ];
+    });
+  }
+
+  function handleChatHistory(data: {
+    messages: MeetingChatMessage[];
+  }) {
+    setChatMessages(
+      data.messages ?? [],
+    );
+
+    setChatLoading(false);
+  }
+
+  function handleChatError(data: {
+    message: string;
+  }) {
+    console.error(
+      "[Meeting Chat]",
+      data.message,
+    );
+
+    setChatLoading(false);
+  }
+
+  socket.on(
+    "meeting:chat:message",
+    handleChatMessage,
+  );
+
+  socket.on(
+    "meeting:chat:history",
+    handleChatHistory,
+  );
+
+  socket.on(
+    "meeting:chat:error",
+    handleChatError,
+  );
+
+  /*
+   * Ask backend for existing messages.
+   */
+  if (socket.connected) {
+    setChatLoading(true);
+
+    socket.emit(
+      "meeting:chat:history",
+      {
+        meetingId,
+      },
+    );
+  }
+
+  return () => {
+    socket.off(
+      "meeting:chat:message",
+      handleChatMessage,
+    );
+
+    socket.off(
+      "meeting:chat:history",
+      handleChatHistory,
+    );
+
+    socket.off(
+      "meeting:chat:error",
+      handleChatError,
+    );
+  };
+}, [meetingId]);
+
+useEffect(() => {
+  if (!chatOpen) {
+    return;
+  }
+
+  const container =
+    chatMessagesRef.current;
+
+  if (!container) {
+    return;
+  }
+
+  container.scrollTop =
+    container.scrollHeight;
+}, [
+  chatMessages,
+  chatOpen,
+]);
 
   /*
    * =========================================================
@@ -792,122 +925,111 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
       </main>
 
       {/* ================================================= */}
-{/* PARTICIPANTS PANEL */}
-{/* ================================================= */}
+      {/* PARTICIPANTS PANEL */}
+      {/* ================================================= */}
 
-{participantsOpen && (
-  <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] border-l border-white/[0.08] bg-[#111318]/95 shadow-2xl backdrop-blur-xl">
-    <div className="flex h-full flex-col">
+      {participantsOpen && (
+        <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] border-l border-white/[0.08] bg-[#111318]/95 shadow-2xl backdrop-blur-xl">
+          <div className="flex h-full flex-col">
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
+              <div>
+                <h2 className="text-sm font-semibold text-white">
+                  Participants
+                </h2>
 
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
-        <div>
-          <h2 className="text-sm font-semibold text-white">
-            Participants
-          </h2>
+                <p className="mt-1 text-xs text-white/35">
+                  {participantCount}{" "}
+                  {participantCount === 1 ? "participant" : "participants"}
+                </p>
+              </div>
 
-          <p className="mt-1 text-xs text-white/35">
-            {participantCount}{" "}
-            {participantCount === 1
-              ? "participant"
-              : "participants"}
-          </p>
-        </div>
+              <button
+                type="button"
+                onClick={() => setParticipantsOpen(false)}
+                className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                Close
+              </button>
+            </div>
 
-        <button
-          type="button"
-          onClick={() =>
-            setParticipantsOpen(false)
-          }
-          className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
-        >
-          Close
-        </button>
-      </div>
+            {/* Participant list */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <div className="space-y-2">
+                {uniqueParticipants.map((participant) => {
+                  const isYou = participant.socketId === localSocketId;
 
-      {/* Participant list */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-4">
-        <div className="space-y-2">
-          {uniqueParticipants.map(
-            (participant) => {
-              const isYou =
-                participant.socketId ===
-                localSocketId;
-
-              return (
-                <div
-                  key={participant.userId}
-                  className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.04] px-3 py-3"
-                >
-                  {/* Avatar */}
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F8EF] text-sm font-semibold text-[#1E8E5A]">
-                    {participant.name
-                      ?.charAt(0)
-                      .toUpperCase() ?? "?"}
-                  </div>
-
-                  {/* Name */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">
-                      {participant.name}
-                    </p>
-
-                    {isYou && (
-                      <p className="mt-0.5 text-[11px] text-emerald-400">
-                        You
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Media status */}
-                  <div className="flex items-center gap-1.5">
+                  return (
                     <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                        participant.micEnabled
-                          ? "bg-white/[0.06] text-white/70"
-                          : "bg-red-500/10 text-red-400"
-                      }`}
-                      title={
-                        participant.micEnabled
-                          ? "Microphone on"
-                          : "Microphone muted"
-                      }
+                      key={participant.userId}
+                      className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.04] px-3 py-3"
                     >
-                      {participant.micEnabled ? (
-                        <Mic size={15} />
-                      ) : (
-                        <MicOff size={15} />
-                      )}
-                    </div>
+                      {/* Avatar */}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F8EF] text-sm font-semibold text-[#1E8E5A]">
+                        {participant.name?.charAt(0).toUpperCase() ?? "?"}
+                      </div>
 
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                        participant.cameraEnabled
-                          ? "bg-white/[0.06] text-white/70"
-                          : "bg-red-500/10 text-red-400"
-                      }`}
-                      title={
-                        participant.cameraEnabled
-                          ? "Camera on"
-                          : "Camera off"
-                      }
-                    >
-                      {participant.cameraEnabled ? (
-                        <Camera size={15} />
-                      ) : (
-                        <CameraOff size={15} />
-                      )}
+                      {/* Name */}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">
+                          {participant.name}
+                        </p>
+
+                        {isYou && (
+                          <p className="mt-0.5 text-[11px] text-emerald-400">
+                            You
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Media status */}
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                            participant.micEnabled
+                              ? "bg-white/[0.06] text-white/70"
+                              : "bg-red-500/10 text-red-400"
+                          }`}
+                          title={
+                            participant.micEnabled
+                              ? "Microphone on"
+                              : "Microphone muted"
+                          }
+                        >
+                          {participant.micEnabled ? (
+                            <Mic size={15} />
+                          ) : (
+                            <MicOff size={15} />
+                          )}
+                        </div>
+
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                            participant.cameraEnabled
+                              ? "bg-white/[0.06] text-white/70"
+                              : "bg-red-500/10 text-red-400"
+                          }`}
+                          title={
+                            participant.cameraEnabled
+                              ? "Camera on"
+                              : "Camera off"
+                          }
+                        >
+                          {participant.cameraEnabled ? (
+                            <Camera size={15} />
+                          ) : (
+                            <CameraOff size={15} />
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              );
-            },
-          )}
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* ================================================= */}
       {/* CONTROLS */}
