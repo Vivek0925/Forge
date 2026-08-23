@@ -181,60 +181,123 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
    */
 
   useEffect(() => {
-    function handleChatMessage(message: MeetingChatMessage) {
-      if (message.meetingId !== meetingId) {
-        return;
+  let active = true;
+
+  function requestChatHistory() {
+    if (
+      !active ||
+      !socket.connected
+    ) {
+      return;
+    }
+
+    setChatLoading(true);
+
+    socket.emit(
+      "meeting:chat:history",
+      {
+        meetingId,
+      },
+    );
+  }
+
+  function handleChatMessage(
+    message: MeetingChatMessage,
+  ) {
+    if (
+      message.meetingId !== meetingId
+    ) {
+      return;
+    }
+
+    setChatMessages((previous) => {
+      if (
+        previous.some(
+          (item) =>
+            item.id === message.id,
+        )
+      ) {
+        return previous;
       }
 
-      setChatMessages((previous) => {
-        /*
-         * Prevent duplicate messages.
-         */
-        if (previous.some((item) => item.id === message.id)) {
-          return previous;
-        }
+      return [
+        ...previous,
+        message,
+      ];
+    });
+  }
 
-        return [...previous, message];
-      });
+  function handleChatHistory(data: {
+    messages: MeetingChatMessage[];
+  }) {
+    if (!active) {
+      return;
     }
 
-    function handleChatHistory(data: { messages: MeetingChatMessage[] }) {
-      setChatMessages(data.messages ?? []);
+    setChatMessages(
+      data.messages ?? [],
+    );
 
+    setChatLoading(false);
+  }
+
+  function handleChatError(data: {
+    message: string;
+  }) {
+    console.error(
+      "[Meeting Chat]",
+      data.message,
+    );
+
+    if (active) {
       setChatLoading(false);
     }
+  }
 
-    function handleChatError(data: { message: string }) {
-      console.error("[Meeting Chat]", data.message);
+  socket.on(
+    "meeting:participants",
+    requestChatHistory,
+  );
 
-      setChatLoading(false);
-    }
+  socket.on(
+    "meeting:chat:message",
+    handleChatMessage,
+  );
 
-    socket.on("meeting:chat:message", handleChatMessage);
+  socket.on(
+    "meeting:chat:history",
+    handleChatHistory,
+  );
 
-    socket.on("meeting:chat:history", handleChatHistory);
+  socket.on(
+    "meeting:chat:error",
+    handleChatError,
+  );
 
-    socket.on("meeting:chat:error", handleChatError);
+  return () => {
+    active = false;
 
-    /*
-     * Ask backend for existing messages.
-     */
-    if (socket.connected) {
-      setChatLoading(true);
+    socket.off(
+      "meeting:participants",
+      requestChatHistory,
+    );
 
-      socket.emit("meeting:chat:history", {
-        meetingId,
-      });
-    }
+    socket.off(
+      "meeting:chat:message",
+      handleChatMessage,
+    );
 
-    return () => {
-      socket.off("meeting:chat:message", handleChatMessage);
+    socket.off(
+      "meeting:chat:history",
+      handleChatHistory,
+    );
 
-      socket.off("meeting:chat:history", handleChatHistory);
-
-      socket.off("meeting:chat:error", handleChatError);
-    };
-  }, [meetingId]);
+    socket.off(
+      "meeting:chat:error",
+      handleChatError,
+    );
+  };
+}, [meetingId]);
 
   useEffect(() => {
     if (!chatOpen) {
@@ -922,7 +985,7 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
       {/* ================================================= */}
 
       {chatOpen && (
-        <aside className="absolute inset-y-16 right-0 z-40 flex w-full max-w-[380px] flex-col border-l border-white/[0.08] bg-[#111318]/[0.98] shadow-2xl backdrop-blur-xl">
+        <aside className="absolute inset-y-16 right-0 z-40 flex w-full max-w-[380px] flex-col border-l rounded-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
           {/* Header */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
             <div>

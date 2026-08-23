@@ -268,181 +268,6 @@ export class RealtimeGateway
 
 
   // =========================================================
-// MEETING CHAT
-// =========================================================
-
-@SubscribeMessage("meeting:chat:send")
-async handleMeetingChatSend(
-  @MessageBody()
-  data: {
-    meetingId: string;
-    content: string;
-  },
-
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  const content =
-    data.content?.trim();
-
-  if (!content) {
-    return;
-  }
-
-  /*
-   * Make sure the sender is actually
-   * inside this meeting.
-   */
-  const participant =
-    this.meetingRoomService.getParticipant(
-      data.meetingId,
-      socket.id,
-    );
-
-  if (!participant) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "You are not in this meeting.",
-      },
-    );
-
-    return;
-  }
-
-  /*
-   * Make sure the meeting exists and
-   * hasn't ended.
-   */
-  const meeting =
-    await this.prisma.meeting.findUnique({
-      where: {
-        id: data.meetingId,
-      },
-    });
-
-  if (
-    !meeting ||
-    meeting.status === "ENDED" ||
-    meeting.status === "CANCELLED"
-  ) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "This meeting is no longer active.",
-      },
-    );
-
-    return;
-  }
-
-  /*
-   * Save message permanently.
-   */
-  const message =
-    await this.prisma.meetingMessage.create({
-      data: {
-        meetingId:
-          data.meetingId,
-
-        senderId:
-          socket.data.currentUser.id,
-
-        content,
-      },
-
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
-  /*
-   * Broadcast the message to everyone
-   * currently inside this meeting.
-   */
-  this.server
-    .to(
-      `meeting:${data.meetingId}`,
-    )
-    .emit(
-      "meeting:chat:message",
-      message,
-    );
-
-  return message;
-}
-
-// =========================================================
-// MEETING CHAT HISTORY
-// =========================================================
-
-@SubscribeMessage(
-  "meeting:chat:history",
-)
-async handleMeetingChatHistory(
-  @MessageBody()
-  data: {
-    meetingId: string;
-  },
-
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  /*
-   * Only participants can request
-   * meeting chat history.
-   */
-  const participant =
-    this.meetingRoomService.getParticipant(
-      data.meetingId,
-      socket.id,
-    );
-
-  if (!participant) {
-    return;
-  }
-
-  const messages =
-    await this.prisma.meetingMessage.findMany({
-      where: {
-        meetingId:
-          data.meetingId,
-      },
-
-      orderBy: {
-        createdAt: "asc",
-      },
-
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-
-      take: 100,
-    });
-
-  socket.emit(
-    "meeting:chat:history",
-    {
-      messages,
-    },
-  );
-}
-
-  // =========================================================
   // MEETING JOIN
   // =========================================================
 
@@ -691,6 +516,181 @@ async handleMeetingChatHistory(
       `${currentUser.name} joined meeting ${data.meetingId} (${socket.id})`,
     );
   }
+
+  // =========================================================
+// MEETING CHAT
+// =========================================================
+
+
+@SubscribeMessage("meeting:chat:send")
+async handleMeetingChatSend(
+  @MessageBody()
+  data: {
+    meetingId: string;
+    content: string;
+  },
+
+  @ConnectedSocket()
+  socket: AuthenticatedSocket,
+) {
+  const content =
+    data.content?.trim();
+
+  if (!content) {
+    return;
+  }
+
+  const participant =
+    this.meetingRoomService.getParticipant(
+      data.meetingId,
+      socket.id,
+    );
+
+  if (!participant) {
+    socket.emit(
+      "meeting:chat:error",
+      {
+        message:
+          "You are not in this meeting.",
+      },
+    );
+
+    return;
+  }
+
+  const meeting =
+    await this.prisma.meeting.findUnique({
+      where: {
+        id: data.meetingId,
+      },
+    });
+
+  if (!meeting) {
+    socket.emit(
+      "meeting:chat:error",
+      {
+        message:
+          "Meeting not found.",
+      },
+    );
+
+    return;
+  }
+
+  if (
+    meeting.status === "ENDED" ||
+    meeting.status === "CANCELLED"
+  ) {
+    socket.emit(
+      "meeting:chat:error",
+      {
+        message:
+          "This meeting is no longer active.",
+      },
+    );
+
+    return;
+  }
+
+  const message =
+    await this.prisma.meetingMessage.create({
+      data: {
+        meetingId:
+          data.meetingId,
+
+        senderId:
+          socket.data.currentUser.id,
+
+        content,
+      },
+
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+  this.server
+    .to(
+      `meeting:${data.meetingId}`,
+    )
+    .emit(
+      "meeting:chat:message",
+      message,
+    );
+
+  return message;
+}
+
+
+// =========================================================
+// MEETING CHAT HISTORY
+// =========================================================
+
+
+@SubscribeMessage("meeting:chat:history")
+async handleMeetingChatHistory(
+  @MessageBody()
+  data: {
+    meetingId: string;
+  },
+
+  @ConnectedSocket()
+  socket: AuthenticatedSocket,
+) {
+  const participant =
+    this.meetingRoomService.getParticipant(
+      data.meetingId,
+      socket.id,
+    );
+
+  if (!participant) {
+    socket.emit(
+      "meeting:chat:error",
+      {
+        message:
+          "You are not in this meeting.",
+      },
+    );
+
+    return;
+  }
+
+  const messages =
+    await this.prisma.meetingMessage.findMany({
+      where: {
+        meetingId: data.meetingId,
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+
+      take: 100,
+
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+  socket.emit(
+    "meeting:chat:history",
+    {
+      messages,
+    },
+  );
+}
 
   // =========================================================
   // MEETING LEAVE
