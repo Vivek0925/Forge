@@ -1106,7 +1106,7 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
       {/* ================================================= */}
 
       {participantsOpen && (
-        <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] border-l border-white/[0.08] bg-[#111318]/95 shadow-2xl backdrop-blur-xl">
+        <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/65 shadow-2xl backdrop-blur-xl">
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
