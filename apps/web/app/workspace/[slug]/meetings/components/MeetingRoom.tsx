@@ -175,127 +175,80 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
   });
 
   /*
- * =========================================================
- * MEETING CHAT
- * =========================================================
- */
+   * =========================================================
+   * MEETING CHAT
+   * =========================================================
+   */
 
-useEffect(() => {
-  function handleChatMessage(
-    message: MeetingChatMessage,
-  ) {
-    if (
-      message.meetingId !== meetingId
-    ) {
+  useEffect(() => {
+    function handleChatMessage(message: MeetingChatMessage) {
+      if (message.meetingId !== meetingId) {
+        return;
+      }
+
+      setChatMessages((previous) => {
+        /*
+         * Prevent duplicate messages.
+         */
+        if (previous.some((item) => item.id === message.id)) {
+          return previous;
+        }
+
+        return [...previous, message];
+      });
+    }
+
+    function handleChatHistory(data: { messages: MeetingChatMessage[] }) {
+      setChatMessages(data.messages ?? []);
+
+      setChatLoading(false);
+    }
+
+    function handleChatError(data: { message: string }) {
+      console.error("[Meeting Chat]", data.message);
+
+      setChatLoading(false);
+    }
+
+    socket.on("meeting:chat:message", handleChatMessage);
+
+    socket.on("meeting:chat:history", handleChatHistory);
+
+    socket.on("meeting:chat:error", handleChatError);
+
+    /*
+     * Ask backend for existing messages.
+     */
+    if (socket.connected) {
+      setChatLoading(true);
+
+      socket.emit("meeting:chat:history", {
+        meetingId,
+      });
+    }
+
+    return () => {
+      socket.off("meeting:chat:message", handleChatMessage);
+
+      socket.off("meeting:chat:history", handleChatHistory);
+
+      socket.off("meeting:chat:error", handleChatError);
+    };
+  }, [meetingId]);
+
+  useEffect(() => {
+    if (!chatOpen) {
       return;
     }
 
-    setChatMessages((previous) => {
-      /*
-       * Prevent duplicate messages.
-       */
-      if (
-        previous.some(
-          (item) =>
-            item.id === message.id,
-        )
-      ) {
-        return previous;
-      }
+    const container = chatMessagesRef.current;
 
-      return [
-        ...previous,
-        message,
-      ];
-    });
-  }
+    if (!container) {
+      return;
+    }
 
-  function handleChatHistory(data: {
-    messages: MeetingChatMessage[];
-  }) {
-    setChatMessages(
-      data.messages ?? [],
-    );
-
-    setChatLoading(false);
-  }
-
-  function handleChatError(data: {
-    message: string;
-  }) {
-    console.error(
-      "[Meeting Chat]",
-      data.message,
-    );
-
-    setChatLoading(false);
-  }
-
-  socket.on(
-    "meeting:chat:message",
-    handleChatMessage,
-  );
-
-  socket.on(
-    "meeting:chat:history",
-    handleChatHistory,
-  );
-
-  socket.on(
-    "meeting:chat:error",
-    handleChatError,
-  );
-
-  /*
-   * Ask backend for existing messages.
-   */
-  if (socket.connected) {
-    setChatLoading(true);
-
-    socket.emit(
-      "meeting:chat:history",
-      {
-        meetingId,
-      },
-    );
-  }
-
-  return () => {
-    socket.off(
-      "meeting:chat:message",
-      handleChatMessage,
-    );
-
-    socket.off(
-      "meeting:chat:history",
-      handleChatHistory,
-    );
-
-    socket.off(
-      "meeting:chat:error",
-      handleChatError,
-    );
-  };
-}, [meetingId]);
-
-useEffect(() => {
-  if (!chatOpen) {
-    return;
-  }
-
-  const container =
-    chatMessagesRef.current;
-
-  if (!container) {
-    return;
-  }
-
-  container.scrollTop =
-    container.scrollHeight;
-}, [
-  chatMessages,
-  chatOpen,
-]);
+    container.scrollTop = container.scrollHeight;
+  }, [chatMessages, chatOpen]);
 
   /*
    * =========================================================
@@ -448,41 +401,28 @@ useEffect(() => {
     };
   }, [stream]);
 
-
   function sendMeetingChatMessage() {
-  const content =
-    chatInput.trim();
+    const content = chatInput.trim();
 
-  if (
-    !content ||
-    !socket.connected
-  ) {
-    return;
-  }
+    if (!content || !socket.connected) {
+      return;
+    }
 
-  socket.emit(
-    "meeting:chat:send",
-    {
+    socket.emit("meeting:chat:send", {
       meetingId,
       content,
-    },
-  );
+    });
 
-  setChatInput("");
-}
-
-function handleChatKeyDown(
-  event: React.KeyboardEvent<HTMLInputElement>,
-) {
-  if (
-    event.key === "Enter" &&
-    !event.shiftKey
-  ) {
-    event.preventDefault();
-
-    sendMeetingChatMessage();
+    setChatInput("");
   }
-}
+
+  function handleChatKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+
+      sendMeetingChatMessage();
+    }
+  }
 
   /*
    * =========================================================
@@ -757,6 +697,10 @@ function handleChatKeyDown(
     ).values(),
   );
 
+  const localParticipant = uniqueParticipants.find(
+    (participant) => participant.socketId === localSocketId,
+  );
+
   /*
    * Never render our own socket as remote.
    */
@@ -823,6 +767,19 @@ function handleChatKeyDown(
               {participantCount}{" "}
               {participantCount === 1 ? "participant" : "participants"}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setChatOpen((previous) => !previous)}
+            title="Meeting chat"
+            className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+              chatOpen
+                ? "bg-white/[0.12] text-white"
+                : "text-white/50 hover:bg-white/[0.08] hover:text-white"
+            }`}
+          >
+            <MessageCircle size={18} />
           </button>
 
           <button
@@ -959,6 +916,127 @@ function handleChatKeyDown(
           })}
         </div>
       </main>
+
+      {/* ================================================= */}
+      {/* MEETING CHAT */}
+      {/* ================================================= */}
+
+      {chatOpen && (
+        <aside className="absolute inset-y-16 right-0 z-40 flex w-full max-w-[380px] flex-col border-l border-white/[0.08] bg-[#111318]/[0.98] shadow-2xl backdrop-blur-xl">
+          {/* Header */}
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Meeting chat</h2>
+
+              <p className="mt-1 text-[11px] text-white/35">
+                Messages from this meeting
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div
+            ref={chatMessagesRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
+          >
+            {chatLoading ? (
+              <div className="flex h-full items-center justify-center text-xs text-white/35">
+                Loading messages...
+              </div>
+            ) : chatMessages.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                <MessageCircle size={28} className="text-white/20" />
+
+                <p className="mt-3 text-sm text-white/45">No messages yet</p>
+
+                <p className="mt-1 text-xs text-white/25">
+                  Start the conversation.
+                </p>
+              </div>
+            ) : (
+              chatMessages.map((message) => {
+                const senderName = message.sender?.name ?? "Unknown";
+
+                const isMine = message.senderId === localParticipant?.userId;
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      isMine ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[82%] ${
+                        isMine ? "items-end" : "items-start"
+                      }`}
+                    >
+                      {!isMine && (
+                        <p className="mb-1 px-1 text-[11px] font-medium text-white/40">
+                          {senderName}
+                        </p>
+                      )}
+
+                      <div
+                        className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                          isMine
+                            ? "rounded-br-md bg-[#1E8E5A] text-white"
+                            : "rounded-bl-md bg-white/[0.07] text-white/85"
+                        }`}
+                      >
+                        {message.content}
+                      </div>
+
+                      <p
+                        className={`mt-1 px-1 text-[10px] text-white/25 ${
+                          isMine ? "text-right" : "text-left"
+                        }`}
+                      >
+                        {new Date(message.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Input */}
+          <div className="shrink-0 border-t border-white/[0.08] p-4">
+            <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.04] p-2">
+              <input
+                value={chatInput}
+                onChange={(event) => setChatInput(event.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder="Message..."
+                maxLength={2000}
+                className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-white outline-none placeholder:text-white/25"
+              />
+
+              <button
+                type="button"
+                onClick={sendMeetingChatMessage}
+                disabled={!chatInput.trim() || !socket.connected}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E8E5A] text-white transition hover:bg-[#187A4B] disabled:cursor-not-allowed disabled:opacity-30"
+                title="Send message"
+              >
+                <span className="text-sm">➤</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* ================================================= */}
       {/* PARTICIPANTS PANEL */}
