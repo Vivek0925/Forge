@@ -8,6 +8,7 @@ import {
   CameraOff,
   Maximize,
   Minimize,
+  MessageCircle,
   Mic,
   MicOff,
   MonitorUp,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useMeeting } from "@/hooks/useMeeting";
+import { socket } from "@/lib/socket";
 
 interface MeetingRoomProps {
   slug: string;
@@ -34,6 +36,19 @@ interface Participant {
 interface RemoteVideoProps {
   stream: MediaStream | undefined;
   participant: Participant;
+}
+
+interface MeetingChatMessage {
+  id: string;
+  meetingId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  sender?: {
+    id: string;
+    name: string;
+    avatar?: string | null;
+  };
 }
 
 export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
