@@ -36,18 +36,12 @@ interface RemoteVideoProps {
   participant: Participant;
 }
 
-export default function MeetingRoom({
-  slug,
-  meetingId,
-}: MeetingRoomProps) {
-  const containerRef =
-    useRef<HTMLDivElement>(null);
+export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const videoRef =
-    useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const streamRef =
-    useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   /*
    * =========================================================
@@ -60,80 +54,65 @@ export default function MeetingRoom({
    * could start before the restore useEffect.
    */
 
-  const [cameraEnabled, setCameraEnabled] =
-    useState<boolean>(() => {
-      if (typeof window === "undefined") {
+  const [cameraEnabled, setCameraEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+
+    try {
+      const saved = localStorage.getItem(`meeting-settings-${meetingId}`);
+
+      if (!saved) {
         return true;
       }
 
-      try {
-        const saved =
-          localStorage.getItem(
-            `meeting-settings-${meetingId}`,
-          );
+      const settings = JSON.parse(saved);
 
-        if (!saved) {
-          return true;
-        }
+      return typeof settings.cameraEnabled === "boolean"
+        ? settings.cameraEnabled
+        : true;
+    } catch {
+      return true;
+    }
+  });
 
-        const settings = JSON.parse(saved);
+  const [micEnabled, setMicEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
 
-        return typeof settings.cameraEnabled ===
-          "boolean"
-          ? settings.cameraEnabled
-          : true;
-      } catch {
-        return true;
-      }
-    });
+    try {
+      const saved = localStorage.getItem(`meeting-settings-${meetingId}`);
 
-  const [micEnabled, setMicEnabled] =
-    useState<boolean>(() => {
-      if (typeof window === "undefined") {
+      if (!saved) {
         return true;
       }
 
-      try {
-        const saved =
-          localStorage.getItem(
-            `meeting-settings-${meetingId}`,
-          );
+      const settings = JSON.parse(saved);
 
-        if (!saved) {
-          return true;
-        }
+      return typeof settings.micEnabled === "boolean"
+        ? settings.micEnabled
+        : true;
+    } catch {
+      return true;
+    }
+  });
 
-        const settings = JSON.parse(saved);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
-        return typeof settings.micEnabled ===
-          "boolean"
-          ? settings.micEnabled
-          : true;
-      } catch {
-        return true;
-      }
-    });
+  const [loading, setLoading] = useState(true);
 
-  const [stream, setStream] =
-    useState<MediaStream | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
-  const [isFullscreen, setIsFullscreen] =
-    useState(false);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
 
-    const [isScreenSharing, setIsScreenSharing] =
-  useState(false);
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
-const screenStreamRef =
-  useRef<MediaStream | null>(null);
-
-const cameraTrackRef =
-  useRef<MediaStreamTrack | null>(null);
+  const cameraTrackRef = useRef<MediaStreamTrack | null>(null);
 
   /*
    * =========================================================
@@ -149,11 +128,7 @@ const cameraTrackRef =
         micEnabled,
       }),
     );
-  }, [
-    meetingId,
-    cameraEnabled,
-    micEnabled,
-  ]);
+  }, [meetingId, cameraEnabled, micEnabled]);
 
   /*
    * =========================================================
@@ -188,24 +163,21 @@ const cameraTrackRef =
         setLoading(true);
         setError(null);
 
-        const mediaStream =
-          await navigator.mediaDevices.getUserMedia({
-            video: {
-              width: {
-                ideal: 1920,
-              },
-              height: {
-                ideal: 1080,
-              },
-              facingMode: "user",
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: {
+              ideal: 1920,
             },
-            audio: true,
-          });
+            height: {
+              ideal: 1080,
+            },
+            facingMode: "user",
+          },
+          audio: true,
+        });
 
         if (!mounted) {
-          mediaStream
-            .getTracks()
-            .forEach((track) => track.stop());
+          mediaStream.getTracks().forEach((track) => track.stop());
 
           return;
         }
@@ -215,63 +187,40 @@ const cameraTrackRef =
          * immediately to the tracks.
          */
 
-        mediaStream
-          .getVideoTracks()
-          .forEach((track) => {
-            track.enabled = cameraEnabled;
-          });
+        mediaStream.getVideoTracks().forEach((track) => {
+          track.enabled = cameraEnabled;
+        });
 
-        mediaStream
-          .getAudioTracks()
-          .forEach((track) => {
-            track.enabled = micEnabled;
-          });
+        mediaStream.getAudioTracks().forEach((track) => {
+          track.enabled = micEnabled;
+        });
 
-        streamRef.current =
-          mediaStream;
+        streamRef.current = mediaStream;
 
         setStream(mediaStream);
 
-        console.log(
-          "[Meeting] local media initialized",
-          {
-            cameraEnabled,
-            micEnabled,
-            tracks:
-              mediaStream
-                .getTracks()
-                .map(
-                  (track) =>
-                    `${track.kind}:${track.enabled}`,
-                ),
-          },
-        );
+        console.log("[Meeting] local media initialized", {
+          cameraEnabled,
+          micEnabled,
+          tracks: mediaStream
+            .getTracks()
+            .map((track) => `${track.kind}:${track.enabled}`),
+        });
       } catch (err) {
-        console.error(
-          "[Meeting] media initialization failed:",
-          err,
-        );
+        console.error("[Meeting] media initialization failed:", err);
 
-        if (
-          err instanceof DOMException &&
-          err.name ===
-            "NotAllowedError"
-        ) {
+        if (err instanceof DOMException && err.name === "NotAllowedError") {
           setError(
             "Camera or microphone permission was denied. Please allow access to this site.",
           );
         } else if (
           err instanceof DOMException &&
-          err.name ===
-            "NotFoundError"
+          err.name === "NotFoundError"
         ) {
-          setError(
-            "No camera or microphone was found.",
-          );
+          setError("No camera or microphone was found.");
         } else if (
           err instanceof DOMException &&
-          err.name ===
-            "NotReadableError"
+          err.name === "NotReadableError"
         ) {
           setError(
             "Your camera or microphone may already be in use by another application.",
@@ -296,11 +245,7 @@ const cameraTrackRef =
       mounted = false;
 
       if (streamRef.current) {
-        streamRef.current
-          .getTracks()
-          .forEach((track) =>
-            track.stop(),
-          );
+        streamRef.current.getTracks().forEach((track) => track.stop());
 
         streamRef.current = null;
       }
@@ -318,8 +263,7 @@ const cameraTrackRef =
    */
 
   useEffect(() => {
-    const video =
-      videoRef.current;
+    const video = videoRef.current;
 
     if (!video || !stream) {
       return;
@@ -337,18 +281,11 @@ const cameraTrackRef =
       try {
         await video.play();
       } catch (err) {
-        if (
-          err instanceof DOMException &&
-          err.name ===
-            "AbortError"
-        ) {
+        if (err instanceof DOMException && err.name === "AbortError") {
           return;
         }
 
-        console.error(
-          "[Meeting] local video playback failed:",
-          err,
-        );
+        console.error("[Meeting] local video playback failed:", err);
       }
     };
 
@@ -371,22 +308,13 @@ const cameraTrackRef =
 
   useEffect(() => {
     function handleFullscreenChange() {
-      setIsFullscreen(
-        document.fullscreenElement ===
-          containerRef.current,
-      );
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
     }
 
-    document.addEventListener(
-      "fullscreenchange",
-      handleFullscreenChange,
-    );
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
-      document.removeEventListener(
-        "fullscreenchange",
-        handleFullscreenChange,
-      );
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
@@ -398,10 +326,7 @@ const cameraTrackRef =
         await document.exitFullscreen();
       }
     } catch (err) {
-      console.error(
-        "Fullscreen error:",
-        err,
-      );
+      console.error("Fullscreen error:", err);
     }
   }
 
@@ -412,15 +337,13 @@ const cameraTrackRef =
    */
 
   function toggleCamera() {
-    const tracks =
-      streamRef.current?.getVideoTracks();
+    const tracks = streamRef.current?.getVideoTracks();
 
     if (!tracks?.length) {
       return;
     }
 
-    const nextState =
-      !cameraEnabled;
+    const nextState = !cameraEnabled;
 
     tracks.forEach((track) => {
       track.enabled = nextState;
@@ -429,191 +352,149 @@ const cameraTrackRef =
     setCameraEnabled(nextState);
   }
 
-
   /*
- * =========================================================
- * SCREEN SHARING
- * =========================================================
- */
-
-async function startScreenSharing() {
-  if (
-    isScreenSharing ||
-    !streamRef.current
-  ) {
-    return;
-  }
-
-  try {
-    const screenStream =
-      await navigator.mediaDevices.getDisplayMedia(
-        {
-          video: true,
-          audio: false,
-        },
-      );
-
-    const screenTrack =
-      screenStream.getVideoTracks()[0];
-
-    if (!screenTrack) {
-      return;
-    }
-
-    /*
-     * Save the current camera track.
-     */
-
-    const cameraTrack =
-      streamRef.current.getVideoTracks()[0];
-
-    cameraTrackRef.current =
-      cameraTrack ?? null;
-
-    /*
-     * Replace camera with screen
-     * on every existing peer.
-     */
-
-    await replaceVideoTrack(
-      screenTrack,
-    );
-
-    /*
-     * Show the screen locally.
-     */
-
-    screenStreamRef.current =
-      screenStream;
-
-    if (videoRef.current) {
-      videoRef.current.srcObject =
-        screenStream;
-
-      videoRef.current.muted = true;
-
-      try {
-        await videoRef.current.play();
-      } catch {
-        // Browser may already be playing.
-      }
-    }
-
-    setIsScreenSharing(true);
-
-    /*
-     * IMPORTANT:
-     *
-     * If the user clicks the browser's
-     * "Stop sharing" button, this fires.
-     */
-
-    screenTrack.onended = () => {
-      void stopScreenSharing();
-    };
-  } catch (error) {
-    /*
-     * User cancelling the browser picker
-     * is normal, so don't show an error.
-     */
-
-    if (
-      error instanceof DOMException &&
-      error.name === "NotAllowedError"
-    ) {
-      return;
-    }
-
-    console.error(
-      "[ScreenShare] Failed to start:",
-      error,
-    );
-  }
-}
-
-async function stopScreenSharing() {
-  if (!isScreenSharing) {
-    return;
-  }
-
-  const cameraTrack =
-    cameraTrackRef.current;
-
-  /*
-   * Stop screen capture.
+   * =========================================================
+   * SCREEN SHARING
+   * =========================================================
    */
 
-  screenStreamRef.current
-    ?.getTracks()
-    .forEach((track) => {
+  async function startScreenSharing() {
+    if (isScreenSharing || !streamRef.current) {
+      return;
+    }
+
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      if (!screenTrack) {
+        return;
+      }
+
+      /*
+       * Save the current camera track.
+       */
+
+      const cameraTrack = streamRef.current.getVideoTracks()[0];
+
+      cameraTrackRef.current = cameraTrack ?? null;
+
+      /*
+       * Replace camera with screen
+       * on every existing peer.
+       */
+
+      await replaceVideoTrack(screenTrack);
+
+      /*
+       * Show the screen locally.
+       */
+
+      screenStreamRef.current = screenStream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = screenStream;
+
+        videoRef.current.muted = true;
+
+        try {
+          await videoRef.current.play();
+        } catch {
+          // Browser may already be playing.
+        }
+      }
+
+      setIsScreenSharing(true);
+
+      /*
+       * IMPORTANT:
+       *
+       * If the user clicks the browser's
+       * "Stop sharing" button, this fires.
+       */
+
+      screenTrack.onended = () => {
+        void stopScreenSharing();
+      };
+    } catch (error) {
+      /*
+       * User cancelling the browser picker
+       * is normal, so don't show an error.
+       */
+
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        return;
+      }
+
+      console.error("[ScreenShare] Failed to start:", error);
+    }
+  }
+
+  async function stopScreenSharing() {
+    if (!isScreenSharing) {
+      return;
+    }
+
+    const cameraTrack = cameraTrackRef.current;
+
+    /*
+     * Stop screen capture.
+     */
+
+    screenStreamRef.current?.getTracks().forEach((track) => {
       track.onended = null;
       track.stop();
     });
 
-  screenStreamRef.current =
-    null;
-
-  /*
-   * Restore camera track.
-   */
-
-  if (cameraTrack) {
-    await replaceVideoTrack(
-      cameraTrack,
-    );
+    screenStreamRef.current = null;
 
     /*
-     * Put camera back into the local
-     * preview stream.
+     * Restore camera track.
      */
 
-    if (streamRef.current) {
-      const currentVideoTrack =
-        streamRef.current.getVideoTracks()[0];
+    if (cameraTrack) {
+      await replaceVideoTrack(cameraTrack);
 
-      if (
-        currentVideoTrack &&
-        currentVideoTrack !==
-          cameraTrack
-      ) {
-        streamRef.current.removeTrack(
-          currentVideoTrack,
-        );
-      }
+      /*
+       * Put camera back into the local
+       * preview stream.
+       */
 
-      const alreadyPresent =
-        streamRef.current
+      if (streamRef.current) {
+        const currentVideoTrack = streamRef.current.getVideoTracks()[0];
+
+        if (currentVideoTrack && currentVideoTrack !== cameraTrack) {
+          streamRef.current.removeTrack(currentVideoTrack);
+        }
+
+        const alreadyPresent = streamRef.current
           .getVideoTracks()
-          .some(
-            (track) =>
-              track.id ===
-              cameraTrack.id,
-          );
+          .some((track) => track.id === cameraTrack.id);
 
-      if (!alreadyPresent) {
-        streamRef.current.addTrack(
-          cameraTrack,
-        );
+        if (!alreadyPresent) {
+          streamRef.current.addTrack(cameraTrack);
+        }
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+
+        try {
+          await videoRef.current.play();
+        } catch {
+          // Ignore playback errors.
+        }
       }
     }
 
-    if (videoRef.current) {
-      videoRef.current.srcObject =
-        streamRef.current;
+    cameraTrackRef.current = null;
 
-      try {
-        await videoRef.current.play();
-      } catch {
-        // Ignore playback errors.
-      }
-    }
+    setIsScreenSharing(false);
   }
-
-  cameraTrackRef.current =
-    null;
-
-  setIsScreenSharing(false);
-}
 
   /*
    * =========================================================
@@ -622,15 +503,13 @@ async function stopScreenSharing() {
    */
 
   function toggleMicrophone() {
-    const tracks =
-      streamRef.current?.getAudioTracks();
+    const tracks = streamRef.current?.getAudioTracks();
 
     if (!tracks?.length) {
       return;
     }
 
-    const nextState =
-      !micEnabled;
+    const nextState = !micEnabled;
 
     tracks.forEach((track) => {
       track.enabled = nextState;
@@ -646,21 +525,16 @@ async function stopScreenSharing() {
    */
 
   async function leaveMeeting() {
-
     if (isScreenSharing) {
-  await stopScreenSharing();
-}
+      await stopScreenSharing();
+    }
     /*
      * Tell the socket layer first.
      */
     leaveSocketMeeting();
 
     if (streamRef.current) {
-      streamRef.current
-        .getTracks()
-        .forEach((track) =>
-          track.stop(),
-        );
+      streamRef.current.getTracks().forEach((track) => track.stop());
 
       streamRef.current = null;
     }
@@ -673,8 +547,7 @@ async function stopScreenSharing() {
       }
     }
 
-    window.location.href =
-      `/workspace/${slug}/meetings`;
+    window.location.href = `/workspace/${slug}/meetings`;
   }
 
   /*
@@ -683,48 +556,37 @@ async function stopScreenSharing() {
    * =========================================================
    */
 
- /*
- * =========================================================
- * CLEAN PARTICIPANT LIST
- * =========================================================
- *
- * A user should only appear once.
- *
- * Socket IDs can change after reconnect.
- * Therefore deduplicate by userId.
- */
+  /*
+   * =========================================================
+   * CLEAN PARTICIPANT LIST
+   * =========================================================
+   *
+   * A user should only appear once.
+   *
+   * Socket IDs can change after reconnect.
+   * Therefore deduplicate by userId.
+   */
 
-const uniqueParticipants =
-  Array.from(
+  const uniqueParticipants = Array.from(
     new Map(
-      participants.map(
-        (participant) => [
-          participant.userId,
-          participant,
-        ],
-      ),
+      participants.map((participant) => [participant.userId, participant]),
     ).values(),
   );
 
-/*
- * Never render our own socket as remote.
- */
-const remoteParticipants =
-  uniqueParticipants.filter(
-    (participant) =>
-      participant.socketId !==
-      localSocketId,
+  /*
+   * Never render our own socket as remote.
+   */
+  const remoteParticipants = uniqueParticipants.filter(
+    (participant) => participant.socketId !== localSocketId,
   );
 
-/*
- * The participant count should represent
- * actual users in the meeting.
- */
-const participantCount =
-  uniqueParticipants.length;
+  /*
+   * The participant count should represent
+   * actual users in the meeting.
+   */
+  const participantCount = uniqueParticipants.length;
 
-const totalVideoTiles =
-  1 + remoteParticipants.length;
+  const totalVideoTiles = 1 + remoteParticipants.length;
 
   const gridClass =
     totalVideoTiles === 1
@@ -749,8 +611,7 @@ const totalVideoTiles =
           <button
             type="button"
             onClick={() =>
-              (window.location.href =
-                `/workspace/${slug}/meetings`)
+              (window.location.href = `/workspace/${slug}/meetings`)
             }
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
             title="Back to meetings"
@@ -759,27 +620,26 @@ const totalVideoTiles =
           </button>
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">
-              Meeting
-            </p>
+            <p className="truncate text-sm font-semibold text-white">Meeting</p>
 
-            <p className="truncate text-xs text-white/35">
-              {meetingId}
-            </p>
+            <p className="truncate text-xs text-white/35">{meetingId}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60">
+          <button
+            type="button"
+            onClick={() => setParticipantsOpen(true)}
+            className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+            title="View participants"
+          >
             <Users size={16} />
 
             <span>
               {participantCount}{" "}
-              {participantCount === 1
-                ? "participant"
-                : "participants"}
+              {participantCount === 1 ? "participant" : "participants"}
             </span>
-          </div>
+          </button>
 
           <button
             type="button"
@@ -792,18 +652,10 @@ const totalVideoTiles =
           <button
             type="button"
             onClick={toggleFullscreen}
-            title={
-              isFullscreen
-                ? "Exit fullscreen"
-                : "Enter fullscreen"
-            }
+            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
           >
-            {isFullscreen ? (
-              <Minimize size={18} />
-            ) : (
-              <Maximize size={18} />
-            )}
+            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
           </button>
         </div>
       </header>
@@ -813,9 +665,7 @@ const totalVideoTiles =
       {/* ================================================= */}
 
       <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
-        <div
-          className={`grid h-full min-h-0 w-full ${gridClass} gap-3`}
-        >
+        <div className={`grid h-full min-h-0 w-full ${gridClass} gap-3`}>
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
           {/* ============================================= */}
@@ -826,9 +676,7 @@ const totalVideoTiles =
                 <div className="text-center">
                   <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
 
-                  <p className="text-sm text-white/50">
-                    Starting camera...
-                  </p>
+                  <p className="text-sm text-white/50">Starting camera...</p>
                 </div>
               </div>
             )}
@@ -837,15 +685,10 @@ const totalVideoTiles =
               <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
                 <div className="max-w-md text-center">
                   <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10">
-                    <CameraOff
-                      size={24}
-                      className="text-red-400"
-                    />
+                    <CameraOff size={24} className="text-red-400" />
                   </div>
 
-                  <h2 className="text-lg font-semibold">
-                    Camera unavailable
-                  </h2>
+                  <h2 className="text-lg font-semibold">Camera unavailable</h2>
 
                   <p className="mt-2 text-sm leading-6 text-white/45">
                     {error}
@@ -853,9 +696,7 @@ const totalVideoTiles =
 
                   <button
                     type="button"
-                    onClick={() =>
-                      window.location.reload()
-                    }
+                    onClick={() => window.location.reload()}
                     className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-[#20232D] transition hover:bg-white/90"
                   >
                     Try again
@@ -872,9 +713,7 @@ const totalVideoTiles =
                   muted
                   playsInline
                   className={`h-full w-full object-cover ${
-                    cameraEnabled
-                      ? "block"
-                      : "hidden"
+                    cameraEnabled ? "block" : "hidden"
                   }`}
                 />
 
@@ -889,15 +728,11 @@ const totalVideoTiles =
                 <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs text-white backdrop-blur-md">
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      cameraEnabled
-                        ? "bg-[#52D88B]"
-                        : "bg-red-400"
+                      cameraEnabled ? "bg-[#52D88B]" : "bg-red-400"
                     }`}
                   />
 
-                  {cameraEnabled
-                    ? "Camera on"
-                    : "Camera off"}
+                  {cameraEnabled ? "Camera on" : "Camera off"}
                 </div>
 
                 {!micEnabled && (
@@ -918,41 +753,146 @@ const totalVideoTiles =
           {/* REMOTE PARTICIPANTS */}
           {/* ============================================= */}
 
-          {remoteParticipants.map(
-  (participant) => {
-    const remoteStream =
-      remoteStreams[
-        participant.socketId
-      ];
+          {remoteParticipants.map((participant) => {
+            const remoteStream = remoteStreams[participant.socketId];
 
-    if (!remoteStream) {
-      return (
-        <RemoteWaitingTile
-          key={
-            participant.userId
-          }
-          participant={
-            participant
-          }
-        />
-      );
-    }
+            if (!remoteStream) {
+              return (
+                <RemoteWaitingTile
+                  key={participant.userId}
+                  participant={participant}
+                />
+              );
+            }
 
-    return (
-      <RemoteVideo
-        key={
-          participant.userId
-        }
-        stream={remoteStream}
-        participant={
-          participant
-        }
-      />
-    );
-  },
-)}
+            return (
+              <RemoteVideo
+                key={participant.userId}
+                stream={remoteStream}
+                participant={participant}
+              />
+            );
+          })}
         </div>
       </main>
+
+      {/* ================================================= */}
+{/* PARTICIPANTS PANEL */}
+{/* ================================================= */}
+
+{participantsOpen && (
+  <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] border-l border-white/[0.08] bg-[#111318]/95 shadow-2xl backdrop-blur-xl">
+    <div className="flex h-full flex-col">
+
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-white">
+            Participants
+          </h2>
+
+          <p className="mt-1 text-xs text-white/35">
+            {participantCount}{" "}
+            {participantCount === 1
+              ? "participant"
+              : "participants"}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            setParticipantsOpen(false)
+          }
+          className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+        >
+          Close
+        </button>
+      </div>
+
+      {/* Participant list */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="space-y-2">
+          {uniqueParticipants.map(
+            (participant) => {
+              const isYou =
+                participant.socketId ===
+                localSocketId;
+
+              return (
+                <div
+                  key={participant.userId}
+                  className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.04] px-3 py-3"
+                >
+                  {/* Avatar */}
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F8EF] text-sm font-semibold text-[#1E8E5A]">
+                    {participant.name
+                      ?.charAt(0)
+                      .toUpperCase() ?? "?"}
+                  </div>
+
+                  {/* Name */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-white">
+                      {participant.name}
+                    </p>
+
+                    {isYou && (
+                      <p className="mt-0.5 text-[11px] text-emerald-400">
+                        You
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Media status */}
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        participant.micEnabled
+                          ? "bg-white/[0.06] text-white/70"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                      title={
+                        participant.micEnabled
+                          ? "Microphone on"
+                          : "Microphone muted"
+                      }
+                    >
+                      {participant.micEnabled ? (
+                        <Mic size={15} />
+                      ) : (
+                        <MicOff size={15} />
+                      )}
+                    </div>
+
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                        participant.cameraEnabled
+                          ? "bg-white/[0.06] text-white/70"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                      title={
+                        participant.cameraEnabled
+                          ? "Camera on"
+                          : "Camera off"
+                      }
+                    >
+                      {participant.cameraEnabled ? (
+                        <Camera size={15} />
+                      ) : (
+                        <CameraOff size={15} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* ================================================= */}
       {/* CONTROLS */}
@@ -963,79 +903,52 @@ const totalVideoTiles =
           <button
             type="button"
             onClick={toggleMicrophone}
-            disabled={
-              loading || !!error
-            }
-            title={
-              micEnabled
-                ? "Mute microphone"
-                : "Unmute microphone"
-            }
+            disabled={loading || !!error}
+            title={micEnabled ? "Mute microphone" : "Unmute microphone"}
             className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
               micEnabled
                 ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
                 : "bg-red-500 text-white hover:bg-red-600"
             } disabled:cursor-not-allowed disabled:opacity-40`}
           >
-            {micEnabled ? (
-              <Mic size={20} />
-            ) : (
-              <MicOff size={20} />
-            )}
+            {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
           </button>
 
           <button
             type="button"
             onClick={toggleCamera}
-            disabled={
-              loading || !!error
-            }
-            title={
-              cameraEnabled
-                ? "Turn camera off"
-                : "Turn camera on"
-            }
+            disabled={loading || !!error}
+            title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
             className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
               cameraEnabled
                 ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
                 : "bg-red-500 text-white hover:bg-red-600"
             } disabled:cursor-not-allowed disabled:opacity-40`}
           >
-            {cameraEnabled ? (
-              <Camera size={20} />
-            ) : (
-              <CameraOff size={20} />
-            )}
+            {cameraEnabled ? <Camera size={20} /> : <CameraOff size={20} />}
           </button>
 
           {/* Screen Share */}
 
-<button
-  type="button"
-  onClick={() => {
-    if (isScreenSharing) {
-      void stopScreenSharing();
-    } else {
-      void startScreenSharing();
-    }
-  }}
-  disabled={
-    loading ||
-    !!error
-  }
-  title={
-    isScreenSharing
-      ? "Stop sharing"
-      : "Share screen"
-  }
-  className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
-    isScreenSharing
-      ? "bg-emerald-500 text-white hover:bg-emerald-600"
-      : "bg-white/[0.07] text-white hover:bg-white/[0.12]"
-  } disabled:cursor-not-allowed disabled:opacity-40`}
->
-  <MonitorUp size={20} />
-</button>
+          <button
+            type="button"
+            onClick={() => {
+              if (isScreenSharing) {
+                void stopScreenSharing();
+              } else {
+                void startScreenSharing();
+              }
+            }}
+            disabled={loading || !!error}
+            title={isScreenSharing ? "Stop sharing" : "Share screen"}
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+              isScreenSharing
+                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                : "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            <MonitorUp size={20} />
+          </button>
 
           <button
             type="button"
@@ -1044,9 +957,7 @@ const totalVideoTiles =
           >
             <PhoneOff size={18} />
 
-            <span className="hidden sm:inline">
-              Leave
-            </span>
+            <span className="hidden sm:inline">Leave</span>
           </button>
         </div>
       </footer>
@@ -1058,12 +969,8 @@ const totalVideoTiles =
 /* REMOTE VIDEO */
 /* ========================================================= */
 
-function RemoteVideo({
-  stream,
-  participant,
-}: RemoteVideoProps) {
-  const videoRef =
-    useRef<HTMLVideoElement>(null);
+function RemoteVideo({ stream, participant }: RemoteVideoProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   /*
    * =========================================================
@@ -1079,8 +986,7 @@ function RemoteVideo({
    */
 
   useEffect(() => {
-    const video =
-      videoRef.current;
+    const video = videoRef.current;
 
     if (!video || !stream) {
       return;
@@ -1109,18 +1015,11 @@ function RemoteVideo({
          * media operation.
          */
 
-        if (
-          error instanceof DOMException &&
-          error.name ===
-            "AbortError"
-        ) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
 
-        console.error(
-          "[WebRTC] remote video playback failed:",
-          error,
-        );
+        console.error("[WebRTC] remote video playback failed:", error);
       }
     };
 
@@ -1135,15 +1034,11 @@ function RemoteVideo({
      * available.
      */
 
-    const handleLoadedMetadata =
-      () => {
-        void playVideo();
-      };
+    const handleLoadedMetadata = () => {
+      void playVideo();
+    };
 
-    video.addEventListener(
-      "loadedmetadata",
-      handleLoadedMetadata,
-    );
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
 
     /*
      * DO NOT:
@@ -1157,10 +1052,7 @@ function RemoteVideo({
      */
 
     return () => {
-      video.removeEventListener(
-        "loadedmetadata",
-        handleLoadedMetadata,
-      );
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [stream]);
 
@@ -1175,14 +1067,11 @@ function RemoteVideo({
    */
 
   useEffect(() => {
-    if (
-      !participant.cameraEnabled
-    ) {
+    if (!participant.cameraEnabled) {
       return;
     }
 
-    const video =
-      videoRef.current;
+    const video = videoRef.current;
 
     if (!video || !stream) {
       return;
@@ -1190,34 +1079,22 @@ function RemoteVideo({
 
     const resumeVideo = async () => {
       try {
-        if (
-          video.srcObject !== stream
-        ) {
+        if (video.srcObject !== stream) {
           video.srcObject = stream;
         }
 
         await video.play();
       } catch (error) {
-        if (
-          error instanceof DOMException &&
-          error.name ===
-            "AbortError"
-        ) {
+        if (error instanceof DOMException && error.name === "AbortError") {
           return;
         }
 
-        console.error(
-          "[WebRTC] failed to resume remote video:",
-          error,
-        );
+        console.error("[WebRTC] failed to resume remote video:", error);
       }
     };
 
     void resumeVideo();
-  }, [
-    participant.cameraEnabled,
-    stream,
-  ]);
+  }, [participant.cameraEnabled, stream]);
 
   return (
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
@@ -1231,9 +1108,7 @@ function RemoteVideo({
         playsInline
         muted
         className={`h-full w-full object-cover ${
-          participant.cameraEnabled
-            ? "block"
-            : "hidden"
+          participant.cameraEnabled ? "block" : "hidden"
         }`}
       />
 
@@ -1244,9 +1119,7 @@ function RemoteVideo({
       {!participant.cameraEnabled && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
           <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-            {participant.name
-              ?.charAt(0)
-              .toUpperCase() ?? "?"}
+            {participant.name?.charAt(0).toUpperCase() ?? "?"}
           </div>
         </div>
       )}
@@ -1257,22 +1130,16 @@ function RemoteVideo({
 
       <div
         className={`absolute left-4 top-4 flex items-center gap-2 rounded-xl px-3 py-2 text-xs text-white backdrop-blur-md ${
-          participant.cameraEnabled
-            ? "bg-black/45"
-            : "bg-red-500/80"
+          participant.cameraEnabled ? "bg-black/45" : "bg-red-500/80"
         }`}
       >
         <span
           className={`h-2 w-2 rounded-full ${
-            participant.cameraEnabled
-              ? "bg-[#52D88B]"
-              : "bg-red-300"
+            participant.cameraEnabled ? "bg-[#52D88B]" : "bg-red-300"
           }`}
         />
 
-        {participant.cameraEnabled
-          ? "Camera on"
-          : "Camera off"}
+        {participant.cameraEnabled ? "Camera on" : "Camera off"}
       </div>
 
       {/* ================================================= */}
@@ -1301,23 +1168,15 @@ function RemoteVideo({
 /* REMOTE WAITING TILE */
 /* ========================================================= */
 
-function RemoteWaitingTile({
-  participant,
-}: {
-  participant: Participant;
-}) {
+function RemoteWaitingTile({ participant }: { participant: Participant }) {
   return (
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#E7F8EF] text-3xl font-semibold text-[#1E8E5A]">
-          {participant.name
-            ?.charAt(0)
-            .toUpperCase() ?? "?"}
+          {participant.name?.charAt(0).toUpperCase() ?? "?"}
         </div>
 
-        <p className="mt-4 text-sm text-white/50">
-          Connecting...
-        </p>
+        <p className="mt-4 text-sm text-white/50">Connecting...</p>
       </div>
 
       {!participant.micEnabled && (
