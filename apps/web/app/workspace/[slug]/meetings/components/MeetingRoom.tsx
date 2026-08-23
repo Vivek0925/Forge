@@ -448,6 +448,42 @@ useEffect(() => {
     };
   }, [stream]);
 
+
+  function sendMeetingChatMessage() {
+  const content =
+    chatInput.trim();
+
+  if (
+    !content ||
+    !socket.connected
+  ) {
+    return;
+  }
+
+  socket.emit(
+    "meeting:chat:send",
+    {
+      meetingId,
+      content,
+    },
+  );
+
+  setChatInput("");
+}
+
+function handleChatKeyDown(
+  event: React.KeyboardEvent<HTMLInputElement>,
+) {
+  if (
+    event.key === "Enter" &&
+    !event.shiftKey
+  ) {
+    event.preventDefault();
+
+    sendMeetingChatMessage();
+  }
+}
+
   /*
    * =========================================================
    * FULLSCREEN
