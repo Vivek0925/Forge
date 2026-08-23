@@ -10,6 +10,7 @@ import {
   Minimize,
   Mic,
   MicOff,
+  MonitorUp,
   PhoneOff,
   Settings,
   Users,
@@ -125,6 +126,15 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] =
     useState(false);
 
+    const [isScreenSharing, setIsScreenSharing] =
+  useState(false);
+
+const screenStreamRef =
+  useRef<MediaStream | null>(null);
+
+const cameraTrackRef =
+  useRef<MediaStreamTrack | null>(null);
+
   /*
    * =========================================================
    * SAVE SETTINGS
@@ -155,6 +165,7 @@ export default function MeetingRoom({
     participants,
     remoteStreams,
     localSocketId,
+    replaceVideoTrack,
     leaveMeeting: leaveSocketMeeting,
   } = useMeeting({
     meetingId,
@@ -417,6 +428,192 @@ export default function MeetingRoom({
 
     setCameraEnabled(nextState);
   }
+
+
+  /*
+ * =========================================================
+ * SCREEN SHARING
+ * =========================================================
+ */
+
+async function startScreenSharing() {
+  if (
+    isScreenSharing ||
+    !streamRef.current
+  ) {
+    return;
+  }
+
+  try {
+    const screenStream =
+      await navigator.mediaDevices.getDisplayMedia(
+        {
+          video: true,
+          audio: false,
+        },
+      );
+
+    const screenTrack =
+      screenStream.getVideoTracks()[0];
+
+    if (!screenTrack) {
+      return;
+    }
+
+    /*
+     * Save the current camera track.
+     */
+
+    const cameraTrack =
+      streamRef.current.getVideoTracks()[0];
+
+    cameraTrackRef.current =
+      cameraTrack ?? null;
+
+    /*
+     * Replace camera with screen
+     * on every existing peer.
+     */
+
+    await replaceVideoTrack(
+      screenTrack,
+    );
+
+    /*
+     * Show the screen locally.
+     */
+
+    screenStreamRef.current =
+      screenStream;
+
+    if (videoRef.current) {
+      videoRef.current.srcObject =
+        screenStream;
+
+      videoRef.current.muted = true;
+
+      try {
+        await videoRef.current.play();
+      } catch {
+        // Browser may already be playing.
+      }
+    }
+
+    setIsScreenSharing(true);
+
+    /*
+     * IMPORTANT:
+     *
+     * If the user clicks the browser's
+     * "Stop sharing" button, this fires.
+     */
+
+    screenTrack.onended = () => {
+      void stopScreenSharing();
+    };
+  } catch (error) {
+    /*
+     * User cancelling the browser picker
+     * is normal, so don't show an error.
+     */
+
+    if (
+      error instanceof DOMException &&
+      error.name === "NotAllowedError"
+    ) {
+      return;
+    }
+
+    console.error(
+      "[ScreenShare] Failed to start:",
+      error,
+    );
+  }
+}
+
+async function stopScreenSharing() {
+  if (!isScreenSharing) {
+    return;
+  }
+
+  const cameraTrack =
+    cameraTrackRef.current;
+
+  /*
+   * Stop screen capture.
+   */
+
+  screenStreamRef.current
+    ?.getTracks()
+    .forEach((track) => {
+      track.onended = null;
+      track.stop();
+    });
+
+  screenStreamRef.current =
+    null;
+
+  /*
+   * Restore camera track.
+   */
+
+  if (cameraTrack) {
+    await replaceVideoTrack(
+      cameraTrack,
+    );
+
+    /*
+     * Put camera back into the local
+     * preview stream.
+     */
+
+    if (streamRef.current) {
+      const currentVideoTrack =
+        streamRef.current.getVideoTracks()[0];
+
+      if (
+        currentVideoTrack &&
+        currentVideoTrack !==
+          cameraTrack
+      ) {
+        streamRef.current.removeTrack(
+          currentVideoTrack,
+        );
+      }
+
+      const alreadyPresent =
+        streamRef.current
+          .getVideoTracks()
+          .some(
+            (track) =>
+              track.id ===
+              cameraTrack.id,
+          );
+
+      if (!alreadyPresent) {
+        streamRef.current.addTrack(
+          cameraTrack,
+        );
+      }
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject =
+        streamRef.current;
+
+      try {
+        await videoRef.current.play();
+      } catch {
+        // Ignore playback errors.
+      }
+    }
+  }
+
+  cameraTrackRef.current =
+    null;
+
+  setIsScreenSharing(false);
+}
 
   /*
    * =========================================================
@@ -806,6 +1003,35 @@ const totalVideoTiles =
               <CameraOff size={20} />
             )}
           </button>
+
+          {/* Screen Share */}
+
+<button
+  type="button"
+  onClick={() => {
+    if (isScreenSharing) {
+      void stopScreenSharing();
+    } else {
+      void startScreenSharing();
+    }
+  }}
+  disabled={
+    loading ||
+    !!error
+  }
+  title={
+    isScreenSharing
+      ? "Stop sharing"
+      : "Share screen"
+  }
+  className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+    isScreenSharing
+      ? "bg-emerald-500 text-white hover:bg-emerald-600"
+      : "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+  } disabled:cursor-not-allowed disabled:opacity-40`}
+>
+  <MonitorUp size={20} />
+</button>
 
           <button
             type="button"

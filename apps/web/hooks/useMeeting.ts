@@ -1122,10 +1122,55 @@ if (reconnectingRef.current) {
     cleanupPeer,
   ]);
 
+  /*
+ * =========================================================
+ * SCREEN SHARING
+ * =========================================================
+ *
+ * Replace the existing outgoing camera video
+ * track without creating a new peer connection.
+ */
+
+const replaceVideoTrack = useCallback(
+  async (track: MediaStreamTrack) => {
+    const peers = Object.values(
+      peerConnections.current,
+    );
+
+    for (const peer of peers) {
+      const videoSender =
+        peer
+          .getSenders()
+          .find(
+            (sender) =>
+              sender.track?.kind ===
+              "video",
+          );
+
+      if (!videoSender) {
+        continue;
+      }
+
+      try {
+        await videoSender.replaceTrack(
+          track,
+        );
+      } catch (error) {
+        console.error(
+          "[WebRTC] Failed to replace video track:",
+          error,
+        );
+      }
+    }
+  },
+  [],
+);
+
   return {
     participants,
     remoteStreams,
     localSocketId,
     leaveMeeting,
+    replaceVideoTrack,
   };
 }
