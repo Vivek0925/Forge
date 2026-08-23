@@ -54,6 +54,7 @@ export function useMeeting({
 
   const joinedRef = useRef(false);
   const mountedRef = useRef(false);
+  const reconnectingRef = useRef(false);
 
   /*
    * =========================================================
@@ -390,7 +391,7 @@ export function useMeeting({
      * PARTICIPANTS
      */
 
-    const handleParticipants = (data: {
+    const handleParticipants = async (data: {
       participants: MeetingParticipant[];
     }) => {
       if (!mountedRef.current) {
@@ -430,6 +431,63 @@ export function useMeeting({
           cleanupPeer(socketId);
         }
       });
+
+      /*
+ * If this participant list arrived after
+ * a socket reconnect, this browser is now
+ * a NEW signaling peer.
+ *
+ * Create offers to the existing participants.
+ *
+ * We deliberately do this here instead of
+ * changing the normal offer/answer flow.
+ */
+if (reconnectingRef.current) {
+  reconnectingRef.current = false;
+
+  for (const participant of normalized) {
+    if (
+      participant.socketId === socket.id
+    ) {
+      continue;
+    }
+
+    const peer =
+      createPeerConnection(
+        participant.socketId,
+      );
+
+    try {
+      if (
+        peer.signalingState !==
+        "stable"
+      ) {
+        continue;
+      }
+
+      const offer =
+        await peer.createOffer();
+
+      await peer.setLocalDescription(
+        offer,
+      );
+
+      socket.emit(
+        "webrtc:offer",
+        {
+          targetSocketId:
+            participant.socketId,
+          offer,
+        },
+      );
+    } catch (error) {
+      console.error(
+        "[WebRTC] reconnect offer failed:",
+        error,
+      );
+    }
+  }
+}
     };
 
     /*
@@ -781,47 +839,67 @@ export function useMeeting({
      */
 
     const handleSocketConnect = () => {
-      if (!mountedRef.current) {
-        return;
-      }
+  if (!mountedRef.current) {
+    return;
+  }
 
-      const newSocketId =
-        socket.id ?? null;
+  const newSocketId =
+    socket.id ?? null;
 
-      setLocalSocketId(newSocketId);
+  setLocalSocketId(newSocketId);
 
-      console.log(
-        "[Socket] connected:",
-        newSocketId,
-      );
+  console.log(
+    "[Socket] connected:",
+    newSocketId,
+  );
 
-      /*
-       * A reconnect creates a new socket.
-       *
-       * Destroy old WebRTC connections.
-       */
-      Object.keys(
-        peerConnections.current,
-      ).forEach((socketId) => {
-        cleanupPeer(socketId);
-      });
+  /*
+   * If this is the first connection,
+   * don't treat it as reconnect recovery.
+   */
+  const isReconnect =
+    joinedRef.current;
 
-      /*
-       * Reset participant state.
-       *
-       * The server will immediately send
-       * the authoritative list after join.
-       */
-      setParticipants([]);
+  /*
+   * The old socket ID is no longer valid
+   * for WebRTC signaling.
+   *
+   * Clean old peer connections, but DO NOT
+   * touch streamRef/current MediaStream.
+   */
+  Object.keys(
+    peerConnections.current,
+  ).forEach((socketId) => {
+    cleanupPeer(socketId);
+  });
 
-      joinedRef.current = false;
+  /*
+   * Clear stale participant state.
+   *
+   * The server will send the authoritative
+   * list after meeting:join.
+   */
+  setParticipants([]);
 
-      socket.emit("meeting:join", {
-        meetingId,
-      });
+  /*
+   * Tell handleParticipants that after the
+   * fresh participant list arrives, this
+   * socket needs to establish fresh peers.
+   */
+  reconnectingRef.current =
+    isReconnect;
 
-      joinedRef.current = true;
-    };
+  joinedRef.current = false;
+
+  socket.emit(
+    "meeting:join",
+    {
+      meetingId,
+    },
+  );
+
+  joinedRef.current = true;
+};
 
     /*
      * REGISTER
