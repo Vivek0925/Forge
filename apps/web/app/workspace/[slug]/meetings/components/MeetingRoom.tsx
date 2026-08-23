@@ -646,6 +646,10 @@ async function stopScreenSharing() {
    */
 
   async function leaveMeeting() {
+
+    if (isScreenSharing) {
+  await stopScreenSharing();
+}
     /*
      * Tell the socket layer first.
      */
