@@ -179,6 +179,8 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
     localSocketId,
     replaceVideoTrack,
     leaveMeeting: leaveSocketMeeting,
+    switchCamera,
+    switchMicrophone,
   } = useMeeting({
     meetingId,
     stream,
@@ -1280,12 +1282,11 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
                 ?.getSettings()
                 .deviceId ?? ""
             }
-            onChange={() => {
-              /*
-               * Device switching intentionally
-               * comes in the next step.
-               */
-            }}
+            onChange={(event) => {
+  void switchCamera(
+    event.target.value,
+  );
+}}
             className="w-full bg-transparent text-sm text-white outline-none"
           >
             {devices.cameras.length ===
@@ -1334,12 +1335,11 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
                 ?.getSettings()
                 .deviceId ?? ""
             }
-            onChange={() => {
-              /*
-               * Device switching intentionally
-               * comes in the next step.
-               */
-            }}
+            onChange={(event) => {
+  void switchMicrophone(
+    event.target.value,
+  );
+}}
             className="w-full bg-transparent text-sm text-white outline-none"
           >
             {devices.microphones.length ===

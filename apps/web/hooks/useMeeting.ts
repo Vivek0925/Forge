@@ -1124,6 +1124,199 @@ if (reconnectingRef.current) {
 
   /*
  * =========================================================
+ * DEVICE SWITCHING
+ * =========================================================
+ */
+
+const switchCamera = useCallback(
+  async (deviceId: string) => {
+    const currentStream =
+      streamRef.current;
+
+    if (!currentStream) {
+      return;
+    }
+
+    try {
+      const newStream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            video: {
+              deviceId: {
+                exact: deviceId,
+              },
+            },
+            audio: false,
+          },
+        );
+
+      const newTrack =
+        newStream.getVideoTracks()[0];
+
+      if (!newTrack) {
+        newStream
+          .getTracks()
+          .forEach((track) =>
+            track.stop(),
+          );
+
+        return;
+      }
+
+      /*
+       * Replace the camera track on every
+       * existing peer connection.
+       */
+      for (const peer of Object.values(
+        peerConnections.current,
+      )) {
+        const sender =
+          peer
+            .getSenders()
+            .find(
+              (item) =>
+                item.track?.kind ===
+                "video",
+            );
+
+        if (!sender) {
+          continue;
+        }
+
+        await sender.replaceTrack(
+          newTrack,
+        );
+      }
+
+      /*
+       * Replace the track in the local
+       * MediaStream as well.
+       */
+      const oldTrack =
+        currentStream.getVideoTracks()[0];
+
+      if (oldTrack) {
+        currentStream.removeTrack(
+          oldTrack,
+        );
+        oldTrack.stop();
+      }
+
+      currentStream.addTrack(
+        newTrack,
+      );
+
+      /*
+       * Preserve the current camera
+       * enabled/disabled state.
+       */
+      newTrack.enabled =
+        oldTrack?.enabled ?? true;
+    } catch (error) {
+      console.error(
+        "[Meeting] Failed to switch camera:",
+        error,
+      );
+    }
+  },
+  [],
+);
+
+const switchMicrophone = useCallback(
+  async (deviceId: string) => {
+    const currentStream =
+      streamRef.current;
+
+    if (!currentStream) {
+      return;
+    }
+
+    try {
+      const newStream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            video: false,
+            audio: {
+              deviceId: {
+                exact: deviceId,
+              },
+            },
+          },
+        );
+
+      const newTrack =
+        newStream.getAudioTracks()[0];
+
+      if (!newTrack) {
+        newStream
+          .getTracks()
+          .forEach((track) =>
+            track.stop(),
+          );
+
+        return;
+      }
+
+      /*
+       * Replace microphone track on every
+       * existing peer connection.
+       */
+      for (const peer of Object.values(
+        peerConnections.current,
+      )) {
+        const sender =
+          peer
+            .getSenders()
+            .find(
+              (item) =>
+                item.track?.kind ===
+                "audio",
+            );
+
+        if (!sender) {
+          continue;
+        }
+
+        await sender.replaceTrack(
+          newTrack,
+        );
+      }
+
+      /*
+       * Replace the microphone track in
+       * the local MediaStream.
+       */
+      const oldTrack =
+        currentStream.getAudioTracks()[0];
+
+      if (oldTrack) {
+        currentStream.removeTrack(
+          oldTrack,
+        );
+        oldTrack.stop();
+      }
+
+      currentStream.addTrack(
+        newTrack,
+      );
+
+      /*
+       * Preserve mute state.
+       */
+      newTrack.enabled =
+        oldTrack?.enabled ?? true;
+    } catch (error) {
+      console.error(
+        "[Meeting] Failed to switch microphone:",
+        error,
+      );
+    }
+  },
+  [],
+);
+
+  /*
+ * =========================================================
  * SCREEN SHARING
  * =========================================================
  *
@@ -1172,5 +1365,7 @@ const replaceVideoTrack = useCallback(
     localSocketId,
     leaveMeeting,
     replaceVideoTrack,
+    switchCamera,
+    switchMicrophone,
   };
 }
