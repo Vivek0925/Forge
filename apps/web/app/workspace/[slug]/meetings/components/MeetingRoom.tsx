@@ -141,11 +141,9 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const [selectedCameraId, setSelectedCameraId] =
-  useState("");
+  const [selectedCameraId, setSelectedCameraId] = useState("");
 
-const [selectedMicrophoneId, setSelectedMicrophoneId] =
-  useState("");
+  const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
 
   const [devices, setDevices] = useState<{
     cameras: MediaDeviceInfo[];
@@ -531,8 +529,6 @@ const [selectedMicrophoneId, setSelectedMicrophoneId] =
 
         setDevices({
           cameras: allDevices.filter((device) => device.kind === "videoinput"),
-
-          
 
           microphones: allDevices.filter(
             (device) => device.kind === "audioinput",
@@ -1239,259 +1235,194 @@ const [selectedMicrophoneId, setSelectedMicrophoneId] =
         </div>
       )}
 
-
       {/* ================================================= */}
-{/* MEETING SETTINGS */}
-{/* ================================================= */}
+      {/* MEETING SETTINGS */}
+      {/* ================================================= */}
 
-{settingsOpen && (
-  <aside className="absolute inset-y-16 right-0 z-50 flex w-full max-w-[380px] flex-col border-l rounded-l-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
+      {settingsOpen && (
+        <aside className="absolute inset-y-16 right-0 z-50 flex w-full max-w-[380px] flex-col border-l rounded-l-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
+          {/* Header */}
 
-    {/* Header */}
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
+            <div>
+              <h2 className="text-sm font-semibold text-white">
+                Meeting settings
+              </h2>
 
-    <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
-      <div>
-        <h2 className="text-sm font-semibold text-white">
-          Meeting settings
-        </h2>
+              <p className="mt-1 text-[11px] text-white/35">
+                Your audio and video devices
+              </p>
+            </div>
 
-        <p className="mt-1 text-[11px] text-white/35">
-          Your audio and video devices
-        </p>
-      </div>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(false)}
+              className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
+            >
+              Close
+            </button>
+          </div>
 
-      <button
-        type="button"
-        onClick={() =>
-          setSettingsOpen(false)
-        }
-        className="rounded-xl px-3 py-2 text-xs text-white/45 transition hover:bg-white/[0.08] hover:text-white"
-      >
-        Close
-      </button>
-    </div>
+          {/* Content */}
 
-    {/* Content */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-5">
+            {/* CAMERA */}
 
-    <div className="min-h-0 flex-1 overflow-y-auto p-5">
+            <div>
+              <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                Camera
+              </label>
 
-      {/* CAMERA */}
+              <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
+                <select
+                  value={selectedCameraId}
+                  onChange={(event) => {
+                    const deviceId = event.target.value;
 
-      <div>
-        <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
-          Camera
-        </label>
+                    setSelectedCameraId(deviceId);
 
-        <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
-          <select
-            value={
-              streamRef.current
-                ?.getVideoTracks()[0]
-                ?.getSettings()
-                .deviceId ?? ""
-            }
-            onChange={(event) => {
-  void switchCamera(
-    event.target.value,
-  );
-}}
-            className="w-full bg-transparent text-sm text-white outline-none"
-          >
-            {devices.cameras.length ===
-            0 ? (
-              <option
-                value=""
-                className="bg-[#111318]"
-              >
-                No camera found
-              </option>
-            ) : (
-              devices.cameras.map(
-                (device, index) => (
-                  <option
-                    key={
-                      device.deviceId ||
-                      `camera-${index}`
-                    }
-                    value={
-                      device.deviceId
-                    }
-                    className="bg-[#111318]"
-                  >
-                    {device.label ||
-                      `Camera ${index + 1}`}
-                  </option>
-                ),
-              )
-            )}
-          </select>
-        </div>
-      </div>
+                    void switchCamera(deviceId);
+                  }}
+                  className="w-full bg-transparent text-sm text-white outline-none"
+                >
+                  {devices.cameras.length === 0 ? (
+                    <option value="" className="bg-[#111318]">
+                      No camera found
+                    </option>
+                  ) : (
+                    devices.cameras.map((device, index) => (
+                      <option
+                        key={device.deviceId || `camera-${index}`}
+                        value={device.deviceId}
+                        className="bg-[#111318]"
+                      >
+                        {device.label || `Camera ${index + 1}`}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            </div>
 
-      {/* MICROPHONE */}
+            {/* MICROPHONE */}
 
-      <div className="mt-6">
-        <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
-          Microphone
-        </label>
+            <div className="mt-6">
+              <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                Microphone
+              </label>
 
-        <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
-          <select
-            value={
-              streamRef.current
-                ?.getAudioTracks()[0]
-                ?.getSettings()
-                .deviceId ?? ""
-            }
-            onChange={(event) => {
-  void switchMicrophone(
-    event.target.value,
-  );
-}}
-            className="w-full bg-transparent text-sm text-white outline-none"
-          >
-            {devices.microphones.length ===
-            0 ? (
-              <option
-                value=""
-                className="bg-[#111318]"
-              >
-                No microphone found
-              </option>
-            ) : (
-              devices.microphones.map(
-                (device, index) => (
-                  <option
-                    key={
-                      device.deviceId ||
-                      `microphone-${index}`
-                    }
-                    value={
-                      device.deviceId
-                    }
-                    className="bg-[#111318]"
-                  >
-                    {device.label ||
-                      `Microphone ${index + 1}`}
-                  </option>
-                ),
-              )
-            )}
-          </select>
-        </div>
-      </div>
+              <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
+                <select
+                  value={selectedMicrophoneId}
+                  onChange={(event) => {
+                    const deviceId = event.target.value;
 
-      {/* SPEAKER */}
+                    setSelectedMicrophoneId(deviceId);
 
-      <div className="mt-6">
-        <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
-          Speaker
-        </label>
+                    void switchMicrophone(deviceId);
+                  }}
+                  className="w-full bg-transparent text-sm text-white outline-none"
+                >
+                  {devices.microphones.length === 0 ? (
+                    <option value="" className="bg-[#111318]">
+                      No microphone found
+                    </option>
+                  ) : (
+                    devices.microphones.map((device, index) => (
+                      <option
+                        key={device.deviceId || `microphone-${index}`}
+                        value={device.deviceId}
+                        className="bg-[#111318]"
+                      >
+                        {device.label || `Microphone ${index + 1}`}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+            </div>
 
-        <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
-          <select
-            className="w-full bg-transparent text-sm text-white outline-none"
-          >
-            {devices.speakers.length ===
-            0 ? (
-              <option
-                value=""
-                className="bg-[#111318]"
-              >
-                Default speaker
-              </option>
-            ) : (
-              devices.speakers.map(
-                (device, index) => (
-                  <option
-                    key={
-                      device.deviceId ||
-                      `speaker-${index}`
-                    }
-                    value={
-                      device.deviceId
-                    }
-                    className="bg-[#111318]"
-                  >
-                    {device.label ||
-                      `Speaker ${index + 1}`}
-                  </option>
-                ),
-              )
-            )}
-          </select>
-        </div>
+            {/* SPEAKER */}
 
-        <p className="mt-2 text-[11px] leading-relaxed text-white/25">
-          Speaker switching will be enabled
-          in the next step.
-        </p>
-      </div>
+            <div className="mt-6">
+              <label className="text-[11px] font-medium uppercase tracking-[0.14em] text-white/35">
+                Speaker
+              </label>
 
-      {/* REFRESH */}
+              <div className="mt-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-3">
+                <select className="w-full bg-transparent text-sm text-white outline-none">
+                  {devices.speakers.length === 0 ? (
+                    <option value="" className="bg-[#111318]">
+                      Default speaker
+                    </option>
+                  ) : (
+                    devices.speakers.map((device, index) => (
+                      <option
+                        key={device.deviceId || `speaker-${index}`}
+                        value={device.deviceId}
+                        className="bg-[#111318]"
+                      >
+                        {device.label || `Speaker ${index + 1}`}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
 
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            const allDevices =
-              await navigator.mediaDevices.enumerateDevices();
+              <p className="mt-2 text-[11px] leading-relaxed text-white/25">
+                Speaker switching will be enabled in the next step.
+              </p>
+            </div>
 
-            setDevices({
-              cameras:
-                allDevices.filter(
-                  (device) =>
-                    device.kind ===
-                    "videoinput",
-                ),
+            {/* REFRESH */}
 
-              microphones:
-                allDevices.filter(
-                  (device) =>
-                    device.kind ===
-                    "audioinput",
-                ),
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const allDevices =
+                    await navigator.mediaDevices.enumerateDevices();
 
-              speakers:
-                allDevices.filter(
-                  (device) =>
-                    device.kind ===
-                    "audiooutput",
-                ),
-            });
+                  setDevices({
+                    cameras: allDevices.filter(
+                      (device) => device.kind === "videoinput",
+                    ),
 
-            const videoTrack =
-  streamRef.current?.getVideoTracks()[0];
+                    microphones: allDevices.filter(
+                      (device) => device.kind === "audioinput",
+                    ),
 
-const audioTrack =
-  streamRef.current?.getAudioTracks()[0];
+                    speakers: allDevices.filter(
+                      (device) => device.kind === "audiooutput",
+                    ),
+                  });
 
-if (videoTrack) {
-  setSelectedCameraId(
-    videoTrack.getSettings().deviceId ?? "",
-  );
-}
+                  const videoTrack = streamRef.current?.getVideoTracks()[0];
 
-if (audioTrack) {
-  setSelectedMicrophoneId(
-    audioTrack.getSettings().deviceId ?? "",
-  );
-}
+                  const audioTrack = streamRef.current?.getAudioTracks()[0];
 
-          } catch (error) {
-            console.error(
-              "Failed to refresh devices:",
-              error,
-            );
-          }
-        }}
-        className="mt-8 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white/70 transition hover:bg-white/[0.08] hover:text-white"
-      >
-        Refresh devices
-      </button>
-    </div>
-  </aside>
-)}
+                  if (videoTrack) {
+                    setSelectedCameraId(
+                      videoTrack.getSettings().deviceId ?? "",
+                    );
+                  }
+
+                  if (audioTrack) {
+                    setSelectedMicrophoneId(
+                      audioTrack.getSettings().deviceId ?? "",
+                    );
+                  }
+                } catch (error) {
+                  console.error("Failed to refresh devices:", error);
+                }
+              }}
+              className="mt-8 w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+            >
+              Refresh devices
+            </button>
+          </div>
+        </aside>
+      )}
 
       {/* ================================================= */}
       {/* CONTROLS */}
@@ -1571,19 +1502,6 @@ if (audioTrack) {
 function RemoteVideo({ stream, participant }: RemoteVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  /*
-   * =========================================================
-   * ATTACH STREAM
-   * =========================================================
-   *
-   * THE IMPORTANT FIX:
-   *
-   * The <video> element NEVER gets
-   * unmounted when cameraEnabled changes.
-   *
-   * We only hide/show it.
-   */
-
   useEffect(() => {
     const video = videoRef.current;
 
@@ -1638,17 +1556,6 @@ function RemoteVideo({ stream, participant }: RemoteVideoProps) {
     };
 
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    /*
-     * DO NOT:
-     *
-     * video.srcObject = null
-     *
-     * during cleanup.
-     *
-     * The same MediaStream must remain
-     * attached when the camera is toggled.
-     */
 
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
