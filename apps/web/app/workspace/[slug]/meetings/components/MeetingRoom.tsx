@@ -141,6 +141,12 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const [selectedCameraId, setSelectedCameraId] =
+  useState("");
+
+const [selectedMicrophoneId, setSelectedMicrophoneId] =
+  useState("");
+
   const [devices, setDevices] = useState<{
     cameras: MediaDeviceInfo[];
     microphones: MediaDeviceInfo[];
@@ -525,6 +531,8 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
 
         setDevices({
           cameras: allDevices.filter((device) => device.kind === "videoinput"),
+
+          
 
           microphones: allDevices.filter(
             (device) => device.kind === "audioinput",
@@ -1451,6 +1459,25 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
                     "audiooutput",
                 ),
             });
+
+            const videoTrack =
+  streamRef.current?.getVideoTracks()[0];
+
+const audioTrack =
+  streamRef.current?.getAudioTracks()[0];
+
+if (videoTrack) {
+  setSelectedCameraId(
+    videoTrack.getSettings().deviceId ?? "",
+  );
+}
+
+if (audioTrack) {
+  setSelectedMicrophoneId(
+    audioTrack.getSettings().deviceId ?? "",
+  );
+}
+
           } catch (error) {
             console.error(
               "Failed to refresh devices:",
