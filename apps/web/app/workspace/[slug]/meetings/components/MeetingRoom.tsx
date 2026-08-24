@@ -139,6 +139,18 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
 
   const cameraTrackRef = useRef<MediaStreamTrack | null>(null);
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const [devices, setDevices] = useState<{
+    cameras: MediaDeviceInfo[];
+    microphones: MediaDeviceInfo[];
+    speakers: MediaDeviceInfo[];
+  }>({
+    cameras: [],
+    microphones: [],
+    speakers: [],
+  });
+
   /*
    * =========================================================
    * SAVE SETTINGS
@@ -181,123 +193,72 @@ export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
    */
 
   useEffect(() => {
-  let active = true;
+    let active = true;
 
-  function requestChatHistory() {
-    if (
-      !active ||
-      !socket.connected
-    ) {
-      return;
-    }
-
-    setChatLoading(true);
-
-    socket.emit(
-      "meeting:chat:history",
-      {
-        meetingId,
-      },
-    );
-  }
-
-  function handleChatMessage(
-    message: MeetingChatMessage,
-  ) {
-    if (
-      message.meetingId !== meetingId
-    ) {
-      return;
-    }
-
-    setChatMessages((previous) => {
-      if (
-        previous.some(
-          (item) =>
-            item.id === message.id,
-        )
-      ) {
-        return previous;
+    function requestChatHistory() {
+      if (!active || !socket.connected) {
+        return;
       }
 
-      return [
-        ...previous,
-        message,
-      ];
-    });
-  }
+      setChatLoading(true);
 
-  function handleChatHistory(data: {
-    messages: MeetingChatMessage[];
-  }) {
-    if (!active) {
-      return;
+      socket.emit("meeting:chat:history", {
+        meetingId,
+      });
     }
 
-    setChatMessages(
-      data.messages ?? [],
-    );
+    function handleChatMessage(message: MeetingChatMessage) {
+      if (message.meetingId !== meetingId) {
+        return;
+      }
 
-    setChatLoading(false);
-  }
+      setChatMessages((previous) => {
+        if (previous.some((item) => item.id === message.id)) {
+          return previous;
+        }
 
-  function handleChatError(data: {
-    message: string;
-  }) {
-    console.error(
-      "[Meeting Chat]",
-      data.message,
-    );
+        return [...previous, message];
+      });
+    }
 
-    if (active) {
+    function handleChatHistory(data: { messages: MeetingChatMessage[] }) {
+      if (!active) {
+        return;
+      }
+
+      setChatMessages(data.messages ?? []);
+
       setChatLoading(false);
     }
-  }
 
-  socket.on(
-    "meeting:participants",
-    requestChatHistory,
-  );
+    function handleChatError(data: { message: string }) {
+      console.error("[Meeting Chat]", data.message);
 
-  socket.on(
-    "meeting:chat:message",
-    handleChatMessage,
-  );
+      if (active) {
+        setChatLoading(false);
+      }
+    }
 
-  socket.on(
-    "meeting:chat:history",
-    handleChatHistory,
-  );
+    socket.on("meeting:participants", requestChatHistory);
 
-  socket.on(
-    "meeting:chat:error",
-    handleChatError,
-  );
+    socket.on("meeting:chat:message", handleChatMessage);
 
-  return () => {
-    active = false;
+    socket.on("meeting:chat:history", handleChatHistory);
 
-    socket.off(
-      "meeting:participants",
-      requestChatHistory,
-    );
+    socket.on("meeting:chat:error", handleChatError);
 
-    socket.off(
-      "meeting:chat:message",
-      handleChatMessage,
-    );
+    return () => {
+      active = false;
 
-    socket.off(
-      "meeting:chat:history",
-      handleChatHistory,
-    );
+      socket.off("meeting:participants", requestChatHistory);
 
-    socket.off(
-      "meeting:chat:error",
-      handleChatError,
-    );
-  };
-}, [meetingId]);
+      socket.off("meeting:chat:message", handleChatMessage);
+
+      socket.off("meeting:chat:history", handleChatHistory);
+
+      socket.off("meeting:chat:error", handleChatError);
+    };
+  }, [meetingId]);
 
   useEffect(() => {
     if (!chatOpen) {
