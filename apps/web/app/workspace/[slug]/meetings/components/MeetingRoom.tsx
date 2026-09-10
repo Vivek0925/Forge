@@ -1037,7 +1037,7 @@ export default function MeetingRoom({
       {/* MEETING CHAT */}
       {/* ================================================= */}
 
-      {chatOpen && (
+      {!minimized && chatOpen && (
         <aside className="absolute inset-y-16 right-0 z-40 flex w-full max-w-[380px] flex-col border-l rounded-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
           {/* Header */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
@@ -1158,7 +1158,7 @@ export default function MeetingRoom({
       {/* PARTICIPANTS PANEL */}
       {/* ================================================= */}
 
-      {participantsOpen && (
+      {!minimized && participantsOpen && (
         <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/65 shadow-2xl backdrop-blur-xl">
           <div className="flex h-full flex-col">
             {/* Header */}
@@ -1265,7 +1265,7 @@ export default function MeetingRoom({
       {/* MEETING SETTINGS */}
       {/* ================================================= */}
 
-      {settingsOpen && (
+      {!minimized && settingsOpen && (
         <aside className="absolute inset-y-16 right-0 z-50 flex w-full max-w-[380px] flex-col border-l rounded-l-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
           {/* Header */}
 
