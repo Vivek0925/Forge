@@ -857,54 +857,69 @@ export default function MeetingRoom({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setParticipantsOpen(true)}
-            className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
-            title="View participants"
-          >
-            <Users size={16} />
+          {!minimized && (
+            <>
+              <button
+                type="button"
+                onClick={() => setParticipantsOpen(true)}
+                className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+                title="View participants"
+              >
+                <Users size={16} />
 
-            <span>
-              {participantCount}{" "}
-              {participantCount === 1 ? "participant" : "participants"}
-            </span>
-          </button>
+                <span>
+                  {participantCount}{" "}
+                  {participantCount === 1 ? "participant" : "participants"}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setChatOpen((previous) => !previous)}
-            title="Meeting chat"
-            className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
-              chatOpen
-                ? "bg-white/[0.12] text-white"
-                : "text-white/50 hover:bg-white/[0.08] hover:text-white"
-            }`}
-          >
-            <MessageCircle size={18} />
-          </button>
+              <button
+                type="button"
+                onClick={() => setChatOpen((previous) => !previous)}
+                title="Meeting chat"
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                  chatOpen
+                    ? "bg-white/[0.12] text-white"
+                    : "text-white/50 hover:bg-white/[0.08] hover:text-white"
+                }`}
+              >
+                <MessageCircle size={18} />
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setSettingsOpen((previous) => !previous)}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
-              settingsOpen
-                ? "bg-white/[0.10] text-white"
-                : "text-white/50 hover:bg-white/[0.08] hover:text-white"
-            }`}
-            title="Settings"
-          >
-            <Settings size={18} />
-          </button>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen((previous) => !previous)}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                  settingsOpen
+                    ? "bg-white/[0.10] text-white"
+                    : "text-white/50 hover:bg-white/[0.08] hover:text-white"
+                }`}
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
 
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
-          >
-            {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-          </button>
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </>
+          )}
+
+          {minimized && (
+            <button
+              type="button"
+              onClick={onRestore}
+              title="Restore meeting"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
+            >
+              <Maximize size={16} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -918,10 +933,10 @@ export default function MeetingRoom({
         }`}
       >
         <div
-  className={`grid h-full min-h-0 w-full ${
-    minimized ? "grid-cols-1" : gridClass
-  } gap-3`}
->
+          className={`grid h-full min-h-0 w-full ${
+            minimized ? "grid-cols-1" : gridClass
+          } gap-3`}
+        >
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
           {/* ============================================= */}
@@ -1010,26 +1025,26 @@ export default function MeetingRoom({
           {/* ============================================= */}
 
           {!minimized &&
-  remoteParticipants.map((participant) => {
-            const remoteStream = remoteStreams[participant.socketId];
+            remoteParticipants.map((participant) => {
+              const remoteStream = remoteStreams[participant.socketId];
 
-            if (!remoteStream) {
+              if (!remoteStream) {
+                return (
+                  <RemoteWaitingTile
+                    key={participant.userId}
+                    participant={participant}
+                  />
+                );
+              }
+
               return (
-                <RemoteWaitingTile
+                <RemoteVideo
                   key={participant.userId}
+                  stream={remoteStream}
                   participant={participant}
                 />
               );
-            }
-
-            return (
-              <RemoteVideo
-                key={participant.userId}
-                stream={remoteStream}
-                participant={participant}
-              />
-            );
-          })}
+            })}
         </div>
       </main>
 
@@ -1453,70 +1468,71 @@ export default function MeetingRoom({
       {/* ================================================= */}
       {/* CONTROLS */}
       {/* ================================================= */}
+      {!minimized && (
+        <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
+          <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
+            <button
+              type="button"
+              onClick={toggleMicrophone}
+              disabled={loading || !!error}
+              title={micEnabled ? "Mute microphone" : "Unmute microphone"}
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+                micEnabled
+                  ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
+            </button>
 
-      <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
-        <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
-          <button
-            type="button"
-            onClick={toggleMicrophone}
-            disabled={loading || !!error}
-            title={micEnabled ? "Mute microphone" : "Unmute microphone"}
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
-              micEnabled
-                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
-                : "bg-red-500 text-white hover:bg-red-600"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-          >
-            {micEnabled ? <Mic size={20} /> : <MicOff size={20} />}
-          </button>
+            <button
+              type="button"
+              onClick={toggleCamera}
+              disabled={loading || !!error}
+              title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+                cameraEnabled
+                  ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {cameraEnabled ? <Camera size={20} /> : <CameraOff size={20} />}
+            </button>
 
-          <button
-            type="button"
-            onClick={toggleCamera}
-            disabled={loading || !!error}
-            title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
-              cameraEnabled
-                ? "bg-white/[0.07] text-white hover:bg-white/[0.12]"
-                : "bg-red-500 text-white hover:bg-red-600"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-          >
-            {cameraEnabled ? <Camera size={20} /> : <CameraOff size={20} />}
-          </button>
+            {/* Screen Share */}
 
-          {/* Screen Share */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isScreenSharing) {
+                  void stopScreenSharing();
+                } else {
+                  void startScreenSharing();
+                }
+              }}
+              disabled={loading || !!error}
+              title={isScreenSharing ? "Stop sharing" : "Share screen"}
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+                isScreenSharing
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-white/[0.07] text-white hover:bg-white/[0.12]"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              <MonitorUp size={20} />
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (isScreenSharing) {
-                void stopScreenSharing();
-              } else {
-                void startScreenSharing();
-              }
-            }}
-            disabled={loading || !!error}
-            title={isScreenSharing ? "Stop sharing" : "Share screen"}
-            className={`flex h-12 w-12 items-center justify-center rounded-2xl transition ${
-              isScreenSharing
-                ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                : "bg-white/[0.07] text-white hover:bg-white/[0.12]"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-          >
-            <MonitorUp size={20} />
-          </button>
+            <button
+              type="button"
+              onClick={leaveMeeting}
+              className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium text-white transition hover:bg-[#DC2626]"
+            >
+              <PhoneOff size={18} />
 
-          <button
-            type="button"
-            onClick={leaveMeeting}
-            className="ml-2 flex h-12 items-center gap-2 rounded-2xl bg-[#EF4444] px-5 text-sm font-medium text-white transition hover:bg-[#DC2626]"
-          >
-            <PhoneOff size={18} />
-
-            <span className="hidden sm:inline">Leave</span>
-          </button>
-        </div>
-      </footer>
+              <span className="hidden sm:inline">Leave</span>
+            </button>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
