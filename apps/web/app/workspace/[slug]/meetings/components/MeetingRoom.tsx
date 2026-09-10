@@ -822,23 +822,29 @@ export default function MeetingRoom({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+      className={
+        minimized
+          ? "fixed bottom-5 right-5 z-[100] flex h-[220px] w-[360px] flex-col overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0B0D11] text-white shadow-2xl"
+          : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+      }
     >
       {/* ================================================= */}
       {/* TOP BAR */}
       {/* ================================================= */}
 
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-4 backdrop-blur-xl sm:px-5">
+      <header
+        className={`flex shrink-0 items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-4 backdrop-blur-xl ${
+          minimized ? "h-11" : "h-16 sm:px-5"
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            onClick={() =>
-              (window.location.href = `/workspace/${slug}/meetings`)
-            }
+            onClick={onMinimize}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
-            title="Back to meetings"
+            title="Minimize meeting"
           >
-            <ArrowLeft size={19} />
+            <Minimize size={18} />
           </button>
 
           <div className="min-w-0">

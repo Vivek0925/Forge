@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useState,
   type ReactNode,
@@ -35,23 +36,23 @@ export function ActiveMeetingProvider({
 
   const [minimized, setMinimized] = useState(false);
 
-  function openMeeting(meeting: ActiveMeeting) {
+  const openMeeting = useCallback((meeting: ActiveMeeting) => {
     setActiveMeeting(meeting);
     setMinimized(false);
-  }
+  }, []);
 
-  function minimizeMeeting() {
+  const minimizeMeeting = useCallback(() => {
     setMinimized(true);
-  }
+  }, []);
 
-  function restoreMeeting() {
+  const restoreMeeting = useCallback(() => {
     setMinimized(false);
-  }
+  }, []);
 
-  function closeMeeting() {
+  const closeMeeting = useCallback(() => {
     setActiveMeeting(null);
     setMinimized(false);
-  }
+  }, []);
 
   return (
     <ActiveMeetingContext.Provider
