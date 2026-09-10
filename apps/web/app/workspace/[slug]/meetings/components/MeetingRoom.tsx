@@ -850,7 +850,9 @@ export default function MeetingRoom({
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">Meeting</p>
 
-            <p className="truncate text-xs text-white/35">{meetingId}</p>
+            {!minimized && (
+              <p className="truncate text-xs text-white/35">{meetingId}</p>
+            )}
           </div>
         </div>
 
@@ -910,8 +912,16 @@ export default function MeetingRoom({
       {/* VIDEO STAGE */}
       {/* ================================================= */}
 
-      <main className="relative min-h-0 flex-1 overflow-hidden p-3 sm:p-5">
-        <div className={`grid h-full min-h-0 w-full ${gridClass} gap-3`}>
+      <main
+        className={`relative min-h-0 flex-1 overflow-hidden ${
+          minimized ? "p-1.5" : "p-3 sm:p-5"
+        }`}
+      >
+        <div
+  className={`grid h-full min-h-0 w-full ${
+    minimized ? "grid-cols-1" : gridClass
+  } gap-3`}
+>
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
           {/* ============================================= */}
@@ -999,7 +1009,8 @@ export default function MeetingRoom({
           {/* REMOTE PARTICIPANTS */}
           {/* ============================================= */}
 
-          {remoteParticipants.map((participant) => {
+          {!minimized &&
+  remoteParticipants.map((participant) => {
             const remoteStream = remoteStreams[participant.socketId];
 
             if (!remoteStream) {
