@@ -1,4 +1,4 @@
-import MeetingRoom from "../components/MeetingRoom";
+import MeetingRoomLauncher from "../../_components/MeetingRoomLauncher";
 
 interface MeetingRoomPageProps {
   params: Promise<{
@@ -13,7 +13,7 @@ export default async function MeetingRoomPage({
   const { slug, meetingId } = await params;
 
   return (
-    <MeetingRoom
+    <MeetingRoomLauncher
       slug={slug}
       meetingId={meetingId}
     />

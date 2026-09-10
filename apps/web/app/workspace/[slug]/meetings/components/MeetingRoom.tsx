@@ -23,6 +23,9 @@ import { socket } from "@/lib/socket";
 interface MeetingRoomProps {
   slug: string;
   meetingId: string;
+  minimized: boolean;
+  onMinimize: () => void;
+  onRestore: () => void;
 }
 
 interface Participant {
@@ -51,7 +54,13 @@ interface MeetingChatMessage {
   };
 }
 
-export default function MeetingRoom({ slug, meetingId }: MeetingRoomProps) {
+export default function MeetingRoom({
+  slug,
+  meetingId,
+  minimized,
+  onMinimize,
+  onRestore,
+}: MeetingRoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
