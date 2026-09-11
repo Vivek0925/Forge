@@ -15,6 +15,7 @@ import {
   PhoneOff,
   Settings,
   Users,
+  X,
 } from "lucide-react";
 
 import { useMeeting } from "@/hooks/useMeeting";
@@ -24,8 +25,10 @@ interface MeetingRoomProps {
   slug: string;
   meetingId: string;
   minimized: boolean;
+  hidden: boolean;
   onMinimize: () => void;
   onRestore: () => void;
+  onHide: () => void;
 }
 
 interface Participant {
@@ -58,8 +61,10 @@ export default function MeetingRoom({
   slug,
   meetingId,
   minimized,
+  hidden,
   onMinimize,
   onRestore,
+  onHide,
 }: MeetingRoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -495,33 +500,6 @@ export default function MeetingRoom({
     };
   }, []);
 
-  async function handleMiniFullscreen() {
-    try {
-      if (isFullscreen) {
-        await document.exitFullscreen();
-        return;
-      }
-
-      if (minimized) {
-        onRestore();
-
-        requestAnimationFrame(async () => {
-          try {
-            await containerRef.current?.requestFullscreen();
-          } catch (error) {
-            console.error("Fullscreen error:", error);
-          }
-        });
-
-        return;
-      }
-
-      await containerRef.current?.requestFullscreen();
-    } catch (err) {
-      console.error("Fullscreen error:", err);
-    }
-  }
-
   async function toggleFullscreen() {
     try {
       if (!document.fullscreenElement) {
@@ -865,6 +843,10 @@ export default function MeetingRoom({
       return;
     }
 
+    if (event.target instanceof HTMLElement && event.target.closest("button")) {
+      return;
+    }
+
     const rect = containerRef.current?.getBoundingClientRect();
 
     if (!rect) {
@@ -931,9 +913,11 @@ export default function MeetingRoom({
           : undefined
       }
       className={
-        minimized
-          ? "fixed bottom-5 right-5 z-[100] flex h-[240px] w-[360px] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40"
-          : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+        hidden
+          ? "hidden"
+          : minimized
+            ? "fixed bottom-5 right-5 z-[100] flex h-[240px] w-[360px] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40"
+            : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
       }
     >
       {/* ================================================= */}
@@ -1052,26 +1036,15 @@ export default function MeetingRoom({
                 <Maximize size={16} />
               </button>
 
-              {/* FULLSCREEN */}
-
-              <button
-                type="button"
-                onClick={handleMiniFullscreen}
-                title="Fullscreen"
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
-              >
-                <Maximize size={16} />
-              </button>
-
               {/* CLOSE MINI WINDOW */}
 
               <button
                 type="button"
-                onClick={onRestore}
+                onClick={onHide}
                 title="Close mini window"
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white"
               >
-                ×
+                <X size={16} />
               </button>
             </>
           )}
