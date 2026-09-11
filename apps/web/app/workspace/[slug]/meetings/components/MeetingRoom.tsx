@@ -495,6 +495,33 @@ export default function MeetingRoom({
     };
   }, []);
 
+  async function handleMiniFullscreen() {
+    try {
+      if (isFullscreen) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      if (minimized) {
+        onRestore();
+
+        requestAnimationFrame(async () => {
+          try {
+            await containerRef.current?.requestFullscreen();
+          } catch (error) {
+            console.error("Fullscreen error:", error);
+          }
+        });
+
+        return;
+      }
+
+      await containerRef.current?.requestFullscreen();
+    } catch (err) {
+      console.error("Fullscreen error:", err);
+    }
+  }
+
   async function toggleFullscreen() {
     try {
       if (!document.fullscreenElement) {
@@ -905,7 +932,7 @@ export default function MeetingRoom({
       }
       className={
         minimized
-          ? "fixed bottom-5 right-5 z-[100] flex h-[250px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl"
+          ? "fixed bottom-5 right-5 z-[100] flex h-[240px] w-[360px] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40"
           : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
       }
     >
@@ -922,15 +949,24 @@ export default function MeetingRoom({
           minimized ? "h-11 cursor-move" : "h-16 sm:px-5"
         }`}
       >
+        {/* LEFT */}
+
         <div className="flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={onMinimize}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
-            title="Minimize meeting"
-          >
-            <Minimize size={18} />
-          </button>
+          {!minimized ? (
+            <button
+              type="button"
+              onClick={onMinimize}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+              title="Minimize meeting"
+            >
+              <Minimize size={18} />
+            </button>
+          ) : (
+            <div className="flex items-center gap-1 text-white/25">
+              <span>⋮</span>
+              <span>⋮</span>
+            </div>
+          )}
 
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white">Meeting</p>
@@ -941,9 +977,13 @@ export default function MeetingRoom({
           </div>
         </div>
 
+        {/* RIGHT */}
+
         <div className="flex items-center gap-2">
-          {!minimized && (
+          {!minimized ? (
             <>
+              {/* PARTICIPANTS */}
+
               <button
                 type="button"
                 onClick={() => setParticipantsOpen(true)}
@@ -958,6 +998,8 @@ export default function MeetingRoom({
                 </span>
               </button>
 
+              {/* CHAT */}
+
               <button
                 type="button"
                 onClick={() => setChatOpen((previous) => !previous)}
@@ -970,6 +1012,8 @@ export default function MeetingRoom({
               >
                 <MessageCircle size={18} />
               </button>
+
+              {/* SETTINGS */}
 
               <button
                 type="button"
@@ -984,32 +1028,52 @@ export default function MeetingRoom({
                 <Settings size={18} />
               </button>
 
-              {!minimized && (
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
-                >
-                  {isFullscreen ? (
-                    <Minimize size={18} />
-                  ) : (
-                    <Maximize size={18} />
-                  )}
-                </button>
-              )}
-            </>
-          )}
+              {/* FULLSCREEN */}
 
-          {minimized && (
-            <button
-              type="button"
-              onClick={onRestore}
-              title="Restore meeting"
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
-            >
-              <Maximize size={16} />
-            </button>
+              <button
+                type="button"
+                onClick={toggleFullscreen}
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </>
+          ) : (
+            <>
+              {/* RESTORE */}
+
+              <button
+                type="button"
+                onClick={onRestore}
+                title="Restore meeting"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
+              >
+                <Maximize size={16} />
+              </button>
+
+              {/* FULLSCREEN */}
+
+              <button
+                type="button"
+                onClick={handleMiniFullscreen}
+                title="Fullscreen"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
+              >
+                <Maximize size={16} />
+              </button>
+
+              {/* CLOSE MINI WINDOW */}
+
+              <button
+                type="button"
+                onClick={onRestore}
+                title="Close mini window"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                ×
+              </button>
+            </>
           )}
         </div>
       </header>
@@ -1555,171 +1619,106 @@ export default function MeetingRoom({
           </div>
         </aside>
       )}
-
       {/* ================================================= */}
       {/* CONTROLS */}
       {/* ================================================= */}
-      {minimized ? (
-        <footer className="flex h-14 shrink-0 items-center justify-center border-t border-white/[0.08] bg-[#111318] px-2">
-          <div className="flex items-center gap-2">
-            {/* MICROPHONE */}
 
-            <button
-              type="button"
-              onClick={toggleMicrophone}
-              disabled={loading || !!error}
-              title={micEnabled ? "Mute microphone" : "Unmute microphone"}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-                micEnabled
-                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                  : "bg-red-500 text-white hover:bg-red-600"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              {micEnabled ? <Mic size={17} /> : <MicOff size={17} />}
-            </button>
+      <footer
+        className={
+          minimized
+            ? "flex h-14 shrink-0 items-center justify-center border-t border-white/[0.08] bg-[#111318] px-2"
+            : "flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4"
+        }
+      >
+        <div
+          className={
+            minimized
+              ? "flex items-center gap-2"
+              : "flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl"
+          }
+        >
+          {/* MICROPHONE */}
 
-            {/* CAMERA */}
+          <button
+            type="button"
+            onClick={toggleMicrophone}
+            disabled={loading || !!error}
+            title={micEnabled ? "Mute microphone" : "Unmute microphone"}
+            className={`flex ${
+              minimized ? "h-10 w-10" : "h-12 w-12"
+            } items-center justify-center rounded-full transition ${
+              micEnabled
+                ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                : "bg-red-500 text-white hover:bg-red-600"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            {micEnabled ? (
+              <Mic size={minimized ? 17 : 19} />
+            ) : (
+              <MicOff size={minimized ? 17 : 19} />
+            )}
+          </button>
 
-            <button
-              type="button"
-              onClick={toggleCamera}
-              disabled={loading || !!error}
-              title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-                cameraEnabled
-                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                  : "bg-red-500 text-white hover:bg-red-600"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              {cameraEnabled ? <Camera size={17} /> : <CameraOff size={17} />}
-            </button>
+          {/* CAMERA */}
 
-            {/* SCREEN SHARE */}
+          <button
+            type="button"
+            onClick={toggleCamera}
+            disabled={loading || !!error}
+            title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+            className={`flex ${
+              minimized ? "h-10 w-10" : "h-12 w-12"
+            } items-center justify-center rounded-full transition ${
+              cameraEnabled
+                ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                : "bg-red-500 text-white hover:bg-red-600"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            {cameraEnabled ? (
+              <Camera size={minimized ? 17 : 19} />
+            ) : (
+              <CameraOff size={minimized ? 17 : 19} />
+            )}
+          </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (isScreenSharing) {
-                  void stopScreenSharing();
-                } else {
-                  void startScreenSharing();
-                }
-              }}
-              disabled={loading || !!error}
-              title={isScreenSharing ? "Stop sharing" : "Share screen"}
-              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-                isScreenSharing
-                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                  : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              <MonitorUp size={17} />
-            </button>
+          {/* SCREEN SHARE */}
 
-            {/* RESTORE */}
+          <button
+            type="button"
+            onClick={() => {
+              if (isScreenSharing) {
+                void stopScreenSharing();
+              } else {
+                void startScreenSharing();
+              }
+            }}
+            disabled={loading || !!error}
+            title={isScreenSharing ? "Stop sharing" : "Share screen"}
+            className={`flex ${
+              minimized ? "h-10 w-10" : "h-12 w-12"
+            } items-center justify-center rounded-full transition ${
+              isScreenSharing
+                ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            <MonitorUp size={minimized ? 17 : 19} />
+          </button>
 
-            <button
-              type="button"
-              onClick={onRestore}
-              title="Open meeting"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.14]"
-            >
-              <Maximize size={17} />
-            </button>
+          {/* LEAVE */}
 
-            {/* LEAVE */}
-
-            <button
-              type="button"
-              onClick={leaveMeeting}
-              title="Leave meeting"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]"
-            >
-              <PhoneOff size={17} />
-            </button>
-          </div>
-        </footer>
-      ) : (
-        <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
-          <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
-            {/* MICROPHONE */}
-
-            <button
-              type="button"
-              onClick={toggleMicrophone}
-              disabled={loading || !!error}
-              title={micEnabled ? "Mute microphone" : "Unmute microphone"}
-              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                micEnabled
-                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                  : "bg-red-500 text-white hover:bg-red-600"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              {micEnabled ? <Mic size={19} /> : <MicOff size={19} />}
-            </button>
-
-            {/* CAMERA */}
-
-            <button
-              type="button"
-              onClick={toggleCamera}
-              disabled={loading || !!error}
-              title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
-              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                cameraEnabled
-                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                  : "bg-red-500 text-white hover:bg-red-600"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              {cameraEnabled ? <Camera size={19} /> : <CameraOff size={19} />}
-            </button>
-
-            {/* SCREEN SHARE */}
-
-            <button
-              type="button"
-              onClick={() => {
-                if (isScreenSharing) {
-                  void stopScreenSharing();
-                } else {
-                  void startScreenSharing();
-                }
-              }}
-              disabled={loading || !!error}
-              title={isScreenSharing ? "Stop sharing" : "Share screen"}
-              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                isScreenSharing
-                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                  : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-              } disabled:cursor-not-allowed disabled:opacity-40`}
-            >
-              <MonitorUp size={19} />
-            </button>
-
-            {/* FULLSCREEN */}
-
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.08] text-white/80 transition hover:bg-white/[0.14] hover:text-white"
-            >
-              {isFullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
-            </button>
-
-            {/* LEAVE */}
-
-            <button
-              type="button"
-              onClick={leaveMeeting}
-              title="Leave meeting"
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]"
-            >
-              <PhoneOff size={19} />
-            </button>
-          </div>
-        </footer>
-      )}
+          <button
+            type="button"
+            onClick={leaveMeeting}
+            title="Leave meeting"
+            className={`flex ${
+              minimized ? "h-10 w-10" : "h-12 w-12"
+            } items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]`}
+          >
+            <PhoneOff size={minimized ? 17 : 19} />
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }
