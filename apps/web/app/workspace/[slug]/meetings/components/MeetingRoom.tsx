@@ -77,20 +77,20 @@ export default function MeetingRoom({
    * This fixes the race where getUserMedia()
    * could start before the restore useEffect.
    */
-const [miniPosition, setMiniPosition] = useState<{
-  x: number;
-  y: number;
-} | null>(null);
+  const [miniPosition, setMiniPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
-const dragStateRef = useRef<{
-  dragging: boolean;
-  offsetX: number;
-  offsetY: number;
-}>({
-  dragging: false,
-  offsetX: 0,
-  offsetY: 0,
-});
+  const dragStateRef = useRef<{
+    dragging: boolean;
+    offsetX: number;
+    offsetY: number;
+  }>({
+    dragging: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
 
   const [cameraEnabled, setCameraEnabled] = useState<boolean>(() => {
     if (typeof window === "undefined") {
@@ -833,95 +833,95 @@ const dragStateRef = useRef<{
           ? "grid-cols-1 md:grid-cols-2"
           : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
 
-          function startMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
-  if (!minimized) {
-    return;
+  function startMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!minimized) {
+      return;
+    }
+
+    const rect = containerRef.current?.getBoundingClientRect();
+
+    if (!rect) {
+      return;
+    }
+
+    dragStateRef.current = {
+      dragging: true,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  const rect = containerRef.current?.getBoundingClientRect();
+  function moveMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
+    if (!minimized || !dragStateRef.current.dragging) {
+      return;
+    }
 
-  if (!rect) {
-    return;
+    const width = containerRef.current?.offsetWidth ?? 360;
+    const height = containerRef.current?.offsetHeight ?? 220;
+
+    const maxX = window.innerWidth - width - 8;
+    const maxY = window.innerHeight - height - 8;
+
+    const nextX = Math.min(
+      Math.max(8, event.clientX - dragStateRef.current.offsetX),
+      maxX,
+    );
+
+    const nextY = Math.min(
+      Math.max(8, event.clientY - dragStateRef.current.offsetY),
+      maxY,
+    );
+
+    setMiniPosition({
+      x: nextX,
+      y: nextY,
+    });
   }
 
-  dragStateRef.current = {
-    dragging: true,
-    offsetX: event.clientX - rect.left,
-    offsetY: event.clientY - rect.top,
-  };
+  function endMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
+    dragStateRef.current.dragging = false;
 
-  event.currentTarget.setPointerCapture(event.pointerId);
-}
-
-function moveMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
-  if (!minimized || !dragStateRef.current.dragging) {
-    return;
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore if pointer capture was already released.
+    }
   }
-
-  const width = containerRef.current?.offsetWidth ?? 360;
-  const height = containerRef.current?.offsetHeight ?? 220;
-
-  const maxX = window.innerWidth - width - 8;
-  const maxY = window.innerHeight - height - 8;
-
-  const nextX = Math.min(
-    Math.max(8, event.clientX - dragStateRef.current.offsetX),
-    maxX,
-  );
-
-  const nextY = Math.min(
-    Math.max(8, event.clientY - dragStateRef.current.offsetY),
-    maxY,
-  );
-
-  setMiniPosition({
-    x: nextX,
-    y: nextY,
-  });
-}
-
-function endMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
-  dragStateRef.current.dragging = false;
-
-  try {
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  } catch {
-    // Ignore if pointer capture was already released.
-  }
-}
 
   return (
-   <div
-  ref={containerRef}
-  style={
-    minimized && miniPosition
-      ? {
-          left: miniPosition.x,
-          top: miniPosition.y,
-          right: "auto",
-          bottom: "auto",
-        }
-      : undefined
-  }
-  className={
-    minimized
-      ? "fixed bottom-5 right-5 z-[100] flex h-[250px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl"
-      : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
-  }
->
+    <div
+      ref={containerRef}
+      style={
+        minimized && miniPosition
+          ? {
+              left: miniPosition.x,
+              top: miniPosition.y,
+              right: "auto",
+              bottom: "auto",
+            }
+          : undefined
+      }
+      className={
+        minimized
+          ? "fixed bottom-5 right-5 z-[100] flex h-[250px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl"
+          : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+      }
+    >
       {/* ================================================= */}
       {/* TOP BAR */}
       {/* ================================================= */}
 
       <header
-  onPointerDown={startMiniDrag}
-  onPointerMove={moveMiniDrag}
-  onPointerUp={endMiniDrag}
-  onPointerCancel={endMiniDrag}
-  className={`flex shrink-0 select-none items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-3 backdrop-blur-xl ${
-    minimized ? "h-11 cursor-move" : "h-16 sm:px-5"
-  }`}
->
+        onPointerDown={startMiniDrag}
+        onPointerMove={moveMiniDrag}
+        onPointerUp={endMiniDrag}
+        onPointerCancel={endMiniDrag}
+        className={`flex shrink-0 select-none items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-3 backdrop-blur-xl ${
+          minimized ? "h-11 cursor-move" : "h-16 sm:px-5"
+        }`}
+      >
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
@@ -984,14 +984,20 @@ function endMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
                 <Settings size={18} />
               </button>
 
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
-              >
-                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
-              </button>
+              {!minimized && (
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+                >
+                  {isFullscreen ? (
+                    <Minimize size={18} />
+                  ) : (
+                    <Maximize size={18} />
+                  )}
+                </button>
+              )}
             </>
           )}
 
@@ -1554,92 +1560,166 @@ function endMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
       {/* CONTROLS */}
       {/* ================================================= */}
       {minimized ? (
-  <footer className="flex h-14 shrink-0 items-center justify-center border-t border-white/[0.08] bg-[#111318] px-2">
-    <div className="flex items-center gap-2">
-      {/* MICROPHONE */}
+        <footer className="flex h-14 shrink-0 items-center justify-center border-t border-white/[0.08] bg-[#111318] px-2">
+          <div className="flex items-center gap-2">
+            {/* MICROPHONE */}
 
-      <button
-        type="button"
-        onClick={toggleMicrophone}
-        disabled={loading || !!error}
-        title={micEnabled ? "Mute microphone" : "Unmute microphone"}
-        className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-          micEnabled
-            ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-            : "bg-red-500 text-white hover:bg-red-600"
-        } disabled:cursor-not-allowed disabled:opacity-40`}
-      >
-        {micEnabled ? <Mic size={17} /> : <MicOff size={17} />}
-      </button>
+            <button
+              type="button"
+              onClick={toggleMicrophone}
+              disabled={loading || !!error}
+              title={micEnabled ? "Mute microphone" : "Unmute microphone"}
+              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                micEnabled
+                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {micEnabled ? <Mic size={17} /> : <MicOff size={17} />}
+            </button>
 
-      {/* CAMERA */}
+            {/* CAMERA */}
 
-      <button
-        type="button"
-        onClick={toggleCamera}
-        disabled={loading || !!error}
-        title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
-        className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-          cameraEnabled
-            ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-            : "bg-red-500 text-white hover:bg-red-600"
-        } disabled:cursor-not-allowed disabled:opacity-40`}
-      >
-        {cameraEnabled ? <Camera size={17} /> : <CameraOff size={17} />}
-      </button>
+            <button
+              type="button"
+              onClick={toggleCamera}
+              disabled={loading || !!error}
+              title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                cameraEnabled
+                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {cameraEnabled ? <Camera size={17} /> : <CameraOff size={17} />}
+            </button>
 
-      {/* SCREEN SHARE */}
+            {/* SCREEN SHARE */}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (isScreenSharing) {
-            void stopScreenSharing();
-          } else {
-            void startScreenSharing();
-          }
-        }}
-        disabled={loading || !!error}
-        title={isScreenSharing ? "Stop sharing" : "Share screen"}
-        className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-          isScreenSharing
-            ? "bg-emerald-500 text-white hover:bg-emerald-600"
-            : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-        } disabled:cursor-not-allowed disabled:opacity-40`}
-      >
-        <MonitorUp size={17} />
-      </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (isScreenSharing) {
+                  void stopScreenSharing();
+                } else {
+                  void startScreenSharing();
+                }
+              }}
+              disabled={loading || !!error}
+              title={isScreenSharing ? "Stop sharing" : "Share screen"}
+              className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                isScreenSharing
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              <MonitorUp size={17} />
+            </button>
 
-      {/* RESTORE */}
+            {/* RESTORE */}
 
-      <button
-        type="button"
-        onClick={onRestore}
-        title="Open meeting"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.14]"
-      >
-        <Maximize size={17} />
-      </button>
+            <button
+              type="button"
+              onClick={onRestore}
+              title="Open meeting"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white transition hover:bg-white/[0.14]"
+            >
+              <Maximize size={17} />
+            </button>
 
-      {/* LEAVE */}
+            {/* LEAVE */}
 
-      <button
-        type="button"
-        onClick={leaveMeeting}
-        title="Leave meeting"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]"
-      >
-        <PhoneOff size={17} />
-      </button>
-    </div>
-  </footer>
-) : (
-  <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
-    <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
-      {/* KEEP YOUR EXISTING FULL-MEETING CONTROLS HERE */}
-    </div>
-  </footer>
-)}
+            <button
+              type="button"
+              onClick={leaveMeeting}
+              title="Leave meeting"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]"
+            >
+              <PhoneOff size={17} />
+            </button>
+          </div>
+        </footer>
+      ) : (
+        <footer className="flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4">
+          <div className="flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl">
+            {/* MICROPHONE */}
+
+            <button
+              type="button"
+              onClick={toggleMicrophone}
+              disabled={loading || !!error}
+              title={micEnabled ? "Mute microphone" : "Unmute microphone"}
+              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                micEnabled
+                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {micEnabled ? <Mic size={19} /> : <MicOff size={19} />}
+            </button>
+
+            {/* CAMERA */}
+
+            <button
+              type="button"
+              onClick={toggleCamera}
+              disabled={loading || !!error}
+              title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                cameraEnabled
+                  ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                  : "bg-red-500 text-white hover:bg-red-600"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              {cameraEnabled ? <Camera size={19} /> : <CameraOff size={19} />}
+            </button>
+
+            {/* SCREEN SHARE */}
+
+            <button
+              type="button"
+              onClick={() => {
+                if (isScreenSharing) {
+                  void stopScreenSharing();
+                } else {
+                  void startScreenSharing();
+                }
+              }}
+              disabled={loading || !!error}
+              title={isScreenSharing ? "Stop sharing" : "Share screen"}
+              className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                isScreenSharing
+                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                  : "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+              } disabled:cursor-not-allowed disabled:opacity-40`}
+            >
+              <MonitorUp size={19} />
+            </button>
+
+            {/* FULLSCREEN */}
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.08] text-white/80 transition hover:bg-white/[0.14] hover:text-white"
+            >
+              {isFullscreen ? <Minimize size={19} /> : <Maximize size={19} />}
+            </button>
+
+            {/* LEAVE */}
+
+            <button
+              type="button"
+              onClick={leaveMeeting}
+              title="Leave meeting"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]"
+            >
+              <PhoneOff size={19} />
+            </button>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -1818,7 +1898,6 @@ function RemoteVideo({ stream, participant }: RemoteVideoProps) {
     </div>
   );
 }
-
 
 /* ========================================================= */
 /* REMOTE WAITING TILE */
