@@ -1030,6 +1030,7 @@ export default function MeetingRoom({
               <button
                 type="button"
                 onClick={onRestore}
+                onPointerDown={(event) => event.stopPropagation()}
                 title="Restore meeting"
                 className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.08] text-white/60 transition hover:bg-white/[0.14] hover:text-white"
               >
@@ -1041,6 +1042,7 @@ export default function MeetingRoom({
               <button
                 type="button"
                 onClick={onHide}
+                onPointerDown={(event) => event.stopPropagation()}
                 title="Close mini window"
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-white/50 transition hover:bg-white/[0.08] hover:text-white"
               >

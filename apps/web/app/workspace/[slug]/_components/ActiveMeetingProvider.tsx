@@ -47,6 +47,7 @@ export function ActiveMeetingProvider({ children }: { children: ReactNode }) {
 
   const minimizeMeeting = useCallback(() => {
     setMinimized(true);
+    setMeetingHidden(false);
   }, []);
 
   const restoreMeeting = useCallback(() => {
@@ -59,6 +60,7 @@ export function ActiveMeetingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showMeeting = useCallback(() => {
+    setMinimized(true);
     setMeetingHidden(false);
   }, []);
 
