@@ -171,7 +171,7 @@ model Meeting {
   participants    MeetingParticipant[]
   meetingMessages MeetingMessage[]
 
-  meetingCode String? @unique
+  meetingCode String @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

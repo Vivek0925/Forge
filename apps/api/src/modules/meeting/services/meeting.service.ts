@@ -56,6 +56,45 @@ export class MeetingService {
     return meeting;
   }
 
+  async joinByCode(
+  meetingCode: string,
+  userId: string,
+) {
+  const meeting =
+    await this.meetingRepository.findByCode(
+      meetingCode.trim().toUpperCase(),
+    );
+
+  if (!meeting) {
+    throw new NotFoundException(
+      "Invalid meeting code",
+    );
+  }
+
+  if (meeting.status === "ENDED") {
+    throw new BadRequestException(
+      "Meeting has ended",
+    );
+  }
+
+  if (meeting.status === "CANCELLED") {
+    throw new BadRequestException(
+      "Meeting has been cancelled",
+    );
+  }
+
+  if (meeting.status !== "ACTIVE") {
+    throw new BadRequestException(
+      "Meeting has not started yet",
+    );
+  }
+
+  return {
+    meetingId: meeting.id,
+    meetingCode: meeting.meetingCode,
+  };
+}
+
   async findWorkspaceMeetings(workspaceSlug: string) {
     const workspace =
       await this.workspaceService.findWorkspaceBySlug(workspaceSlug);

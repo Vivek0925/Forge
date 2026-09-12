@@ -84,6 +84,14 @@ export class MeetingRepository {
     });
   }
 
+  findByCode(meetingCode: string) {
+  return this.prisma.meeting.findUnique({
+    where: {
+      meetingCode,
+    },
+  });
+}
+
   findByWorkspace(workspaceId: string) {
     return this.prisma.meeting.findMany({
       where: {

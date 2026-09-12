@@ -16,6 +16,52 @@ interface HeroProps {
 export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
   const [open, setOpen] = useState(false);
 
+  const [meetingCode, setMeetingCode] = useState("");
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState("");
+
+  async function handleJoinMeeting() {
+    const code = meetingCode.trim();
+
+    if (!code) {
+      setJoinError("Enter a meeting code.");
+      return;
+    }
+
+    try {
+      setJoining(true);
+      setJoinError("");
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/meetings/join-code`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            meetingCode: code,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to join meeting.");
+      }
+
+      window.location.href = `/workspace/${data.workspaceSlug}/meetings/${data.meetingId}`;
+    } catch (error) {
+      setJoinError(
+        error instanceof Error ? error.message : "Unable to join meeting.",
+      );
+    } finally {
+      setJoining(false);
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center text-center">
       <h1 className="max-w-[800px] text-[48px] font-light leading-[1.15] tracking-[-0.03em] text-[#14141C] md:text-[64px] lg:text-[72px]">

@@ -33,6 +33,17 @@ export class MeetingController {
     );
   }
 
+  @Post("join-code")
+async joinByCode(
+  @Body("meetingCode") meetingCode: string,
+  @Request() req: any,
+) {
+  return this.meetingService.joinByCode(
+    meetingCode,
+    req.user.id,
+  );
+}
+
   @Get(":id")
   async getMeeting(
     @Param("id") id: string,
