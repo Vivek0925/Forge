@@ -964,19 +964,26 @@ if (reconnectingRef.current) {
      * INITIAL JOIN
      */
 
-    if (!joinedRef.current) {
-      console.log(
-        "[Meeting] joining:",
-        meetingId,
-      );
+    /*
+ * INITIAL JOIN
+ */
 
-      socket.emit("meeting:join", {
-        meetingId,
-      });
+if (!joinedRef.current) {
+  console.log(
+    "[Meeting] joining:",
+    meetingId,
+  );
 
-      joinedRef.current = true;
-    }
+  if (!socket.connected) {
+    socket.connect();
+  } else {
+    socket.emit("meeting:join", {
+      meetingId,
+    });
 
+    joinedRef.current = true;
+  }
+}
     /*
      * CLEANUP
      */
