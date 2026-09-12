@@ -89,6 +89,13 @@ export class MeetingRepository {
     where: {
       meetingCode,
     },
+    include: {
+      workspace: {
+        select: {
+          slug: true,
+        },
+      },
+    },
   });
 }
 

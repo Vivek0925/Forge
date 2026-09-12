@@ -90,9 +90,10 @@ export class MeetingService {
   }
 
   return {
-    meetingId: meeting.id,
-    meetingCode: meeting.meetingCode,
-  };
+  meetingId: meeting.id,
+  meetingCode: meeting.meetingCode,
+  workspaceSlug: meeting.workspace.slug,
+};
 }
 
   async findWorkspaceMeetings(workspaceSlug: string) {

@@ -104,14 +104,35 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         <div className="flex gap-2">
           <input
             type="text"
+            value={meetingCode}
+            onChange={(event) => {
+              setMeetingCode(event.target.value);
+              setJoinError("");
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void handleJoinMeeting();
+              }
+            }}
             placeholder="Enter a code or meeting link"
             className="flex-1 rounded-full border-2 border-[#DEDFE8] bg-white px-6 py-3 text-[14px] placeholder-[#5B5D6E] transition-all focus:border-[#059669] focus:outline-none"
           />
-          <button className="rounded-full bg-[#FAFAF8] px-6 py-3 text-[14px] font-medium text-[#5B5D6E] transition-all hover:bg-[#DEDFE8]">
-            Join
+          <button
+            type="button"
+            onClick={() => void handleJoinMeeting()}
+            disabled={joining}
+            className="rounded-full bg-[#FAFAF8] px-6 py-3 text-[14px] font-medium text-[#5B5D6E] transition-all hover:bg-[#DEDFE8] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {joining ? "Joining..." : "Join"}
           </button>
         </div>
       </div>
+
+      {joinError && (
+  <p className="mt-2 px-4 text-left text-sm text-red-500">
+    {joinError}
+  </p>
+)}
 
       <div className="mt-16 flex items-center justify-center">
         <div className="relative h-[280px] w-[280px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-8">
