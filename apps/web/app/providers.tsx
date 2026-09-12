@@ -2,6 +2,8 @@
 
 import { AuthProvider } from "../context/AuthContext";
 import InvitationProvider from "../context/InvitationProvider";
+import { ActiveMeetingProvider } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
+import ActiveMeeting from "@/app/workspace/[slug]/_components/ActiveMeeting";
 
 export default function Providers({
   children,
@@ -9,10 +11,13 @@ export default function Providers({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
-      <InvitationProvider>
+  <AuthProvider>
+    <InvitationProvider>
+      <ActiveMeetingProvider>
         {children}
-      </InvitationProvider>
-    </AuthProvider>
-  );
+        <ActiveMeeting />
+      </ActiveMeetingProvider>
+    </InvitationProvider>
+  </AuthProvider>
+);
 }

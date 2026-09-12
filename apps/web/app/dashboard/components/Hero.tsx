@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CreateWorkspaceModal } from "@/components/workspace";
 import type { Workspace } from "@/lib/workspace";
+import { useActiveMeeting } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
 
 type User = {
   name?: string | null;
@@ -19,6 +20,7 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
   const [meetingCode, setMeetingCode] = useState("");
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState("");
+  const { openMeeting } = useActiveMeeting();
 
   async function handleJoinMeeting() {
     const code = meetingCode.trim();
@@ -129,10 +131,8 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
       </div>
 
       {joinError && (
-  <p className="mt-2 px-4 text-left text-sm text-red-500">
-    {joinError}
-  </p>
-)}
+        <p className="mt-2 px-4 text-left text-sm text-red-500">{joinError}</p>
+      )}
 
       <div className="mt-16 flex items-center justify-center">
         <div className="relative h-[280px] w-[280px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-8">
