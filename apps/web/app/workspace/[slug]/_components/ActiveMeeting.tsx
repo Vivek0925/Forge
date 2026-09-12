@@ -25,6 +25,7 @@ export default function ActiveMeeting() {
       <MeetingRoom
         slug={activeMeeting.slug}
         meetingId={activeMeeting.meetingId}
+        source={activeMeeting.source}
         minimized={minimized}
         hidden={meetingHidden}
         onMinimize={minimizeMeeting}

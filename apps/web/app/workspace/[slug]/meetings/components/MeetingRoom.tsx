@@ -24,6 +24,7 @@ import { socket } from "@/lib/socket";
 interface MeetingRoomProps {
   slug: string;
   meetingId: string;
+  source: "workspace" | "quick-join";
   minimized: boolean;
   hidden: boolean;
   onMinimize: () => void;
@@ -61,6 +62,7 @@ export default function MeetingRoom({
   slug,
   meetingId,
   minimized,
+  source,
   hidden,
   onMinimize,
   onRestore,
@@ -784,7 +786,10 @@ export default function MeetingRoom({
       }
     }
 
-    window.location.href = `/workspace/${slug}/meetings`;
+    window.location.href =
+  source === "quick-join"
+    ? "/dashboard"
+    : `/workspace/${slug}/meetings`;
   }
 
   /*
