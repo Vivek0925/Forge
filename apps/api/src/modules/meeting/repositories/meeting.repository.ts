@@ -16,6 +16,7 @@ export class MeetingRepository {
     status: "SCHEDULED" | "ACTIVE";
     workspaceId: string;
     createdById: string;
+    meetingCode: string;
   }) {
     return this.prisma.meeting.create({
       data: {
@@ -26,6 +27,7 @@ export class MeetingRepository {
         status: data.status,
         workspaceId: data.workspaceId,
         createdById: data.createdById,
+        meetingCode: data.meetingCode,
       },
 
       include: {
