@@ -54,7 +54,11 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         throw new Error(data.message || "Unable to join meeting.");
       }
 
-      window.location.href = `/workspace/${data.workspaceSlug}/meetings/${data.meetingId}`;
+      openMeeting({
+  meetingId: data.meetingId,
+  slug: data.workspaceSlug,
+  source: "quick-join",
+});
     } catch (error) {
       setJoinError(
         error instanceof Error ? error.message : "Unable to join meeting.",

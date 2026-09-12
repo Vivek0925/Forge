@@ -16,11 +16,12 @@ export default function MeetingRoomLauncher({
   const { openMeeting } = useActiveMeeting();
 
   useEffect(() => {
-    openMeeting({
-      slug,
-      meetingId,
-    });
-  }, [slug, meetingId, openMeeting]);
+  openMeeting({
+    meetingId,
+    slug,
+    source: "workspace",
+  });
+}, [slug, meetingId, openMeeting]);
 
   return null;
 }
