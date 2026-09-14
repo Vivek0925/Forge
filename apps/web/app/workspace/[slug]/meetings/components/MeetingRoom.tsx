@@ -743,7 +743,7 @@ export default function MeetingRoom({
   // copy meeting link to clipboard
   async function copyMeetingCode() {
     try {
-      await navigator.clipboard.writeText(meetingId);
+      await navigator.clipboard.writeText(meetingCode);
       setCopied(true);
 
       setTimeout(() => {
@@ -986,7 +986,7 @@ export default function MeetingRoom({
                 <button
                   type="button"
                   onClick={() => void copyMeetingCode()}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-white/40 transition hover:bg-white/[0.08] hover:text-white"
+                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[4px] text-white/40 transition hover:bg-white/[0.08] hover:text-white"
                   title="Copy meeting code"
                 >
                   <Copy size={12} />
