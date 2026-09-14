@@ -148,6 +148,8 @@ export default function MeetingRoom({
 
   const [stream, setStream] = useState<MediaStream | null>(null);
 
+  const [joined, setJoined] = useState(false);
+
   const [loading, setLoading] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
@@ -225,6 +227,7 @@ export default function MeetingRoom({
     stream,
     micEnabled,
     cameraEnabled,
+    shouldJoin: joined,
   });
 
   /*
