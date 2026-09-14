@@ -22,6 +22,7 @@ interface UseMeetingOptions {
   stream: MediaStream | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  shouldJoin:boolean;
 }
 
 export function useMeeting({
@@ -29,6 +30,7 @@ export function useMeeting({
   stream,
   micEnabled,
   cameraEnabled,
+  shouldJoin,
 }: UseMeetingOptions) {
   const [participants, setParticipants] = useState<
     MeetingParticipant[]
@@ -381,7 +383,7 @@ export function useMeeting({
    */
 
   useEffect(() => {
-    if (!meetingId || !stream) {
+    if (!meetingId || !stream || !shouldJoin) {
       return;
     }
 
@@ -1055,6 +1057,7 @@ if (!joinedRef.current) {
   }, [
     meetingId,
     stream,
+    shouldJoin,
     createPeerConnection,
     cleanupPeer,
     flushIceCandidates,
@@ -1070,6 +1073,7 @@ if (!joinedRef.current) {
   useEffect(() => {
     if (
       !meetingId ||
+      !shouldJoin ||
       !joinedRef.current
     ) {
       return;
@@ -1085,6 +1089,7 @@ if (!joinedRef.current) {
     );
   }, [
     meetingId,
+    shouldJoin,
     micEnabled,
     cameraEnabled,
   ]);
