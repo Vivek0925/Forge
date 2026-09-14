@@ -25,6 +25,7 @@ import { socket } from "@/lib/socket";
 interface MeetingRoomProps {
   slug: string;
   meetingId: string;
+  meetingCode: string;
   source: "workspace" | "quick-join";
   minimized: boolean;
   hidden: boolean;
@@ -62,6 +63,7 @@ interface MeetingChatMessage {
 export default function MeetingRoom({
   slug,
   meetingId,
+  meetingCode,
   minimized,
   source,
   hidden,
@@ -740,17 +742,17 @@ export default function MeetingRoom({
 
   // copy meeting link to clipboard
   async function copyMeetingCode() {
-  try {
-    await navigator.clipboard.writeText(meetingId);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(meetingId);
+      setCopied(true);
 
-    setTimeout(() => {
-      setCopied(false);
-    }, 1500);
-  } catch (error) {
-    console.error("Failed to copy meeting code:", error);
+      setTimeout(() => {
+        setCopied(false);
+      }, 1500);
+    } catch (error) {
+      console.error("Failed to copy meeting code:", error);
+    }
   }
-}
 
   /*
    * =========================================================
@@ -804,9 +806,7 @@ export default function MeetingRoom({
     }
 
     window.location.href =
-  source === "quick-join"
-    ? "/dashboard"
-    : `/workspace/${slug}/meetings`;
+      source === "quick-join" ? "/dashboard" : `/workspace/${slug}/meetings`;
   }
 
   /*
@@ -978,7 +978,21 @@ export default function MeetingRoom({
             <p className="truncate text-sm font-semibold text-white">Meeting</p>
 
             {!minimized && (
-              <p className="truncate text-xs text-white/35">{meetingId}</p>
+              <div className="mt-0.5 flex items-center gap-2">
+                <p className="text-xs tracking-wider text-white/35">
+                  {meetingCode}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => void copyMeetingCode()}
+                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-white/40 transition hover:bg-white/[0.08] hover:text-white"
+                  title="Copy meeting code"
+                >
+                  <Copy size={12} />
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
             )}
           </div>
         </div>
