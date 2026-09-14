@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   Camera,
+  Copy,
   CameraOff,
   Maximize,
   Minimize,
@@ -174,6 +175,8 @@ export default function MeetingRoom({
   const [selectedCameraId, setSelectedCameraId] = useState("");
 
   const [selectedMicrophoneId, setSelectedMicrophoneId] = useState("");
+
+  const [copied, setCopied] = useState(false);
 
   const [devices, setDevices] = useState<{
     cameras: MediaDeviceInfo[];
@@ -734,6 +737,20 @@ export default function MeetingRoom({
 
     setIsScreenSharing(false);
   }
+
+  // copy meeting link to clipboard
+  async function copyMeetingCode() {
+  try {
+    await navigator.clipboard.writeText(meetingId);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 1500);
+  } catch (error) {
+    console.error("Failed to copy meeting code:", error);
+  }
+}
 
   /*
    * =========================================================
