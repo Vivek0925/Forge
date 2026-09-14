@@ -11,6 +11,7 @@ import {
 interface ActiveMeeting {
   meetingId: string;
   slug: string;
+  meetingCode: string;
   source: "workspace" | "quick-join";
 }
 

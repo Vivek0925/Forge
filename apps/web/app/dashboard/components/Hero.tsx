@@ -55,10 +55,12 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
       }
 
       openMeeting({
-  meetingId: data.meetingId,
-  slug: data.workspaceSlug,
-  source: "quick-join",
-});
+        meetingId: data.meetingId,
+        slug: data.workspaceSlug,
+        meetingCode: data.meetingCode,
+        source: "quick-join",
+      });
+
     } catch (error) {
       setJoinError(
         error instanceof Error ? error.message : "Unable to join meeting.",
