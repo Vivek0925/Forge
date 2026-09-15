@@ -53,9 +53,16 @@ export function AuthProvider({
     }
   }
 
-  async function logout() {
+ async function logout() {
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+  } finally {
     setUser(null);
   }
+}
 
   useEffect(() => {
     refreshUser();
