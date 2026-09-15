@@ -56,7 +56,7 @@ export function AuthProvider({
  async function logout() {
   try {
     await fetch(`${API_URL}/auth/logout`, {
-      method: "DELETE",
+      method: "POST",
       credentials: "include",
     });
   } finally {
