@@ -102,49 +102,9 @@ export default function MeetingRoom({
     offsetY: 0,
   });
 
-  const [cameraEnabled, setCameraEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
+ const [cameraEnabled, setCameraEnabled] = useState(true);
 
-    try {
-      const saved = localStorage.getItem(`meeting-settings-${meetingId}`);
-
-      if (!saved) {
-        return true;
-      }
-
-      const settings = JSON.parse(saved);
-
-      return typeof settings.cameraEnabled === "boolean"
-        ? settings.cameraEnabled
-        : true;
-    } catch {
-      return true;
-    }
-  });
-
-  const [micEnabled, setMicEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-
-    try {
-      const saved = localStorage.getItem(`meeting-settings-${meetingId}`);
-
-      if (!saved) {
-        return true;
-      }
-
-      const settings = JSON.parse(saved);
-
-      return typeof settings.micEnabled === "boolean"
-        ? settings.micEnabled
-        : true;
-    } catch {
-      return true;
-    }
-  });
+ const [micEnabled, setMicEnabled] = useState(true);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -192,21 +152,7 @@ export default function MeetingRoom({
     speakers: [],
   });
 
-  /*
-   * =========================================================
-   * SAVE SETTINGS
-   * =========================================================
-   */
 
-  useEffect(() => {
-    localStorage.setItem(
-      `meeting-settings-${meetingId}`,
-      JSON.stringify({
-        cameraEnabled,
-        micEnabled,
-      }),
-    );
-  }, [meetingId, cameraEnabled, micEnabled]);
 
   /*
    * =========================================================
@@ -467,7 +413,7 @@ export default function MeetingRoom({
        * The stream itself is still valid.
        */
     };
-  }, [stream]);
+  }, [stream,joined]);
 
   function sendMeetingChatMessage() {
     const content = chatInput.trim();
