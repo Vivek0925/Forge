@@ -51,6 +51,29 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleLogin() {}
 
+  @Get("google/callback")
+@UseGuards(AuthGuard("google"))
+async googleCallback(
+  @CurrentUser() user: {
+    providerId: string;
+    email?: string;
+    name: string;
+    avatar?: string;
+  },
+  @Res({ passthrough: true }) res: Response,
+) {
+  const { token } = await this.authService.googleLogin(user);
+
+  res.cookie("access_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  return res.redirect("http://localhost:3000/dashboard");
+}
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   getMe(@CurrentUser() user: CurrentUserData) {

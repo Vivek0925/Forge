@@ -96,4 +96,59 @@ export class AuthService {
     },
   };
 }
+async googleLogin(profile: {
+  providerId: string;
+  email?: string;
+  name: string;
+  avatar?: string;
+}) {
+  if (!profile.email) {
+    throw new UnauthorizedException(
+      "Google account does not provide an email",
+    );
+  }
+
+  let user = await this.prisma.user.findUnique({
+    where: {
+      email: profile.email,
+    },
+  });
+
+  if (!user) {
+    user = await this.prisma.user.create({
+      data: {
+        name: profile.name,
+        email: profile.email,
+        avatar: profile.avatar,
+        provider: "GOOGLE",
+        providerId: profile.providerId,
+        emailVerified: true,
+      },
+    });
+  } else if (user.provider === "GOOGLE") {
+    user = await this.prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        providerId: profile.providerId,
+        avatar: profile.avatar,
+      },
+    });
+  }
+
+  const token = await this.jwtService.signAsync({
+    sub: user.id,
+    email: user.email,
+  });
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    },
+  };
+}
 }
