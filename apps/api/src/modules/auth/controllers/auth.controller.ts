@@ -9,6 +9,13 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { CurrentUserData } from '../interfaces/current-user.interface';
 
+interface GoogleUser {
+  providerId: string;
+  email?: string;
+  name: string;
+  avatar?: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -51,18 +58,13 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleLogin() {}
 
-  @Get("google/callback")
+ @Get("google/callback")
 @UseGuards(AuthGuard("google"))
 async googleCallback(
-  @CurrentUser() user: {
-    providerId: string;
-    email?: string;
-    name: string;
-    avatar?: string;
-  },
+  @CurrentUser() googleUser: GoogleUser,
   @Res({ passthrough: true }) res: Response,
 ) {
-  const { token } = await this.authService.googleLogin(user);
+  const { token } = await this.authService.googleLogin(googleUser);
 
   res.cookie("access_token", token, {
     httpOnly: true,
