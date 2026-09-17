@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res, Get, UseGuards, ExecutionContext} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -14,6 +14,38 @@ interface GoogleUser {
   email?: string;
   name: string;
   avatar?: string;
+}
+
+class GoogleAuthGuard extends AuthGuard('google') {
+  getAuthenticateOptions(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest();
+    const returnTo = request.query.returnTo;
+
+    return {
+      state:
+        typeof returnTo === 'string' &&
+        returnTo.startsWith('/') &&
+        !returnTo.startsWith('//')
+          ? returnTo
+          : '/dashboard',
+    };
+  }
+}
+
+class GithubAuthGuard extends AuthGuard('github') {
+  getAuthenticateOptions(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest();
+    const returnTo = request.query.returnTo;
+
+    return {
+      state:
+        typeof returnTo === 'string' &&
+        returnTo.startsWith('/') &&
+        !returnTo.startsWith('//')
+          ? returnTo
+          : '/dashboard',
+    };
+  }
 }
 
 @Controller('auth')
@@ -54,9 +86,9 @@ export class AuthController {
     };
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  googleLogin() {}
+ @Get('google')
+@UseGuards(GoogleAuthGuard)
+googleLogin() {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
@@ -76,9 +108,9 @@ export class AuthController {
     return res.redirect('http://localhost:3000/dashboard');
   }
 
-  @Get('github')
-  @UseGuards(AuthGuard('github'))
-  githubLogin() {}
+ @Get('github')
+@UseGuards(GithubAuthGuard)
+githubLogin() {}
 
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
