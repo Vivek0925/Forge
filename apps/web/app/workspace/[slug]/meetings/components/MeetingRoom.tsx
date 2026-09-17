@@ -102,9 +102,9 @@ export default function MeetingRoom({
     offsetY: 0,
   });
 
- const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
 
- const [micEnabled, setMicEnabled] = useState(true);
+  const [micEnabled, setMicEnabled] = useState(true);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -151,8 +151,6 @@ export default function MeetingRoom({
     microphones: [],
     speakers: [],
   });
-
-
 
   /*
    * =========================================================
@@ -413,7 +411,7 @@ export default function MeetingRoom({
        * The stream itself is still valid.
        */
     };
-  }, [stream,joined]);
+  }, [stream, joined]);
 
   function sendMeetingChatMessage() {
     const content = chatInput.trim();
@@ -731,9 +729,8 @@ export default function MeetingRoom({
    * =========================================================
    */
   function joinMeeting() {
-  setJoined(true);
-}
-
+    setJoined(true);
+  }
 
   async function leaveMeeting() {
     if (isScreenSharing) {
@@ -875,194 +872,180 @@ export default function MeetingRoom({
   }
 
   if (!joined) {
-  return (
-    <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col bg-[#0B0D11] text-white">
-      {/* HEADER */}
+    return (
+      <div className="fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col bg-[#0B0D11] text-white">
+        {/* HEADER */}
 
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1E8E5A]/15">
-            <Camera size={18} className="text-[#52D88B]" />
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold">Ready to join?</p>
-            <p className="text-xs text-white/35">
-              Meeting · {meetingCode}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href =
-              source === "quick-join"
-                ? "/dashboard"
-                : `/workspace/${slug}/meetings`;
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
-          title="Leave"
-        >
-          <X size={18} />
-        </button>
-      </header>
-
-      {/* CONTENT */}
-
-      <main className="flex min-h-0 flex-1 items-center justify-center px-5 py-8">
-        <div className="flex w-full max-w-5xl flex-col items-center gap-8 lg:flex-row">
-          {/* CAMERA PREVIEW */}
-
-          <div className="relative aspect-video w-full max-w-2xl overflow-hidden rounded-3xl bg-[#171A20] shadow-2xl ring-1 ring-white/[0.08]">
-            {loading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
-
-                <p className="text-sm text-white/45">
-                  Starting camera and microphone...
-                </p>
-              </div>
-            ) : error ? (
-              <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
-                <div>
-                  <CameraOff
-                    size={32}
-                    className="mx-auto text-red-400"
-                  />
-
-                  <p className="mt-4 text-sm font-medium">
-                    Camera or microphone unavailable
-                  </p>
-
-                  <p className="mt-2 max-w-md text-xs leading-5 text-white/40">
-                    {error}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className={`h-full w-full object-cover ${
-                    cameraEnabled ? "block" : "hidden"
-                  }`}
-                />
-
-                {!cameraEnabled && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
-                    <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-                      V
-                    </div>
-                  </div>
-                )}
-
-                {/* NAME */}
-
-                <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
-                  You
-                </div>
-
-                {/* CAMERA STATUS */}
-
-                <div className="absolute left-4 top-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
-                  {cameraEnabled ? "Camera on" : "Camera off"}
-                </div>
-
-                {/* MIC STATUS */}
-
-                {!micEnabled && (
-                  <div className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
-                    <MicOff size={13} />
-                    Muted
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* JOIN PANEL */}
-
-          <div className="flex w-full max-w-sm flex-col items-center lg:items-start">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Ready to join?
-            </h1>
-
-            <p className="mt-2 text-center text-sm text-white/40 lg:text-left">
-              Check your camera and microphone before joining the meeting.
-            </p>
-
-            {/* MEDIA CONTROLS */}
-
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={toggleMicrophone}
-                disabled={loading || !!error}
-                title={
-                  micEnabled
-                    ? "Turn microphone off"
-                    : "Turn microphone on"
-                }
-                className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                  micEnabled
-                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                } disabled:cursor-not-allowed disabled:opacity-40`}
-              >
-                {micEnabled ? (
-                  <Mic size={19} />
-                ) : (
-                  <MicOff size={19} />
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={toggleCamera}
-                disabled={loading || !!error}
-                title={
-                  cameraEnabled
-                    ? "Turn camera off"
-                    : "Turn camera on"
-                }
-                className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
-                  cameraEnabled
-                    ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                } disabled:cursor-not-allowed disabled:opacity-40`}
-              >
-                {cameraEnabled ? (
-                  <Camera size={19} />
-                ) : (
-                  <CameraOff size={19} />
-                )}
-              </button>
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1E8E5A]/15">
+              <Camera size={18} className="text-[#52D88B]" />
             </div>
 
-            {/* JOIN */}
-
-            <button
-              type="button"
-              onClick={joinMeeting}
-              disabled={loading || !!error}
-              className="mt-6 w-full rounded-2xl bg-[#1E8E5A] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#187A4B] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Join now
-            </button>
-
-            <p className="mt-3 text-center text-[11px] leading-5 text-white/25">
-              Your microphone and camera settings can be changed after joining.
-            </p>
+            <div>
+              <p className="text-sm font-semibold">Ready to join?</p>
+              <p className="text-xs text-white/35">Meeting · {meetingCode}</p>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
-  );
-}
+
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href =
+                source === "quick-join"
+                  ? "/dashboard"
+                  : `/workspace/${slug}/meetings`;
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+            title="Leave"
+          >
+            <X size={18} />
+          </button>
+        </header>
+
+        {/* CONTENT */}
+
+        <main className="flex min-h-0 flex-1 items-center justify-center px-5 py-8">
+          <div className="flex w-full max-w-5xl flex-col items-center gap-8 lg:flex-row">
+            {/* CAMERA PREVIEW */}
+
+            <div className="relative aspect-video w-full max-w-2xl overflow-hidden rounded-3xl bg-[#171A20] shadow-2xl ring-1 ring-white/[0.08]">
+              {loading ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white" />
+
+                  <p className="text-sm text-white/45">
+                    Starting camera and microphone...
+                  </p>
+                </div>
+              ) : error ? (
+                <div className="absolute inset-0 flex items-center justify-center px-8 text-center">
+                  <div>
+                    <CameraOff size={32} className="mx-auto text-red-400" />
+
+                    <p className="mt-4 text-sm font-medium">
+                      Camera or microphone unavailable
+                    </p>
+
+                    <p className="mt-2 max-w-md text-xs leading-5 text-white/40">
+                      {error}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className={`h-full w-full object-cover ${
+                      cameraEnabled ? "block" : "hidden"
+                    }`}
+                  />
+
+                  {!cameraEnabled && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
+                      <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
+                        V
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NAME */}
+
+                  <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+                    You
+                  </div>
+
+                  {/* CAMERA STATUS */}
+
+                  <div className="absolute left-4 top-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
+                    {cameraEnabled ? "Camera on" : "Camera off"}
+                  </div>
+
+                  {/* MIC STATUS */}
+
+                  {!micEnabled && (
+                    <div className="absolute right-4 top-4 flex items-center gap-2 rounded-xl bg-red-500/80 px-3 py-2 text-xs text-white backdrop-blur-md">
+                      <MicOff size={13} />
+                      Muted
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* JOIN PANEL */}
+
+            <div className="flex w-full max-w-sm flex-col items-center lg:items-start">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Ready to join?
+              </h1>
+
+              <p className="mt-2 text-center text-sm text-white/40 lg:text-left">
+                Check your camera and microphone before joining the meeting.
+              </p>
+
+              {/* MEDIA CONTROLS */}
+
+              <div className="mt-6 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={toggleMicrophone}
+                  disabled={loading || !!error}
+                  title={
+                    micEnabled ? "Turn microphone off" : "Turn microphone on"
+                  }
+                  className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                    micEnabled
+                      ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                      : "bg-red-500 text-white hover:bg-red-600"
+                  } disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  {micEnabled ? <Mic size={19} /> : <MicOff size={19} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleCamera}
+                  disabled={loading || !!error}
+                  title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full transition ${
+                    cameraEnabled
+                      ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
+                      : "bg-red-500 text-white hover:bg-red-600"
+                  } disabled:cursor-not-allowed disabled:opacity-40`}
+                >
+                  {cameraEnabled ? (
+                    <Camera size={19} />
+                  ) : (
+                    <CameraOff size={19} />
+                  )}
+                </button>
+              </div>
+
+              {/* JOIN */}
+
+              <button
+                type="button"
+                onClick={joinMeeting}
+                disabled={loading || !!error}
+                className="mt-6 w-full rounded-2xl bg-[#1E8E5A] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#187A4B] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Join now
+              </button>
+
+              <p className="mt-3 text-center text-[11px] leading-5 text-white/25">
+                Your microphone and camera settings can be changed after
+                joining.
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -1242,7 +1225,7 @@ export default function MeetingRoom({
         }`}
       >
         <div
-          className={`grid h-full min-h-0 w-full ${
+          className={`grid h-full min-h-0 w-full auto-rows-fr ${
             minimized ? "grid-cols-1" : gridClass
           } gap-3`}
         >
