@@ -1106,7 +1106,7 @@ export default function MeetingRoom({
             {!minimized && (
               <div className="mt-0.5 flex items-center gap-2">
                 <p className="text-xs tracking-wider text-white/35">
-                  {meetingCode}
+                  {`${window.location.origin}/meet/${meetingCode}`}
                 </p>
 
                 <button
