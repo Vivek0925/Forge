@@ -80,12 +80,34 @@ export default function SignupForm() {
   const passwordsMismatch =
     confirmPassword.length > 0 && confirmPassword !== password;
 
-    const handleGoogleSignup = () => {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+  const handleGoogleSignup = () => {
+  const returnTo =
+    new URLSearchParams(window.location.search).get("returnTo");
+
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
+  );
+
+  if (returnTo) {
+    url.searchParams.set("returnTo", returnTo);
+  }
+
+  window.location.href = url.toString();
 };
 
 const handleGithubSignup = () => {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/github`;
+  const returnTo =
+    new URLSearchParams(window.location.search).get("returnTo");
+
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/github`,
+  );
+
+  if (returnTo) {
+    url.searchParams.set("returnTo", returnTo);
+  }
+
+  window.location.href = url.toString();
 };
 
   async function handleSubmit(e: React.FormEvent) {

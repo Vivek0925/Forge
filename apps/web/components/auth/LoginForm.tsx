@@ -34,11 +34,33 @@ const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 
 const handleGoogleSignup = () => {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+  const returnTo =
+    new URLSearchParams(window.location.search).get("returnTo");
+
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
+  );
+
+  if (returnTo) {
+    url.searchParams.set("returnTo", returnTo);
+  }
+
+  window.location.href = url.toString();
 };
 
 const handleGithubSignup = () => {
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/github`;
+  const returnTo =
+    new URLSearchParams(window.location.search).get("returnTo");
+
+  const url = new URL(
+    `${process.env.NEXT_PUBLIC_API_URL}/auth/github`,
+  );
+
+  if (returnTo) {
+    url.searchParams.set("returnTo", returnTo);
+  }
+
+  window.location.href = url.toString();
 };
 
  async function handleSubmit(e: React.FormEvent) {
@@ -49,11 +71,14 @@ const handleGithubSignup = () => {
     setError("");
 
     await login({
-      email,
-      password,
-    });
+  email,
+  password,
+});
 
-    router.push("/dashboard");
+const params = new URLSearchParams(window.location.search);
+const returnTo = params.get("returnTo");
+
+router.push(returnTo || "/dashboard");
   } catch (err) {
     if (err instanceof Error) {
       setError(err.message);
