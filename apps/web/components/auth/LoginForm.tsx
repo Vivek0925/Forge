@@ -37,6 +37,10 @@ const handleGoogleSignup = () => {
   window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
 };
 
+const handleGithubSignup = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/github`;
+};
+
  async function handleSubmit(e: React.FormEvent) {
   e.preventDefault();
 
@@ -83,6 +87,7 @@ const handleGoogleSignup = () => {
       <div className="mt-8 flex flex-col gap-3">
         <button
           type="button"
+          onClick={handleGithubSignup}
           className="flex h-11 items-center justify-center gap-2.5 rounded-[var(--radius-sm)] border border-border bg-surface text-[13px] font-medium text-text transition-colors hover:bg-surface-secondary"
         >
           <GithubIcon />
@@ -90,7 +95,7 @@ const handleGoogleSignup = () => {
         </button>
         <button
           type="button"
-          onClick={handleGoogleSignup}
+          onClick={handleGithubSignup}
           className="flex h-11 items-center justify-center gap-2.5 rounded-[var(--radius-sm)] border border-border bg-surface text-[13px] font-medium text-text transition-colors hover:bg-surface-secondary"
         >
           <GoogleIcon />
