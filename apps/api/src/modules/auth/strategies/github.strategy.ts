@@ -21,9 +21,7 @@ export class GithubStrategy extends PassportStrategy(
     refreshToken: string,
     profile: Profile,
   ) {
-    const email =
-      profile.emails?.find((email) => email.primary)?.value ??
-      profile.emails?.[0]?.value;
+    const email = profile.emails?.[0]?.value;
 
     return {
       providerId: profile.id,

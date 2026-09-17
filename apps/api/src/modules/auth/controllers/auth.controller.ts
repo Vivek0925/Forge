@@ -58,23 +58,45 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleLogin() {}
 
- @Get("google/callback")
-@UseGuards(AuthGuard("google"))
-async googleCallback(
-  @CurrentUser() googleUser: GoogleUser,
-  @Res({ passthrough: true }) res: Response,
-) {
-  const { token } = await this.authService.googleLogin(googleUser);
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(
+    @CurrentUser() googleUser: GoogleUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { token } = await this.authService.googleLogin(googleUser);
 
-  res.cookie("access_token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
-  return res.redirect("http://localhost:3000/dashboard");
-}
+    return res.redirect('http://localhost:3000/dashboard');
+  }
+
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  githubLogin() {}
+
+  @Get('github/callback')
+  @UseGuards(AuthGuard('github'))
+  async githubCallback(
+    @CurrentUser() githubUser: GoogleUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { token } = await this.authService.githubLogin(githubUser);
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.redirect('http://localhost:3000/dashboard');
+  }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
