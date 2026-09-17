@@ -688,18 +688,17 @@ export default function MeetingRoom({
   }
 
   // copy meeting link to clipboard
-  async function copyMeetingCode() {
-    try {
-      await navigator.clipboard.writeText(meetingCode);
-      setCopied(true);
+  const copyMeetingCode = async () => {
+  const meetingLink = `${window.location.origin}/meet/${meetingCode}`;
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 1500);
-    } catch (error) {
-      console.error("Failed to copy meeting code:", error);
-    }
-  }
+  await navigator.clipboard.writeText(meetingLink);
+
+  setCopied(true);
+
+  setTimeout(() => {
+    setCopied(false);
+  }, 2000);
+};
 
   /*
    * =========================================================
@@ -1113,7 +1112,7 @@ export default function MeetingRoom({
                   type="button"
                   onClick={() => void copyMeetingCode()}
                   className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[4px] text-white/40 transition hover:bg-white/[0.08] hover:text-white"
-                  title="Copy meeting code"
+                  title="Copy meeting link"
                 >
                   <Copy size={12} />
                   {copied ? "Copied" : "Copy"}
