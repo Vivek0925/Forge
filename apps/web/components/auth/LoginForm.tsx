@@ -33,6 +33,10 @@ export default function LoginForm() {
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 
+const handleGoogleSignup = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+};
+
  async function handleSubmit(e: React.FormEvent) {
   e.preventDefault();
 
@@ -86,6 +90,7 @@ const [error, setError] = useState("");
         </button>
         <button
           type="button"
+          onClick={handleGoogleSignup}
           className="flex h-11 items-center justify-center gap-2.5 rounded-[var(--radius-sm)] border border-border bg-surface text-[13px] font-medium text-text transition-colors hover:bg-surface-secondary"
         >
           <GoogleIcon />
