@@ -86,7 +86,7 @@ export default function SignupForm() {
 
 const handleGithubSignup = () => {
   window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/github`;
-}
+};
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
