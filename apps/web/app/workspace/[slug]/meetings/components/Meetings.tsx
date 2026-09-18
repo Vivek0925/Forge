@@ -1,27 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  CalendarDays,
-  Plus,
-  Video,
-  X,
-} from "lucide-react";
+import { CalendarDays, Plus, Video, X } from "lucide-react";
 
 import MeetingCard from "../components/MeetingCard";
 import { api } from "@/lib/api";
+import { useActiveMeeting } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
 
 interface Meeting {
   id: string;
   title: string;
   description?: string | null;
-  status:
-    | "SCHEDULED"
-    | "ACTIVE"
-    | "ENDED"
-    | "CANCELLED";
+  status: "SCHEDULED" | "ACTIVE" | "ENDED" | "CANCELLED";
   scheduledAt?: string | null;
   createdAt: string;
+  meetingCode: string;
 
   createdBy: {
     id: string;
@@ -45,30 +38,22 @@ interface MeetingsProps {
 
 type MeetingMode = "now" | "scheduled";
 
-export default function Meetings({
-  slug,
-}: MeetingsProps) {
-  const [meetings, setMeetings] = useState<Meeting[]>(
-    [],
-  );
+export default function Meetings({ slug }: MeetingsProps) {
+  const { openMeeting } = useActiveMeeting();
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
 
   const [loading, setLoading] = useState(true);
 
-  const [showCreate, setShowCreate] =
-    useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
-  const [mode, setMode] =
-    useState<MeetingMode>("now");
+  const [mode, setMode] = useState<MeetingMode>("now");
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] =
-    useState("");
+  const [description, setDescription] = useState("");
 
-  const [scheduledAt, setScheduledAt] =
-    useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
 
-  const [creating, setCreating] =
-    useState(false);
+  const [creating, setCreating] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -77,16 +62,11 @@ export default function Meetings({
       setLoading(true);
       setError("");
 
-      const data = await api<Meeting[]>(
-        `/meetings/workspace/${slug}`,
-      );
+      const data = await api<Meeting[]>(`/meetings/workspace/${slug}`);
 
       setMeetings(data);
     } catch (error) {
-      console.error(
-        "Failed to load meetings",
-        error,
-      );
+      console.error("Failed to load meetings", error);
 
       setError("Failed to load meetings.");
     } finally {
@@ -122,9 +102,7 @@ export default function Meetings({
     }
 
     if (mode === "scheduled" && !scheduledAt) {
-      setError(
-        "Please select a date and time.",
-      );
+      setError("Please select a date and time.");
       return;
     }
 
@@ -132,44 +110,40 @@ export default function Meetings({
       setCreating(true);
       setError("");
 
-      const meeting = await api<Meeting>(
-        `/meetings/workspaces/${slug}`,
-        {
-          method: "POST",
+      const meeting = await api<Meeting>(`/meetings/workspaces/${slug}`, {
+        method: "POST",
 
-          body: JSON.stringify({
-            title: title.trim(),
-            description:
-              description.trim() || undefined,
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
 
-            ...(mode === "scheduled"
-              ? {
-                  scheduledAt: new Date(
-                    scheduledAt,
-                  ).toISOString(),
-                }
-              : {}),
-          }),
-        },
-      );
+          ...(mode === "scheduled"
+            ? {
+                scheduledAt: new Date(scheduledAt).toISOString(),
+              }
+            : {}),
+        }),
+      });
 
-      setMeetings((prev) => [
-        meeting,
-        ...prev,
-      ]);
+      if (mode === "now") {
+        openMeeting({
+          meetingId: meeting.id,
+          slug,
+          meetingCode: meeting.meetingCode,
+          hostId: meeting.createdBy.id,
+          source: "workspace",
+        });
+      } else {
+        setMeetings((prev) => [meeting, ...prev]);
+      }
 
       setShowCreate(false);
       resetForm();
     } catch (error) {
-      console.error(
-        "Failed to create meeting",
-        error,
-      );
+      console.error("Failed to create meeting", error);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to create meeting.",
+        error instanceof Error ? error.message : "Failed to create meeting.",
       );
     } finally {
       setCreating(false);
@@ -177,18 +151,15 @@ export default function Meetings({
   }
 
   function handleJoin(meetingId: string) {
-  window.location.href =
-    `/workspace/${slug}/meetings/${meetingId}`;
-}
+    window.location.href = `/workspace/${slug}/meetings/${meetingId}`;
+  }
 
   const activeMeetings = meetings.filter(
-    (meeting) =>
-      meeting.status === "ACTIVE",
+    (meeting) => meeting.status === "ACTIVE",
   );
 
   const scheduledMeetings = meetings.filter(
-    (meeting) =>
-      meeting.status === "SCHEDULED",
+    (meeting) => meeting.status === "SCHEDULED",
   );
 
   return (
@@ -199,10 +170,7 @@ export default function Meetings({
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">
-              <Video
-                size={21}
-                className="text-[#1E8E5A]"
-              />
+              <Video size={21} className="text-[#1E8E5A]" />
             </div>
 
             <div>
@@ -211,17 +179,14 @@ export default function Meetings({
               </h1>
 
               <p className="mt-1 text-sm text-[#707487]">
-                Meet, collaborate, and stay
-                connected with your workspace.
+                Meet, collaborate, and stay connected with your workspace.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() =>
-              setShowCreate(true)
-            }
+            onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 bg-none rounded-xl px-4 py-2.5 text-sm font-medium text-black transition hover:bg-green-50"
           >
             <Plus size={17} />
@@ -247,10 +212,7 @@ export default function Meetings({
           ) : meetings.length === 0 ? (
             <div className="flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#DCDFE7] bg-white">
               <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#F3F7F5]">
-                <Video
-                  size={30}
-                  className="text-[#1E8E5A]"
-                />
+                <Video size={30} className="text-[#1E8E5A]" />
               </div>
 
               <h2 className="text-xl font-semibold text-[#20232D]">
@@ -258,16 +220,13 @@ export default function Meetings({
               </h2>
 
               <p className="mt-2 max-w-md text-center text-sm leading-6 text-[#707487]">
-                Start an instant meeting or
-                schedule one for later.
+                Start an instant meeting or schedule one for later.
               </p>
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowCreate(true)
-                }
-                className="mt-6 flex items-center gap-2 rounded-xl  px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]"
+                onClick={() => setShowCreate(true)}
+                className="mt-6 flex items-center gap-2 rounded-xl  px-4 py-2.5 text-sm font-medium text-black transition hover:bg-[#30333E]/50"
               >
                 <Plus size={17} />
                 New Meeting
@@ -288,15 +247,13 @@ export default function Meetings({
                   </div>
 
                   <div className="space-y-4">
-                    {activeMeetings.map(
-                      (meeting) => (
-                        <MeetingCard
-                          key={meeting.id}
-                          meeting={meeting}
-                          onJoin={handleJoin}
-                        />
-                      ),
-                    )}
+                    {activeMeetings.map((meeting) => (
+                      <MeetingCard
+                        key={meeting.id}
+                        meeting={meeting}
+                        onJoin={handleJoin}
+                      />
+                    ))}
                   </div>
                 </section>
               )}
@@ -306,10 +263,7 @@ export default function Meetings({
               {scheduledMeetings.length > 0 && (
                 <section>
                   <div className="mb-5 flex items-center gap-3">
-                    <CalendarDays
-                      size={16}
-                      className="text-[#85899A]"
-                    />
+                    <CalendarDays size={16} className="text-[#85899A]" />
 
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-[#85899A]">
                       Upcoming
@@ -317,15 +271,13 @@ export default function Meetings({
                   </div>
 
                   <div className="space-y-4">
-                    {scheduledMeetings.map(
-                      (meeting) => (
-                        <MeetingCard
-                          key={meeting.id}
-                          meeting={meeting}
-                          onJoin={handleJoin}
-                        />
-                      ),
-                    )}
+                    {scheduledMeetings.map((meeting) => (
+                      <MeetingCard
+                        key={meeting.id}
+                        meeting={meeting}
+                        onJoin={handleJoin}
+                      />
+                    ))}
                   </div>
                 </section>
               )}
@@ -346,8 +298,7 @@ export default function Meetings({
                 </h2>
 
                 <p className="mt-1 text-sm text-[#707487]">
-                  Start now or schedule it for
-                  later.
+                  Start now or schedule it for later.
                 </p>
               </div>
 
@@ -371,9 +322,7 @@ export default function Meetings({
 
                 <input
                   value={title}
-                  onChange={(e) =>
-                    setTitle(e.target.value)
-                  }
+                  onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Weekly Engineering Sync"
                   className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition placeholder:text-[#A1A5B3] focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
                 />
@@ -391,11 +340,7 @@ export default function Meetings({
 
                 <textarea
                   value={description}
-                  onChange={(e) =>
-                    setDescription(
-                      e.target.value,
-                    )
-                  }
+                  onChange={(e) => setDescription(e.target.value)}
                   rows={3}
                   placeholder="What is this meeting about?"
                   className="w-full resize-none rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition placeholder:text-[#A1A5B3] focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
@@ -412,9 +357,7 @@ export default function Meetings({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() =>
-                      setMode("now")
-                    }
+                    onClick={() => setMode("now")}
                     className={`rounded-2xl border px-4 py-4 text-left transition ${
                       mode === "now"
                         ? "border-[#9ADDBB] bg-[#F0FBF5]"
@@ -436,16 +379,13 @@ export default function Meetings({
                     </div>
 
                     <p className="mt-2 pl-4 text-xs leading-5 text-[#707487]">
-                      Start the meeting
-                      immediately.
+                      Start the meeting immediately.
                     </p>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setMode("scheduled")
-                    }
+                    onClick={() => setMode("scheduled")}
                     className={`rounded-2xl border px-4 py-4 text-left transition ${
                       mode === "scheduled"
                         ? "border-[#9ADDBB] "
@@ -456,8 +396,7 @@ export default function Meetings({
                       <CalendarDays
                         size={15}
                         className={
-                          mode ===
-                          "scheduled"
+                          mode === "scheduled"
                             ? "text-[#1E8E5A]"
                             : "text-[#85899A]"
                         }
@@ -487,14 +426,8 @@ export default function Meetings({
                   <input
                     type="datetime-local"
                     value={scheduledAt}
-                    min={new Date()
-                      .toISOString()
-                      .slice(0, 16)}
-                    onChange={(e) =>
-                      setScheduledAt(
-                        e.target.value,
-                      )
-                    }
+                    min={new Date().toISOString().slice(0, 16)}
+                    onChange={(e) => setScheduledAt(e.target.value)}
                     className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
                   />
                 </div>
@@ -525,8 +458,7 @@ export default function Meetings({
                 disabled={
                   creating ||
                   !title.trim() ||
-                  (mode === "scheduled" &&
-                    !scheduledAt)
+                  (mode === "scheduled" && !scheduledAt)
                 }
                 className="flex items-center gap-2 rounded-xl  px-5 py-2.5 text-sm font-medium text-black transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-70"
               >
