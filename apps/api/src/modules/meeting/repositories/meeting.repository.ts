@@ -106,16 +106,6 @@ export class MeetingRepository {
     return this.prisma.meeting.findMany({
       where: {
         workspaceId,
-
-        /*
-         * The Meetings page only shows:
-         *
-         * ACTIVE    → currently live
-         * SCHEDULED → upcoming
-         *
-         * ENDED meetings remain in PostgreSQL
-         * but are intentionally not returned here.
-         */
         status: {
           in: ['ACTIVE', 'SCHEDULED'],
         },
@@ -131,6 +121,9 @@ export class MeetingRepository {
         },
 
         participants: {
+          where: {
+            leftAt: null,
+          },
           include: {
             user: {
               select: {

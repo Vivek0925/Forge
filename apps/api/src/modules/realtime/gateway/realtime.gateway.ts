@@ -6,27 +6,28 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-} from "@nestjs/websockets";
+} from '@nestjs/websockets';
 
-import { Logger } from "@nestjs/common";
-import { Server } from "socket.io";
+import { Logger } from '@nestjs/common';
+import { Server } from 'socket.io';
 
-import { PresenceService } from "../services/presence.service";
-import { SocketAuthService } from "../services/socket-auth.service";
-import type { AuthenticatedSocket } from "../interfaces/authenticated-socket.interface";
+import { PresenceService } from '../services/presence.service';
+import { SocketAuthService } from '../services/socket-auth.service';
+import type { AuthenticatedSocket } from '../interfaces/authenticated-socket.interface';
 
-import { JoinWorkspaceDto } from "../dto/join-workspace.dto";
+import { JoinWorkspaceDto } from '../dto/join-workspace.dto';
 
-import { PrismaService } from "../../../database/prisma.service";
+import { PrismaService } from '../../../database/prisma.service';
 
-import { ChatService } from "../../chat/services/chat.service";
-import { SendMessageDto } from "../../chat/dto/send-message.dto";
+import { ChatService } from '../../chat/services/chat.service';
+import { SendMessageDto } from '../../chat/dto/send-message.dto';
 
-import { MeetingRoomService } from "../../meeting/services/meeting-room.service";
+import { MeetingRoomService } from '../../meeting/services/meeting-room.service';
+import { MeetingRepository } from '../../meeting/repositories/meeting.repository';
 
 @WebSocketGateway({
   cors: {
-    origin: "http://localhost:3000",
+    origin: 'http://localhost:3000',
     credentials: true,
   },
 })
@@ -36,8 +37,7 @@ export class RealtimeGateway
   @WebSocketServer()
   server!: Server;
 
-  private readonly logger =
-    new Logger(RealtimeGateway.name);
+  private readonly logger = new Logger(RealtimeGateway.name);
 
   constructor(
     private readonly socketAuthService: SocketAuthService,
@@ -45,31 +45,22 @@ export class RealtimeGateway
     private readonly prisma: PrismaService,
     private readonly chatService: ChatService,
     private readonly meetingRoomService: MeetingRoomService,
+    private readonly meetingRepository: MeetingRepository,
   ) {}
 
   // =========================================================
   // SOCKET CONNECTION
   // =========================================================
 
-  async handleConnection(
-    socket: AuthenticatedSocket,
-  ) {
+  async handleConnection(socket: AuthenticatedSocket) {
     try {
-      const currentUser =
-        await this.socketAuthService.authenticate(
-          socket,
-        );
+      const currentUser = await this.socketAuthService.authenticate(socket);
 
-      socket.data.currentUser =
-        currentUser;
+      socket.data.currentUser = currentUser;
 
-      this.logger.log(
-        `${currentUser.name} connected (${socket.id})`,
-      );
+      this.logger.log(`${currentUser.name} connected (${socket.id})`);
     } catch (error) {
-      this.logger.warn(
-        `Unauthorized socket connection: ${socket.id}`,
-      );
+      this.logger.warn(`Unauthorized socket connection: ${socket.id}`);
 
       socket.disconnect(true);
     }
@@ -79,9 +70,7 @@ export class RealtimeGateway
   // SOCKET DISCONNECT
   // =========================================================
 
-  handleDisconnect(
-    socket: AuthenticatedSocket,
-  ) {
+  handleDisconnect(socket: AuthenticatedSocket) {
     /*
      * IMPORTANT:
      *
@@ -92,56 +81,38 @@ export class RealtimeGateway
      * here as well as in meeting:leave.
      */
 
-    const meetingId =
-      this.meetingRoomService.getMeetingForSocket(
-        socket.id,
-      );
+    const meetingId = this.meetingRoomService.getMeetingForSocket(socket.id);
 
     if (meetingId) {
-      this.removeMeetingParticipant(
-        meetingId,
-        socket,
-      );
+      this.removeMeetingParticipant(meetingId, socket);
     }
 
     /*
      * Existing workspace presence cleanup.
      */
 
-    const onlineUser =
-      this.presenceService.getUser(
-        socket.id,
-      );
+    const onlineUser = this.presenceService.getUser(socket.id);
 
     if (!onlineUser) {
       return;
     }
 
-    this.presenceService.removeUser(
-      socket.id,
-    );
+    this.presenceService.removeUser(socket.id);
 
     this.server
-      .to(
-        `workspace:${onlineUser.workspaceId}`,
-      )
-      .emit("presence:update", {
-        users:
-          this.presenceService.getWorkspaceUsers(
-            onlineUser.workspaceId,
-          ),
+      .to(`workspace:${onlineUser.workspaceId}`)
+      .emit('presence:update', {
+        users: this.presenceService.getWorkspaceUsers(onlineUser.workspaceId),
       });
 
-    this.logger.log(
-      `${onlineUser.name} disconnected`,
-    );
+    this.logger.log(`${onlineUser.name} disconnected`);
   }
 
   // =========================================================
   // WORKSPACE JOIN
   // =========================================================
 
-  @SubscribeMessage("workspace:join")
+  @SubscribeMessage('workspace:join')
   async handleWorkspaceJoin(
     @MessageBody()
     dto: JoinWorkspaceDto,
@@ -149,24 +120,19 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const workspace =
-      await this.prisma.workspace.findUnique({
-        where: {
-          slug: dto.workspaceSlug,
-        },
-      });
+    const workspace = await this.prisma.workspace.findUnique({
+      where: {
+        slug: dto.workspaceSlug,
+      },
+    });
 
     if (!workspace) {
-      this.logger.warn(
-        `Workspace not found: ${dto.workspaceSlug}`,
-      );
+      this.logger.warn(`Workspace not found: ${dto.workspaceSlug}`);
 
       return;
     }
 
-    socket.join(
-      `workspace:${workspace.id}`,
-    );
+    socket.join(`workspace:${workspace.id}`);
 
     this.presenceService.addUser({
       socketId: socket.id,
@@ -176,16 +142,9 @@ export class RealtimeGateway
       email: socket.data.currentUser.email,
     });
 
-    this.server
-      .to(
-        `workspace:${workspace.id}`,
-      )
-      .emit("presence:update", {
-        users:
-          this.presenceService.getWorkspaceUsers(
-            workspace.id,
-          ),
-      });
+    this.server.to(`workspace:${workspace.id}`).emit('presence:update', {
+      users: this.presenceService.getWorkspaceUsers(workspace.id),
+    });
 
     this.logger.log(
       `${socket.data.currentUser.name} joined workspace ${workspace.slug}`,
@@ -196,7 +155,7 @@ export class RealtimeGateway
   // WORKSPACE LEAVE
   // =========================================================
 
-  @SubscribeMessage("workspace:leave")
+  @SubscribeMessage('workspace:leave')
   async handleWorkspaceLeave(
     @MessageBody()
     dto: JoinWorkspaceDto,
@@ -204,35 +163,23 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const workspace =
-      await this.prisma.workspace.findUnique({
-        where: {
-          slug: dto.workspaceSlug,
-        },
-      });
+    const workspace = await this.prisma.workspace.findUnique({
+      where: {
+        slug: dto.workspaceSlug,
+      },
+    });
 
     if (!workspace) {
       return;
     }
 
-    socket.leave(
-      `workspace:${workspace.id}`,
-    );
+    socket.leave(`workspace:${workspace.id}`);
 
-    this.presenceService.removeUser(
-      socket.id,
-    );
+    this.presenceService.removeUser(socket.id);
 
-    this.server
-      .to(
-        `workspace:${workspace.id}`,
-      )
-      .emit("presence:update", {
-        users:
-          this.presenceService.getWorkspaceUsers(
-            workspace.id,
-          ),
-      });
+    this.server.to(`workspace:${workspace.id}`).emit('presence:update', {
+      users: this.presenceService.getWorkspaceUsers(workspace.id),
+    });
 
     this.logger.log(
       `${socket.data.currentUser.name} left workspace ${workspace.slug}`,
@@ -243,7 +190,7 @@ export class RealtimeGateway
   // CHAT
   // =========================================================
 
-  @SubscribeMessage("chat:send")
+  @SubscribeMessage('chat:send')
   async handleChatSend(
     @MessageBody()
     dto: SendMessageDto,
@@ -251,27 +198,23 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const message =
-      await this.chatService.createMessage(
-        socket.data.currentUser.id,
-        dto,
-      );
+    const message = await this.chatService.createMessage(
+      socket.data.currentUser.id,
+      dto,
+    );
 
     this.server
-      .to(
-        `workspace:${message.workspaceId}`,
-      )
-      .emit("chat:new", message);
+      .to(`workspace:${message.workspaceId}`)
+      .emit('chat:new', message);
 
     return message;
   }
-
 
   // =========================================================
   // MEETING JOIN
   // =========================================================
 
-  @SubscribeMessage("meeting:join")
+  @SubscribeMessage('meeting:join')
   async handleMeetingJoin(
     @MessageBody()
     data: {
@@ -281,28 +224,23 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const meeting =
-      await this.prisma.meeting.findUnique({
-        where: {
-          id: data.meetingId,
-        },
-      });
+    const meeting = await this.prisma.meeting.findUnique({
+      where: {
+        id: data.meetingId,
+      },
+    });
 
     if (!meeting) {
-      socket.emit("meeting:error", {
-        message: "Meeting not found",
+      socket.emit('meeting:error', {
+        message: 'Meeting not found',
       });
 
       return;
     }
 
-    if (
-      meeting.status === "ENDED" ||
-      meeting.status === "CANCELLED"
-    ) {
-      socket.emit("meeting:error", {
-        message:
-          "This meeting is no longer active",
+    if (meeting.status === 'ENDED' || meeting.status === 'CANCELLED') {
+      socket.emit('meeting:error', {
+        message: 'This meeting is no longer active',
       });
 
       return;
@@ -313,43 +251,26 @@ export class RealtimeGateway
      * another meeting, clean it up first.
      */
 
-    const previousMeeting =
-      this.meetingRoomService.getMeetingForSocket(
-        socket.id,
-      );
+    const previousMeeting = this.meetingRoomService.getMeetingForSocket(
+      socket.id,
+    );
 
-    if (
-      previousMeeting &&
-      previousMeeting !==
-        data.meetingId
-    ) {
-      this.removeMeetingParticipant(
-        previousMeeting,
-        socket,
-      );
+    if (previousMeeting && previousMeeting !== data.meetingId) {
+      this.removeMeetingParticipant(previousMeeting, socket);
     }
 
     /*
      * Prevent duplicate joins.
      */
 
-    if (
-      this.meetingRoomService.hasParticipant(
+    if (this.meetingRoomService.hasParticipant(data.meetingId, socket.id)) {
+      const participants = this.meetingRoomService.getParticipants(
         data.meetingId,
-        socket.id,
-      )
-    ) {
-      const participants =
-        this.meetingRoomService.getParticipants(
-          data.meetingId,
-        );
-
-      socket.emit(
-        "meeting:participants",
-        {
-          participants,
-        },
       );
+
+      socket.emit('meeting:participants', {
+        participants,
+      });
 
       return;
     }
@@ -358,12 +279,8 @@ export class RealtimeGateway
      * Scheduled -> ACTIVE.
      */
 
-    if (
-      meeting.status ===
-      "SCHEDULED"
-    ) {
-      const startedAt =
-        new Date();
+    if (meeting.status === 'SCHEDULED') {
+      const startedAt = new Date();
 
       await this.prisma.meeting.update({
         where: {
@@ -371,25 +288,21 @@ export class RealtimeGateway
         },
 
         data: {
-          status: "ACTIVE",
+          status: 'ACTIVE',
           startedAt,
         },
       });
 
       this.server
-        .to(
-          `workspace:${meeting.workspaceId}`,
-        )
-        .emit("meeting:status", {
+        .to(`workspace:${meeting.workspaceId}`)
+        .emit('meeting:status', {
           meetingId: meeting.id,
-          status: "ACTIVE",
-          startedAt:
-            startedAt.toISOString(),
+          status: 'ACTIVE',
+          startedAt: startedAt.toISOString(),
         });
     }
 
-    const currentUser =
-      socket.data.currentUser;
+    const currentUser = socket.data.currentUser;
 
     /*
      * Get existing participants BEFORE
@@ -399,51 +312,39 @@ export class RealtimeGateway
      * for WebRTC negotiation.
      */
 
-    const existingParticipants =
-      this.meetingRoomService.getParticipants(
-        data.meetingId,
-      );
+    const existingParticipants = this.meetingRoomService.getParticipants(
+      data.meetingId,
+    );
 
     /*
      * Add participant to authoritative
      * server-side room.
      */
 
-    this.meetingRoomService.join(
-      data.meetingId,
-      {
-        socketId: socket.id,
-        userId: currentUser.id,
-        name: currentUser.name,
+    this.meetingRoomService.join(data.meetingId, {
+      socketId: socket.id,
+      userId: currentUser.id,
+      name: currentUser.name,
+      micEnabled: true,
+      cameraEnabled: true,
+    });
 
-        /*
-         * Initial media state.
-         *
-         * The frontend should start its
-         * camera/mic with these values.
-         */
-        micEnabled: true,
-        cameraEnabled: true,
-      },
-    );
+    await this.meetingRepository.join(data.meetingId, currentUser.id);
 
     /*
      * Join Socket.IO room.
      */
 
-    socket.join(
-      `meeting:${data.meetingId}`,
-    );
+    socket.join(`meeting:${data.meetingId}`);
 
     /*
      * Get authoritative list AFTER
      * adding the new participant.
      */
 
-    const allParticipants =
-      this.meetingRoomService.getParticipants(
-        data.meetingId,
-      );
+    const allParticipants = this.meetingRoomService.getParticipants(
+      data.meetingId,
+    );
 
     /*
      * IMPORTANT:
@@ -457,17 +358,9 @@ export class RealtimeGateway
      * [A,B].
      */
 
-    this.server
-      .to(
-        `meeting:${data.meetingId}`,
-      )
-      .emit(
-        "meeting:participants",
-        {
-          participants:
-            allParticipants,
-        },
-      );
+    this.server.to(`meeting:${data.meetingId}`).emit('meeting:participants', {
+      participants: allParticipants,
+    });
 
     /*
      * Tell existing participants that
@@ -476,24 +369,15 @@ export class RealtimeGateway
      * Existing participant creates offer.
      */
 
-    socket
-      .to(
-        `meeting:${data.meetingId}`,
-      )
-      .emit(
-        "meeting:participant-joined",
-        {
-          participant: {
-            socketId: socket.id,
-            userId:
-              currentUser.id,
-            name:
-              currentUser.name,
-            micEnabled: true,
-            cameraEnabled: true,
-          },
-        },
-      );
+    socket.to(`meeting:${data.meetingId}`).emit('meeting:participant-joined', {
+      participant: {
+        socketId: socket.id,
+        userId: currentUser.id,
+        name: currentUser.name,
+        micEnabled: true,
+        cameraEnabled: true,
+      },
+    });
 
     /*
      * Tell newcomer exactly who was
@@ -504,13 +388,9 @@ export class RealtimeGateway
      * WebRTC setup deterministic.
      */
 
-    socket.emit(
-      "meeting:existing-participants",
-      {
-        participants:
-          existingParticipants,
-      },
-    );
+    socket.emit('meeting:existing-participants', {
+      participants: existingParticipants,
+    });
 
     this.logger.log(
       `${currentUser.name} joined meeting ${data.meetingId} (${socket.id})`,
@@ -518,89 +398,66 @@ export class RealtimeGateway
   }
 
   // =========================================================
-// MEETING CHAT
-// =========================================================
+  // MEETING CHAT
+  // =========================================================
 
+  @SubscribeMessage('meeting:chat:send')
+  async handleMeetingChatSend(
+    @MessageBody()
+    data: {
+      meetingId: string;
+      content: string;
+    },
 
-@SubscribeMessage("meeting:chat:send")
-async handleMeetingChatSend(
-  @MessageBody()
-  data: {
-    meetingId: string;
-    content: string;
-  },
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
+  ) {
+    const content = data.content?.trim();
 
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  const content =
-    data.content?.trim();
+    if (!content) {
+      return;
+    }
 
-  if (!content) {
-    return;
-  }
-
-  const participant =
-    this.meetingRoomService.getParticipant(
+    const participant = this.meetingRoomService.getParticipant(
       data.meetingId,
       socket.id,
     );
 
-  if (!participant) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "You are not in this meeting.",
-      },
-    );
+    if (!participant) {
+      socket.emit('meeting:chat:error', {
+        message: 'You are not in this meeting.',
+      });
 
-    return;
-  }
+      return;
+    }
 
-  const meeting =
-    await this.prisma.meeting.findUnique({
+    const meeting = await this.prisma.meeting.findUnique({
       where: {
         id: data.meetingId,
       },
     });
 
-  if (!meeting) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "Meeting not found.",
-      },
-    );
+    if (!meeting) {
+      socket.emit('meeting:chat:error', {
+        message: 'Meeting not found.',
+      });
 
-    return;
-  }
-  
+      return;
+    }
 
-  if (
-    meeting.status === "ENDED" ||
-    meeting.status === "CANCELLED"
-  ) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "This meeting is no longer active.",
-      },
-    );
+    if (meeting.status === 'ENDED' || meeting.status === 'CANCELLED') {
+      socket.emit('meeting:chat:error', {
+        message: 'This meeting is no longer active.',
+      });
 
-    return;
-  }
+      return;
+    }
 
-  const message =
-    await this.prisma.meetingMessage.create({
+    const message = await this.prisma.meetingMessage.create({
       data: {
-        meetingId:
-          data.meetingId,
+        meetingId: data.meetingId,
 
-        senderId:
-          socket.data.currentUser.id,
+        senderId: socket.data.currentUser.id,
 
         content,
       },
@@ -616,60 +473,47 @@ async handleMeetingChatSend(
       },
     });
 
-  this.server
-    .to(
-      `meeting:${data.meetingId}`,
-    )
-    .emit(
-      "meeting:chat:message",
-      message,
-    );
+    this.server
+      .to(`meeting:${data.meetingId}`)
+      .emit('meeting:chat:message', message);
 
-  return message;
-}
+    return message;
+  }
 
+  // =========================================================
+  // MEETING CHAT HISTORY
+  // =========================================================
 
-// =========================================================
-// MEETING CHAT HISTORY
-// =========================================================
+  @SubscribeMessage('meeting:chat:history')
+  async handleMeetingChatHistory(
+    @MessageBody()
+    data: {
+      meetingId: string;
+    },
 
-
-@SubscribeMessage("meeting:chat:history")
-async handleMeetingChatHistory(
-  @MessageBody()
-  data: {
-    meetingId: string;
-  },
-
-  @ConnectedSocket()
-  socket: AuthenticatedSocket,
-) {
-  const participant =
-    this.meetingRoomService.getParticipant(
+    @ConnectedSocket()
+    socket: AuthenticatedSocket,
+  ) {
+    const participant = this.meetingRoomService.getParticipant(
       data.meetingId,
       socket.id,
     );
 
-  if (!participant) {
-    socket.emit(
-      "meeting:chat:error",
-      {
-        message:
-          "You are not in this meeting.",
-      },
-    );
+    if (!participant) {
+      socket.emit('meeting:chat:error', {
+        message: 'You are not in this meeting.',
+      });
 
-    return;
-  }
+      return;
+    }
 
-  const messages =
-    await this.prisma.meetingMessage.findMany({
+    const messages = await this.prisma.meetingMessage.findMany({
       where: {
         meetingId: data.meetingId,
       },
 
       orderBy: {
-        createdAt: "asc",
+        createdAt: 'asc',
       },
 
       take: 100,
@@ -685,19 +529,16 @@ async handleMeetingChatHistory(
       },
     });
 
-  socket.emit(
-    "meeting:chat:history",
-    {
+    socket.emit('meeting:chat:history', {
       messages,
-    },
-  );
-}
+    });
+  }
 
   // =========================================================
   // MEETING LEAVE
   // =========================================================
 
-  @SubscribeMessage("meeting:leave")
+  @SubscribeMessage('meeting:leave')
   handleMeetingLeave(
     @MessageBody()
     data: {
@@ -707,19 +548,14 @@ async handleMeetingChatHistory(
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    this.removeMeetingParticipant(
-      data.meetingId,
-      socket,
-    );
+    this.removeMeetingParticipant(data.meetingId, socket);
   }
 
   // =========================================================
   // PARTICIPANT STATE
   // =========================================================
 
-  @SubscribeMessage(
-    "meeting:participant-state",
-  )
+  @SubscribeMessage('meeting:participant-state')
   handleMeetingParticipantState(
     @MessageBody()
     data: {
@@ -736,27 +572,23 @@ async handleMeetingChatHistory(
      * actually inside this meeting.
      */
 
-    const currentParticipant =
-      this.meetingRoomService.getParticipant(
-        data.meetingId,
-        socket.id,
-      );
+    const currentParticipant = this.meetingRoomService.getParticipant(
+      data.meetingId,
+      socket.id,
+    );
 
     if (!currentParticipant) {
       return;
     }
 
-    const updatedParticipant =
-      this.meetingRoomService.updateParticipantState(
-        data.meetingId,
-        socket.id,
-        {
-          micEnabled:
-            data.micEnabled,
-          cameraEnabled:
-            data.cameraEnabled,
-        },
-      );
+    const updatedParticipant = this.meetingRoomService.updateParticipantState(
+      data.meetingId,
+      socket.id,
+      {
+        micEnabled: data.micEnabled,
+        cameraEnabled: data.cameraEnabled,
+      },
+    );
 
     if (!updatedParticipant) {
       return;
@@ -772,16 +604,10 @@ async handleMeetingChatHistory(
      */
 
     this.server
-      .to(
-        `meeting:${data.meetingId}`,
-      )
-      .emit(
-        "meeting:participant-state",
-        {
-          participant:
-            updatedParticipant,
-        },
-      );
+      .to(`meeting:${data.meetingId}`)
+      .emit('meeting:participant-state', {
+        participant: updatedParticipant,
+      });
 
     this.logger.debug(
       `Participant state updated: ${updatedParticipant.name} | mic=${updatedParticipant.micEnabled} camera=${updatedParticipant.cameraEnabled}`,
@@ -792,7 +618,7 @@ async handleMeetingChatHistory(
   // MEETING END
   // =========================================================
 
-  @SubscribeMessage("meeting:end")
+  @SubscribeMessage('meeting:end')
   async handleMeetingEnd(
     @MessageBody()
     data: {
@@ -802,26 +628,24 @@ async handleMeetingChatHistory(
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const meeting =
-      await this.prisma.meeting.findUnique({
-        where: {
-          id: data.meetingId,
-        },
-      });
+    const meeting = await this.prisma.meeting.findUnique({
+      where: {
+        id: data.meetingId,
+      },
+    });
 
     if (!meeting) {
       return;
     }
 
     if (meeting.createdById !== socket.data.currentUser.id) {
-  socket.emit("meeting:error", {
-    message: "Only the host can end the meeting",
-  });
-  return;
-}
+      socket.emit('meeting:error', {
+        message: 'Only the host can end the meeting',
+      });
+      return;
+    }
 
-    const endedAt =
-      new Date();
+    const endedAt = new Date();
 
     await this.prisma.meeting.update({
       where: {
@@ -829,7 +653,7 @@ async handleMeetingChatHistory(
       },
 
       data: {
-        status: "ENDED",
+        status: 'ENDED',
         endedAt,
       },
     });
@@ -838,24 +662,16 @@ async handleMeetingChatHistory(
      * Tell everyone that the meeting ended.
      */
 
-    this.server
-      .to(
-        `meeting:${data.meetingId}`,
-      )
-      .emit("meeting:ended", {
-        meetingId:
-          data.meetingId,
-        endedAt:
-          endedAt.toISOString(),
-      });
+    this.server.to(`meeting:${data.meetingId}`).emit('meeting:ended', {
+      meetingId: data.meetingId,
+      endedAt: endedAt.toISOString(),
+    });
 
     /*
      * Clear server-side room.
      */
 
-    this.meetingRoomService.clearMeeting(
-      data.meetingId,
-    );
+    this.meetingRoomService.clearMeeting(data.meetingId);
 
     this.logger.log(
       `Meeting ended: ${data.meetingId} by ${socket.data.currentUser.name}`,
@@ -866,7 +682,7 @@ async handleMeetingChatHistory(
   // WEBRTC OFFER
   // =========================================================
 
-  @SubscribeMessage("webrtc:offer")
+  @SubscribeMessage('webrtc:offer')
   handleWebRTCOffer(
     @MessageBody()
     data: {
@@ -884,20 +700,17 @@ async handleMeetingChatHistory(
      * meeting.
      */
 
-    this.server
-      .to(data.targetSocketId)
-      .emit("webrtc:offer", {
-        senderSocketId:
-          socket.id,
-        offer: data.offer,
-      });
+    this.server.to(data.targetSocketId).emit('webrtc:offer', {
+      senderSocketId: socket.id,
+      offer: data.offer,
+    });
   }
 
   // =========================================================
   // WEBRTC ANSWER
   // =========================================================
 
-  @SubscribeMessage("webrtc:answer")
+  @SubscribeMessage('webrtc:answer')
   handleWebRTCAnswer(
     @MessageBody()
     data: {
@@ -908,22 +721,17 @@ async handleMeetingChatHistory(
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    this.server
-      .to(data.targetSocketId)
-      .emit("webrtc:answer", {
-        senderSocketId:
-          socket.id,
-        answer: data.answer,
-      });
+    this.server.to(data.targetSocketId).emit('webrtc:answer', {
+      senderSocketId: socket.id,
+      answer: data.answer,
+    });
   }
 
   // =========================================================
   // WEBRTC ICE
   // =========================================================
 
-  @SubscribeMessage(
-    "webrtc:ice-candidate",
-  )
+  @SubscribeMessage('webrtc:ice-candidate')
   handleWebRTCIceCandidate(
     @MessageBody()
     data: {
@@ -934,103 +742,61 @@ async handleMeetingChatHistory(
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    this.server
-      .to(data.targetSocketId)
-      .emit(
-        "webrtc:ice-candidate",
-        {
-          senderSocketId:
-            socket.id,
-          candidate:
-            data.candidate,
-        },
-      );
+    this.server.to(data.targetSocketId).emit('webrtc:ice-candidate', {
+      senderSocketId: socket.id,
+      candidate: data.candidate,
+    });
   }
 
   // =========================================================
   // REMOVE PARTICIPANT
   // =========================================================
 
-  private removeMeetingParticipant(
+  private async removeMeetingParticipant(
     meetingId: string,
     socket: AuthenticatedSocket,
   ) {
-    const participant =
-      this.meetingRoomService.getParticipant(
-        meetingId,
-        socket.id,
-      );
-
-    /*
-     * Already removed.
-     *
-     * This can happen when both:
-     *
-     * meeting:leave
-     *
-     * and
-     *
-     * disconnect
-     *
-     * happen around the same time.
-     */
+    const participant = this.meetingRoomService.getParticipant(
+      meetingId,
+      socket.id,
+    );
 
     if (!participant) {
       return;
     }
 
+    await this.meetingRepository.leave(meetingId, participant.userId);
+
     /*
      * Remove from server-side room.
      */
 
-    const participants =
-      this.meetingRoomService.leave(
-        meetingId,
-        socket.id,
-      );
+    const participants = this.meetingRoomService.leave(meetingId, socket.id);
 
     /*
      * Remove from Socket.IO room.
      */
 
-    socket.leave(
-      `meeting:${meetingId}`,
-    );
+    socket.leave(`meeting:${meetingId}`);
 
     /*
      * Tell everyone else that this exact
      * socket left.
      */
 
-    this.server
-      .to(
-        `meeting:${meetingId}`,
-      )
-      .emit(
-        "meeting:participant-left",
-        {
-          socketId:
-            socket.id,
-          userId:
-            participant.userId,
-        },
-      );
+    this.server.to(`meeting:${meetingId}`).emit('meeting:participant-left', {
+      socketId: socket.id,
+      userId: participant.userId,
+    });
 
     /*
      * Then send authoritative complete
      * participant list.
      */
 
-    this.server
-      .to(
-        `meeting:${meetingId}`,
-      )
-      .emit(
-        "meeting:participants",
-        {
-          participants,
-        },
-      );
+    this.server.to(`meeting:${meetingId}`).emit('meeting:participants', {
+      participants,
+    });
 
     this.logger.log(
       `${participant.name} left meeting ${meetingId} (${socket.id})`,
