@@ -145,6 +145,8 @@ export default function MeetingRoom({
 
   const [copied, setCopied] = useState(false);
 
+  const [showLeaveOptions, setShowLeaveOptions] = useState(false);
+
   const [devices, setDevices] = useState<{
     cameras: MediaDeviceInfo[];
     microphones: MediaDeviceInfo[];
@@ -176,6 +178,12 @@ export default function MeetingRoom({
     cameraEnabled,
     shouldJoin: joined,
   });
+
+  const localParticipant = participants.find(
+    (participant) => participant.socketId === localSocketId,
+  );
+
+  const isHost = localParticipant?.userId === hostId;
 
   /*
    * =========================================================
@@ -725,6 +733,22 @@ export default function MeetingRoom({
     setMicEnabled(nextState);
   }
 
+  useEffect(() => {
+    function handleMeetingEnded(data: { meetingId: string }) {
+      if (data.meetingId !== meetingId) {
+        return;
+      }
+
+      void leaveMeeting();
+    }
+
+    socket.on("meeting:ended", handleMeetingEnded);
+
+    return () => {
+      socket.off("meeting:ended", handleMeetingEnded);
+    };
+  }, [meetingId]);
+
   /*
    * =========================================================
    * LEAVE
@@ -761,6 +785,16 @@ export default function MeetingRoom({
       source === "quick-join" ? "/dashboard" : `/workspace/${slug}/meetings`;
   }
 
+  const endMeeting = () => {
+    if (!isHost || !socket.connected) {
+      return;
+    }
+
+    socket.emit("meeting:end", {
+      meetingId,
+    });
+  };
+
   /*
    * =========================================================
    * PARTICIPANT COUNT
@@ -782,10 +816,6 @@ export default function MeetingRoom({
     new Map(
       participants.map((participant) => [participant.userId, participant]),
     ).values(),
-  );
-
-  const localParticipant = uniqueParticipants.find(
-    (participant) => participant.socketId === localSocketId,
   );
 
   /*
@@ -1855,8 +1885,8 @@ export default function MeetingRoom({
 
           <button
             type="button"
-            onClick={leaveMeeting}
-            title="Leave meeting"
+            onClick={() => setShowLeaveOptions(true)}
+            title={isHost ? "Leave meeting" : "Leave meeting"}
             className={`flex ${
               minimized ? "h-10 w-10" : "h-12 w-12"
             } items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]`}
@@ -1865,6 +1895,58 @@ export default function MeetingRoom({
           </button>
         </div>
       </footer>
+
+      {/* LEAVE OPTIONS */}
+      {showLeaveOptions && (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+    <div className="w-full max-w-sm rounded-2xl bg-gray-800/50  p-5 shadow-2xl">
+      <h3 className="text-lg font-semibold text-white-500">
+        Leave meeting?
+      </h3>
+
+      <p className="mt-1 text-sm text-white/50">
+        Choose what you want to do.
+      </p>
+
+      <div className="mt-5 flex flex-col gap-2">
+        {/* Leave meeting */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowLeaveOptions(false);
+            void leaveMeeting();
+          }}
+          className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-900 transition hover:bg-gray-200"
+        >
+          Leave meeting
+        </button>
+
+        {/* End meeting — host only */}
+        {isHost && (
+          <button
+            type="button"
+            onClick={() => {
+              setShowLeaveOptions(false);
+              endMeeting();
+            }}
+            className="w-full rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+          >
+            End meeting
+          </button>
+        )}
+
+        {/* Cancel */}
+        <button
+          type="button"
+          onClick={() => setShowLeaveOptions(false)}
+          className="w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
@@ -1873,7 +1955,7 @@ export default function MeetingRoom({
 /* REMOTE VIDEO */
 /* ========================================================= */
 
-function RemoteVideo({ stream, participant,hostId }: RemoteVideoProps) {
+function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -2039,6 +2121,12 @@ function RemoteVideo({ stream, participant,hostId }: RemoteVideoProps) {
 
       <div className="absolute bottom-4 left-4 rounded-xl bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-md">
         {participant.name}
+
+        {participant.userId === hostId && (
+          <span className="ml-2 text-[10px] font-medium tracking-wider text-emerald-400">
+            HOST
+          </span>
+        )}
       </div>
     </div>
   );
