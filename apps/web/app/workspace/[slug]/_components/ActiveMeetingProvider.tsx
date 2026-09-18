@@ -12,6 +12,7 @@ interface ActiveMeeting {
   meetingId: string;
   slug: string;
   meetingCode: string;
+  hostId: string;
   source: "workspace" | "quick-join";
 }
 

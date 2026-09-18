@@ -93,6 +93,7 @@ export class MeetingService {
   meetingId: meeting.id,
   meetingCode: meeting.meetingCode,
   workspaceSlug: meeting.workspace.slug,
+  hostId: meeting.createdBy.id,
 };
 }
 

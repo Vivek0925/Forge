@@ -41,6 +41,7 @@ export default function MeetingRoomLauncher({
           meetingId,
           slug,
           meetingCode: data.meetingCode,
+          hostId: data.createdBy.id,
           source: "workspace",
         });
       } catch (error) {

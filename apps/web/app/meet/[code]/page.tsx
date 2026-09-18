@@ -49,6 +49,7 @@ if (!user) {
           meetingId: data.meetingId,
           slug: data.workspaceSlug,
           meetingCode: data.meetingCode,
+          hostId: data.hostId,
           source: "quick-join",
         });
       } catch (error) {

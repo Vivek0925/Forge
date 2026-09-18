@@ -26,6 +26,7 @@ interface MeetingRoomProps {
   slug: string;
   meetingId: string;
   meetingCode: string;
+  hostId: string;
   source: "workspace" | "quick-join";
   minimized: boolean;
   hidden: boolean;
@@ -45,6 +46,7 @@ interface Participant {
 interface RemoteVideoProps {
   stream: MediaStream | undefined;
   participant: Participant;
+  hostId: string;
 }
 
 interface MeetingChatMessage {
@@ -70,6 +72,7 @@ export default function MeetingRoom({
   onMinimize,
   onRestore,
   onHide,
+  hostId,
 }: MeetingRoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -689,16 +692,16 @@ export default function MeetingRoom({
 
   // copy meeting link to clipboard
   const copyMeetingCode = async () => {
-  const meetingLink = `${window.location.origin}/meet/${meetingCode}`;
+    const meetingLink = `${window.location.origin}/meet/${meetingCode}`;
 
-  await navigator.clipboard.writeText(meetingLink);
+    await navigator.clipboard.writeText(meetingLink);
 
-  setCopied(true);
+    setCopied(true);
 
-  setTimeout(() => {
-    setCopied(false);
-  }, 2000);
-};
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  };
 
   /*
    * =========================================================
@@ -1333,6 +1336,7 @@ export default function MeetingRoom({
                   key={participant.userId}
                   stream={remoteStream}
                   participant={participant}
+                  hostId={hostId}
                 />
               );
             })}
@@ -1510,6 +1514,12 @@ export default function MeetingRoom({
                         <p className="truncate text-sm font-medium text-white">
                           {participant.name}
                         </p>
+
+                        {participant.userId === hostId && (
+                          <p className="mt-0.5 text-[10px] font-medium tracking-wider text-emerald-400">
+                            HOST
+                          </p>
+                        )}
 
                         {isYou && (
                           <p className="mt-0.5 text-[11px] text-emerald-400">
@@ -1863,7 +1873,7 @@ export default function MeetingRoom({
 /* REMOTE VIDEO */
 /* ========================================================= */
 
-function RemoteVideo({ stream, participant }: RemoteVideoProps) {
+function RemoteVideo({ stream, participant,hostId }: RemoteVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
