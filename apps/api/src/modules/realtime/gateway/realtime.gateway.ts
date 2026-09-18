@@ -576,6 +576,7 @@ async handleMeetingChatSend(
 
     return;
   }
+  
 
   if (
     meeting.status === "ENDED" ||
@@ -811,6 +812,13 @@ async handleMeetingChatHistory(
     if (!meeting) {
       return;
     }
+
+    if (meeting.createdById !== socket.data.currentUser.id) {
+  socket.emit("meeting:error", {
+    message: "Only the host can end the meeting",
+  });
+  return;
+}
 
     const endedAt =
       new Date();
