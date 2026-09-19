@@ -67,6 +67,13 @@ export class MeetingRepository {
           },
         },
 
+        workspace: {
+          select: {
+            id: true,
+            slug: true,
+          },
+        },
+
         participants: {
           include: {
             user: {

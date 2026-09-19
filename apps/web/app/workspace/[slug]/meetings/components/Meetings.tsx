@@ -6,6 +6,7 @@ import { CalendarDays, Plus, Video, X } from "lucide-react";
 import MeetingCard from "../components/MeetingCard";
 import { api } from "@/lib/api";
 import { useActiveMeeting } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
+import { socket } from "@/lib/socket";
 
 interface Meeting {
   id: string;
@@ -74,11 +75,21 @@ export default function Meetings({ slug }: MeetingsProps) {
     }
   }
 
-  useEffect(() => {
-    if (slug) {
-      loadMeetings();
-    }
-  }, [slug]);
+ useEffect(() => {
+  if (!slug) return;
+
+  loadMeetings();
+
+  const onMeetingUpdated = () => {
+    loadMeetings();
+  };
+
+  socket.on("meeting:updated", onMeetingUpdated);
+
+  return () => {
+    socket.off("meeting:updated", onMeetingUpdated);
+  };
+}, [slug]);
 
   function resetForm() {
     setTitle("");
@@ -136,6 +147,11 @@ export default function Meetings({ slug }: MeetingsProps) {
       } else {
         setMeetings((prev) => [meeting, ...prev]);
       }
+
+      socket.emit("meeting:created", {
+        meetingId: meeting.id,
+        workspaceSlug: slug,
+      });
 
       setShowCreate(false);
       resetForm();

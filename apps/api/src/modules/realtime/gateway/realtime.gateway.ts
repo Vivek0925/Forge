@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 
 import { Logger } from '@nestjs/common';
-import { Server } from 'socket.io';
+import { Server,Socket } from 'socket.io';
 
 import { PresenceService } from '../services/presence.service';
 import { SocketAuthService } from '../services/socket-auth.service';
@@ -65,6 +65,7 @@ export class RealtimeGateway
       socket.disconnect(true);
     }
   }
+
 
   // =========================================================
   // SOCKET DISCONNECT
@@ -747,6 +748,44 @@ export class RealtimeGateway
       candidate: data.candidate,
     });
   }
+
+  @SubscribeMessage("meeting:created")
+async handleMeetingCreated(
+  @ConnectedSocket() socket: Socket,
+  @MessageBody()
+  data: {
+    meetingId: string;
+    workspaceSlug: string;
+  },
+) {
+  const meeting = await this.meetingRepository.findById(data.meetingId);
+
+  if (!meeting) {
+    return;
+  }
+
+  // Make sure the meeting belongs to the workspace
+  // the socket is currently connected to.
+  if (meeting.workspace.slug !== data.workspaceSlug) {
+    return;
+  }
+
+  this.emitMeetingUpdated(
+    meeting.workspaceId,
+    meeting.id,
+  );
+}
+
+  private emitMeetingUpdated(
+  workspaceId: string,
+  meetingId: string,
+) {
+  this.server
+    .to(`workspace:${workspaceId}`)
+    .emit("meeting:updated", {
+      meetingId,
+    });
+}
 
   // =========================================================
   // REMOVE PARTICIPANT
