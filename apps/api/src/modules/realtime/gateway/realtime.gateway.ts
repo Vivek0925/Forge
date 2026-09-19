@@ -331,6 +331,14 @@ export class RealtimeGateway
 
     await this.meetingRepository.join(data.meetingId, currentUser.id);
 
+    const updatedMeeting = await this.meetingRepository.findById(
+      data.meetingId,
+    );
+
+    if (updatedMeeting) {
+      this.emitMeetingUpdated(updatedMeeting.workspaceId, updatedMeeting.id);
+    }
+
     /*
      * Join Socket.IO room.
      */
@@ -657,6 +665,8 @@ export class RealtimeGateway
         endedAt,
       },
     });
+
+    this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
 
     /*
      * Tell everyone that the meeting ended.
