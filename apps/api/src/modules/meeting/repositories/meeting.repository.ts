@@ -193,6 +193,49 @@ export class MeetingRepository {
     });
   }
 
+  update(
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    scheduledAt?: Date;
+  },
+) {
+  return this.prisma.meeting.update({
+    where: {
+      id,
+    },
+
+    data: {
+      title: data.title,
+      description: data.description,
+      scheduledAt: data.scheduledAt,
+    },
+
+    include: {
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
   end(id: string) {
     return this.prisma.meeting.update({
       where: {

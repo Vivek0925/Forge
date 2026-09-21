@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarDays, Clock, Users, Video } from "lucide-react";
+import { CalendarDays, Clock, Users, Video,MoreVertical, } from "lucide-react";
+import { useState } from "react";
 
 interface Meeting {
   id: string;
@@ -31,6 +32,8 @@ interface MeetingCardProps {
   meeting: Meeting;
   onJoin: (meetingId: string) => void;
 }
+
+const [showMenu, setShowMenu] = useState(false);
 
 export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
   const isActive = meeting.status === "ACTIVE";
