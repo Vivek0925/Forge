@@ -7,6 +7,7 @@ import {
 import { WorkspaceService } from '../../workspace/services/workspace.service';
 
 import { CreateMeetingDto } from '../dto/create-meeting.dto';
+import { UpdateMeetingDto } from '../dto/update-meeting.dto';
 import { MeetingRepository } from '../repositories/meeting.repository';
 import { randomBytes } from 'crypto';
 
@@ -55,6 +56,34 @@ export class MeetingService {
 
     return meeting;
   }
+
+  async update(
+  id: string,
+  userId: string,
+  dto: UpdateMeetingDto,
+) {
+  const meeting = await this.findById(id);
+
+  if (meeting.createdById !== userId) {
+    throw new BadRequestException(
+      'Only the meeting host can edit the meeting',
+    );
+  }
+
+  if (meeting.status !== 'SCHEDULED') {
+    throw new BadRequestException(
+      'Only scheduled meetings can be edited',
+    );
+  }
+
+  return this.meetingRepository.update(id, {
+    title: dto.title,
+    description: dto.description,
+    scheduledAt: dto.scheduledAt
+      ? new Date(dto.scheduledAt)
+      : undefined,
+  });
+}
 
   async joinByCode(
   meetingCode: string,
