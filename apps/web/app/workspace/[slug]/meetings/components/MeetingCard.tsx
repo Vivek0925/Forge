@@ -5,6 +5,7 @@ import { CalendarDays, Clock, Users, Video } from "lucide-react";
 interface Meeting {
   id: string;
   title: string;
+  meetingCode: string;
   description?: string | null;
   status: "SCHEDULED" | "ACTIVE" | "ENDED" | "CANCELLED";
   scheduledAt?: string | null;
@@ -118,13 +119,25 @@ export default function MeetingCard({ meeting, onJoin }: MeetingCardProps) {
           <button
             type="button"
             onClick={() => onJoin(meeting.id)}
-            className="flex items-center gap-2 background-none rounded-xl  px-3 py-1.5 border border-[#ECEEF3]  text-sm font-medium text-black transition hover:bg-paper-700"
+            className="flex hover:bg-green-300/60 items-center gap-2 bg-white/40 rounded-xl  px-3 py-1.5 border border-[#ECEEF3]  text-sm font-medium text-black transition hover:bg-paper-700"
           >
             <Video size={16} />
 
             {isActive ? "Join Meeting" : "View Meeting"}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(
+              `${window.location.origin}/meet/${meeting.meetingCode}`,
+            );
+          }}
+          className="hover:bg-green-300/60 flex items-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-3 py-1.5 text-sm font-medium text-black transition"
+        >
+          Copy Link
+        </button>
       </div>
     </div>
   );
