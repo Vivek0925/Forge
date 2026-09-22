@@ -188,6 +188,46 @@ export default function Meetings({ slug }: MeetingsProps) {
     }
   }
 
+  async function updateMeeting() {
+    if (!editingMeeting) return;
+
+    if (!title.trim()) {
+      setError("Meeting title is required.");
+      return;
+    }
+
+    if (!scheduledAt) {
+      setError("Please select a date and time.");
+      return;
+    }
+
+    try {
+      setError("");
+
+      await api(`/meetings/${editingMeeting.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          scheduledAt: new Date(scheduledAt).toISOString(),
+        }),
+      });
+
+      setEditingMeeting(null);
+      resetForm();
+
+      await loadMeetings();
+
+     
+    } catch (error) {
+      console.error("Failed to update meeting", error);
+
+      setError(
+        error instanceof Error ? error.message : "Failed to update meeting.",
+      );
+    }
+  }
+
   const activeMeetings = meetings.filter(
     (meeting) => meeting.status === "ACTIVE",
   );
@@ -505,6 +545,91 @@ export default function Meetings({ slug }: MeetingsProps) {
                   : mode === "now"
                     ? "Start Meeting"
                     : "Schedule Meeting"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {editingMeeting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-[#20232D]">
+                  Edit Meeting
+                </h2>
+
+                <p className="mt-1 text-sm text-[#707487]">
+                  Update the meeting details.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingMeeting(null)}
+                className="rounded-xl p-2 text-[#85899A] transition hover:bg-zinc-100 hover:text-[#20232D]"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#20232D]">
+                  Meeting title
+                </label>
+
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[#20232D]">
+                  Description
+                </label>
+
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-[#20232D]">
+                  <CalendarDays size={15} />
+                  Date and time
+                </label>
+
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  min={new Date().toISOString().slice(0, 16)}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="w-full rounded-xl border border-[#DEDFE8] px-4 py-3 text-sm text-[#20232D] outline-none transition focus:border-[#BEEAD7] focus:ring-2 focus:ring-[#E7F8EF]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-7 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingMeeting(null)}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium text-[#707487] transition hover:bg-zinc-100"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={updateMeeting}
+                className="rounded-xl px-5 py-2.5 text-sm font-medium text-black transition hover:bg-green-100"
+              >
+                Save Changes
               </button>
             </div>
           </div>

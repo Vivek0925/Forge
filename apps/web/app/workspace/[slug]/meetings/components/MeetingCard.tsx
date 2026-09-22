@@ -34,8 +34,6 @@ interface MeetingCardProps {
   onEdit: (meeting: Meeting) => void;
 }
 
-const [showMenu, setShowMenu] = useState(false);
-
 export default function MeetingCard({ meeting, onJoin, onEdit }: MeetingCardProps) {
   const isActive = meeting.status === "ACTIVE";
   const isEnded = meeting.status === "ENDED";
