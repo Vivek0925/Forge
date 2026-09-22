@@ -2,6 +2,7 @@
 
 import { CalendarDays, Clock, Users, Video,MoreVertical, } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";  
 
 interface Meeting {
   id: string;
@@ -39,6 +40,9 @@ export default function MeetingCard({ meeting, onJoin, onEdit }: MeetingCardProp
   const isEnded = meeting.status === "ENDED";
 
   const [showMenu, setShowMenu] = useState(false);
+
+  const { user } = useAuth();
+  const isCreator = user?.id === meeting.createdBy.id;
 
   const scheduledDate = meeting.scheduledAt
     ? new Date(meeting.scheduledAt)
@@ -143,7 +147,7 @@ export default function MeetingCard({ meeting, onJoin, onEdit }: MeetingCardProp
           Copy Link
         </button>
 
-        {meeting.status === "SCHEDULED" && (
+        {meeting.status === "SCHEDULED" && isCreator && (
   <div className="relative">
     <button
       type="button"
