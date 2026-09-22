@@ -189,28 +189,31 @@ export default function Meetings({ slug }: MeetingsProps) {
   }
 
   async function handleCancel(meetingId: string) {
-  const confirmed = window.confirm(
-    "Are you sure you want to cancel this meeting?",
-  );
-
-  if (!confirmed) return;
-
-  try {
-    await api(`/meetings/${meetingId}/cancel`, {
-      method: "POST",
-    });
-
-    await loadMeetings();
-  } catch (error) {
-    console.error("Failed to cancel meeting", error);
-
-    setError(
-      error instanceof Error
-        ? error.message
-        : "Failed to cancel meeting.",
+    const confirmed = window.confirm(
+      "Are you sure you want to cancel this meeting?",
     );
+
+    if (!confirmed) return;
+
+    try {
+      await api(`/meetings/${meetingId}/cancel`, {
+        method: "POST",
+      });
+
+      socket.emit("meeting:cancelled", {
+        meetingId,
+        workspaceSlug: slug,
+      });
+
+      await loadMeetings();
+    } catch (error) {
+      console.error("Failed to cancel meeting", error);
+
+      setError(
+        error instanceof Error ? error.message : "Failed to cancel meeting.",
+      );
+    }
   }
-}
 
   async function updateMeeting() {
     if (!editingMeeting) return;
@@ -241,8 +244,6 @@ export default function Meetings({ slug }: MeetingsProps) {
       resetForm();
 
       await loadMeetings();
-
-     
     } catch (error) {
       console.error("Failed to update meeting", error);
 

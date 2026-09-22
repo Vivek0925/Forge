@@ -782,6 +782,26 @@ export class RealtimeGateway
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
 
+  @SubscribeMessage("meeting:cancelled")
+async handleMeetingCancelled(
+  @ConnectedSocket() socket: Socket,
+  @MessageBody()
+  data: { meetingId: string; workspaceSlug: string },
+) {
+  const meeting = await this.meetingRepository.findById(
+    data.meetingId,
+  );
+
+  if (!meeting) return;
+
+  if (meeting.workspace.slug !== data.workspaceSlug) return;
+
+  this.emitMeetingUpdated(
+    meeting.workspaceId,
+    meeting.id,
+  );
+}
+
   private emitMeetingUpdated(workspaceId: string, meetingId: string) {
     this.server.to(`workspace:${workspaceId}`).emit('meeting:updated', {
       meetingId,
