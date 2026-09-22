@@ -46,6 +46,17 @@ export class MeetingController {
     return this.meetingService.joinByCode(meetingCode, req.user.id);
   }
 
+  @Post(":id/cancel")
+async cancelMeeting(
+  @Param("id") id: string,
+  @Request() req: any,
+) {
+  return this.meetingService.cancel(
+    id,
+    req.user.id,
+  );
+}
+
   @Get(':id')
   async getMeeting(@Param('id') id: string) {
     return this.meetingService.findById(id);

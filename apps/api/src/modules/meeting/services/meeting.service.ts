@@ -168,6 +168,24 @@ export class MeetingService {
     return this.meetingRepository.end(id);
   }
 
+  async cancel(id: string, userId: string) {
+  const meeting = await this.findById(id);
+
+  if (meeting.createdById !== userId) {
+    throw new BadRequestException(
+      "Only the meeting creator can cancel the meeting",
+    );
+  }
+
+  if (meeting.status !== "SCHEDULED") {
+    throw new BadRequestException(
+      "Only scheduled meetings can be cancelled",
+    );
+  }
+
+  return this.meetingRepository.cancel(id);
+}
+
   async join(meetingId: string, userId: string) {
     const meeting = await this.findById(meetingId);
 

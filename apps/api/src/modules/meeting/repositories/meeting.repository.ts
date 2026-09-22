@@ -271,6 +271,41 @@ export class MeetingRepository {
     });
   }
 
+  cancel(id: string) {
+  return this.prisma.meeting.update({
+    where: {
+      id,
+    },
+
+    data: {
+      status: "CANCELLED",
+      endedAt: new Date(),
+    },
+
+    include: {
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+
+      participants: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
   async join(meetingId: string, userId: string) {
     return this.prisma.meetingParticipant.upsert({
       where: {
