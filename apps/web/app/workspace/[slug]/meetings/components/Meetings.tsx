@@ -47,6 +47,8 @@ export default function Meetings({ slug }: MeetingsProps) {
 
   const [showCreate, setShowCreate] = useState(false);
 
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+
   const [mode, setMode] = useState<MeetingMode>("now");
 
   const [title, setTitle] = useState("");
@@ -75,21 +77,21 @@ export default function Meetings({ slug }: MeetingsProps) {
     }
   }
 
- useEffect(() => {
-  if (!slug) return;
+  useEffect(() => {
+    if (!slug) return;
 
-  loadMeetings();
-
-  const onMeetingUpdated = () => {
     loadMeetings();
-  };
 
-  socket.on("meeting:updated", onMeetingUpdated);
+    const onMeetingUpdated = () => {
+      loadMeetings();
+    };
 
-  return () => {
-    socket.off("meeting:updated", onMeetingUpdated);
-  };
-}, [slug]);
+    socket.on("meeting:updated", onMeetingUpdated);
+
+    return () => {
+      socket.off("meeting:updated", onMeetingUpdated);
+    };
+  }, [slug]);
 
   function resetForm() {
     setTitle("");
@@ -168,6 +170,22 @@ export default function Meetings({ slug }: MeetingsProps) {
 
   function handleJoin(meetingId: string) {
     window.location.href = `/workspace/${slug}/meetings/${meetingId}`;
+  }
+
+  function handleEdit(meeting: Meeting) {
+    setEditingMeeting(meeting);
+    setTitle(meeting.title);
+    setDescription(meeting.description ?? "");
+
+    if (meeting.scheduledAt) {
+      const date = new Date(meeting.scheduledAt);
+
+      const localDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000,
+      );
+
+      setScheduledAt(localDate.toISOString().slice(0, 16));
+    }
   }
 
   const activeMeetings = meetings.filter(
@@ -268,6 +286,7 @@ export default function Meetings({ slug }: MeetingsProps) {
                         key={meeting.id}
                         meeting={meeting}
                         onJoin={handleJoin}
+                        onEdit={handleEdit}
                       />
                     ))}
                   </div>
@@ -292,6 +311,7 @@ export default function Meetings({ slug }: MeetingsProps) {
                         key={meeting.id}
                         meeting={meeting}
                         onJoin={handleJoin}
+                        onEdit={handleEdit}
                       />
                     ))}
                   </div>
