@@ -301,7 +301,7 @@ export default function Meetings({ slug }: MeetingsProps) {
 
       {/* Content */}
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 overflow-hidden">
+      <div className="flex-1 px-8 py-8 overflow-hidden">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
