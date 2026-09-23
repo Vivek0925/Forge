@@ -18,4 +18,14 @@ export class GoogleCalendarService {
       ],
     });
   }
+
+  async handleCallback(code: string) {
+  const { tokens } =
+    await this.oauth2Client.getToken(code);
+
+  return {
+    message: "Google Calendar connected",
+    tokens,
+  };
+}
 }
