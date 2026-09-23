@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { google } from "googleapis";
+import type { Credentials } from "google-auth-library";
 
 @Injectable()
 export class GoogleCalendarService {
@@ -19,7 +20,10 @@ export class GoogleCalendarService {
     });
   }
 
-  async handleCallback(code: string) {
+  async handleCallback(code: string): Promise<{
+  message: string;
+  tokens: Credentials;
+}> {
   const { tokens } =
     await this.oauth2Client.getToken(code);
 

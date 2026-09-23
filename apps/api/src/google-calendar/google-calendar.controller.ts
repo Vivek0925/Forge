@@ -1,6 +1,7 @@
 import { Controller, Get, Query, Res } from "@nestjs/common";
 import type { Response } from "express";
 import { GoogleCalendarService } from "./google-calendar.service";
+import type { Credentials } from "google-auth-library";
 
 @Controller("google-calendar")
 export class GoogleCalendarController {
@@ -16,10 +17,13 @@ export class GoogleCalendarController {
     return res.redirect(url);
   }
 
-  @Get("callback")
+ @Get("callback")
 async callback(
   @Query("code") code: string,
-) {
+): Promise<{
+  message: string;
+  tokens: Credentials;
+}> {
   return this.googleCalendarService.handleCallback(code);
 }
 }
