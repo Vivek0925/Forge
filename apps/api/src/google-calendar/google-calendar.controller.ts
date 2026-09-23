@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res,Request } from '@nestjs/common';
+import { Controller, Get, Query, Res, Request } from '@nestjs/common';
 import type { Response } from 'express';
 import { GoogleCalendarService } from './google-calendar.service';
 import { UseGuards } from '@nestjs/common';
@@ -28,5 +28,10 @@ export class GoogleCalendarController {
     return {
       message: 'Google Calendar connected successfully',
     };
+  }
+
+  @Get('status')
+  async status(@Request() req: any) {
+    return this.googleCalendarService.getConnectionStatus(req.user.id);
   }
 }
