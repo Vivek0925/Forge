@@ -49,6 +49,8 @@ export default function Meetings({ slug }: MeetingsProps) {
 
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
 
+  const [calendarConnected, setCalendarConnected] = useState(false);
+
   const [mode, setMode] = useState<MeetingMode>("now");
 
   const [title, setTitle] = useState("");
@@ -92,6 +94,19 @@ export default function Meetings({ slug }: MeetingsProps) {
       socket.off("meeting:updated", onMeetingUpdated);
     };
   }, [slug]);
+
+  useEffect(() => {
+    async function checkCalendarConnection() {
+      try {
+        const data = await api("/google-calendar/status");
+        setCalendarConnected(data.connected);
+      } catch (error) {
+        console.error("Failed to check Google Calendar connection", error);
+      }
+    }
+
+    checkCalendarConnection();
+  }, []);
 
   function resetForm() {
     setTitle("");
@@ -288,6 +303,25 @@ export default function Meetings({ slug }: MeetingsProps) {
             </div>
           </div>
 
+           <button
+            type="button"
+            disabled={calendarConnected}
+            onClick={() => {
+              window.location.href =
+                "http://localhost:4000/google-calendar/connect";
+            }}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition ${
+              calendarConnected
+                ? "cursor-default border-green-200 bg-green-50 text-green-700"
+                : "border-[#E2E5EB] bg-white text-[#343844] hover:bg-[#F5F6F8]"
+            }`}
+          >
+            <CalendarDays size={16} />
+            {calendarConnected
+              ? "Google Calendar Connected"
+              : "Connect Google Calendar"}
+          </button>
+
           <button
             type="button"
             onClick={() => setShowCreate(true)}
@@ -296,6 +330,7 @@ export default function Meetings({ slug }: MeetingsProps) {
             <Plus size={17} />
             New Meeting
           </button>
+
         </div>
       </div>
 
