@@ -31,8 +31,25 @@ model User {
 
   meetingsCreated     Meeting[]            @relation("MeetingCreator")
   meetingParticipants MeetingParticipant[]
+  googleCalendarConnection GoogleCalendarConnection?
 
   @@map("users")
+}
+
+model GoogleCalendarConnection {
+  id           String   @id @default(cuid())
+
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_calendar_connections")
 }
 
 model Workspace {
