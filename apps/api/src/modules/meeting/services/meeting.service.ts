@@ -95,11 +95,29 @@ export class MeetingService {
       throw new BadRequestException('Only scheduled meetings can be edited');
     }
 
-    return this.meetingRepository.update(id, {
+    const updatedMeeting = await this.meetingRepository.update(id, {
       title: dto.title,
       description: dto.description,
       scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
     });
+
+    if (updatedMeeting.googleCalendarEventId) {
+      try {
+        await this.googleCalendarService.updateMeetingEvent(
+          userId,
+          updatedMeeting.googleCalendarEventId,
+          {
+            title: updatedMeeting.title,
+            description: updatedMeeting.description,
+            scheduledAt: updatedMeeting.scheduledAt!,
+          },
+        );
+      } catch (error) {
+        console.error('Failed to update Google Calendar event:', error);
+      }
+    }
+
+    return updatedMeeting;
   }
 
   async joinByCode(meetingCode: string, userId: string) {

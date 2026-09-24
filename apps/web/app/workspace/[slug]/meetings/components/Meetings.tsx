@@ -98,7 +98,9 @@ export default function Meetings({ slug }: MeetingsProps) {
   useEffect(() => {
     async function checkCalendarConnection() {
       try {
-        const data = await api("/google-calendar/status");
+        const data = await api<{ connected: boolean }>(
+          "/google-calendar/status",
+        );
         setCalendarConnected(data.connected);
       } catch (error) {
         console.error("Failed to check Google Calendar connection", error);
@@ -303,7 +305,7 @@ export default function Meetings({ slug }: MeetingsProps) {
             </div>
           </div>
 
-           <button
+          <button
             type="button"
             disabled={calendarConnected}
             onClick={() => {
@@ -330,13 +332,12 @@ export default function Meetings({ slug }: MeetingsProps) {
             <Plus size={17} />
             New Meeting
           </button>
-
         </div>
       </div>
 
       {/* Content */}
 
-      <div className="flex-1 px-8 py-8 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
