@@ -10,7 +10,7 @@ import { CreateMeetingDto } from '../dto/create-meeting.dto';
 import { UpdateMeetingDto } from '../dto/update-meeting.dto';
 import { MeetingRepository } from '../repositories/meeting.repository';
 import { randomBytes } from 'crypto';
-import { GoogleCalendarService } from "../../../google-calendar/google-calendar.service";
+import { GoogleCalendarService } from '../../../google-calendar/google-calendar.service';
 
 @Injectable()
 export class MeetingService {
@@ -36,7 +36,7 @@ export class MeetingService {
 
     const meetingCode = randomBytes(4).toString('hex').toUpperCase();
 
-    return this.meetingRepository.create({
+    const meeting = await this.meetingRepository.create({
       title: dto.title,
       description: dto.description,
       scheduledAt,
@@ -45,8 +45,31 @@ export class MeetingService {
       workspaceId: workspace.id,
       createdById: userId,
       meetingCode,
-      
     });
+
+    if (scheduledAt) {
+      try {
+        const googleEventId =
+          await this.googleCalendarService.createMeetingEvent(userId, {
+            id: meeting.id,
+            title: meeting.title,
+            description: meeting.description,
+            scheduledAt,
+            meetingCode: meeting.meetingCode,
+          });
+
+        if (googleEventId) {
+          await this.meetingRepository.updateCalendarEventId(
+            meeting.id,
+            googleEventId,
+          );
+        }
+      } catch (error) {
+        console.error('Failed to create Google Calendar event:', error);
+      }
+    }
+
+    return meeting;
   }
 
   async findById(id: string) {
@@ -59,74 +82,54 @@ export class MeetingService {
     return meeting;
   }
 
-  async update(
-  id: string,
-  userId: string,
-  dto: UpdateMeetingDto,
-) {
-  const meeting = await this.findById(id);
+  async update(id: string, userId: string, dto: UpdateMeetingDto) {
+    const meeting = await this.findById(id);
 
-  if (meeting.createdById !== userId) {
-    throw new BadRequestException(
-      'Only the meeting host can edit the meeting',
-    );
+    if (meeting.createdById !== userId) {
+      throw new BadRequestException(
+        'Only the meeting host can edit the meeting',
+      );
+    }
+
+    if (meeting.status !== 'SCHEDULED') {
+      throw new BadRequestException('Only scheduled meetings can be edited');
+    }
+
+    return this.meetingRepository.update(id, {
+      title: dto.title,
+      description: dto.description,
+      scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : undefined,
+    });
   }
 
-  if (meeting.status !== 'SCHEDULED') {
-    throw new BadRequestException(
-      'Only scheduled meetings can be edited',
-    );
-  }
-
-  return this.meetingRepository.update(id, {
-    title: dto.title,
-    description: dto.description,
-    scheduledAt: dto.scheduledAt
-      ? new Date(dto.scheduledAt)
-      : undefined,
-  });
-}
-
-  async joinByCode(
-  meetingCode: string,
-  userId: string,
-) {
-  const meeting =
-    await this.meetingRepository.findByCode(
+  async joinByCode(meetingCode: string, userId: string) {
+    const meeting = await this.meetingRepository.findByCode(
       meetingCode.trim().toUpperCase(),
     );
 
-  if (!meeting) {
-    throw new NotFoundException(
-      "Invalid meeting code",
-    );
-  }
+    if (!meeting) {
+      throw new NotFoundException('Invalid meeting code');
+    }
 
-  if (meeting.status === "ENDED") {
-    throw new BadRequestException(
-      "Meeting has ended",
-    );
-  }
+    if (meeting.status === 'ENDED') {
+      throw new BadRequestException('Meeting has ended');
+    }
 
-  if (meeting.status === "CANCELLED") {
-    throw new BadRequestException(
-      "Meeting has been cancelled",
-    );
-  }
+    if (meeting.status === 'CANCELLED') {
+      throw new BadRequestException('Meeting has been cancelled');
+    }
 
-  if (meeting.status !== "ACTIVE") {
-    throw new BadRequestException(
-      "Meeting has not started yet",
-    );
-  }
+    if (meeting.status !== 'ACTIVE') {
+      throw new BadRequestException('Meeting has not started yet');
+    }
 
-  return {
-  meetingId: meeting.id,
-  meetingCode: meeting.meetingCode,
-  workspaceSlug: meeting.workspace.slug,
-  hostId: meeting.createdBy.id,
-};
-}
+    return {
+      meetingId: meeting.id,
+      meetingCode: meeting.meetingCode,
+      workspaceSlug: meeting.workspace.slug,
+      hostId: meeting.createdBy.id,
+    };
+  }
 
   async findWorkspaceMeetings(workspaceSlug: string) {
     const workspace =
@@ -171,22 +174,20 @@ export class MeetingService {
   }
 
   async cancel(id: string, userId: string) {
-  const meeting = await this.findById(id);
+    const meeting = await this.findById(id);
 
-  if (meeting.createdById !== userId) {
-    throw new BadRequestException(
-      "Only the meeting creator can cancel the meeting",
-    );
+    if (meeting.createdById !== userId) {
+      throw new BadRequestException(
+        'Only the meeting creator can cancel the meeting',
+      );
+    }
+
+    if (meeting.status !== 'SCHEDULED') {
+      throw new BadRequestException('Only scheduled meetings can be cancelled');
+    }
+
+    return this.meetingRepository.cancel(id);
   }
-
-  if (meeting.status !== "SCHEDULED") {
-    throw new BadRequestException(
-      "Only scheduled meetings can be cancelled",
-    );
-  }
-
-  return this.meetingRepository.cancel(id);
-}
 
   async join(meetingId: string, userId: string) {
     const meeting = await this.findById(meetingId);

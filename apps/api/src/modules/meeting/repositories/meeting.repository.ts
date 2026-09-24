@@ -352,4 +352,18 @@ export class MeetingRepository {
       },
     });
   }
+  
+  async updateCalendarEventId(
+  meetingId: string,
+  googleCalendarEventId: string,
+) {
+  return this.prisma.meeting.update({
+    where: {
+      id: meetingId,
+    },
+    data: {
+      googleCalendarEventId,
+    },
+  });
+}
 }
