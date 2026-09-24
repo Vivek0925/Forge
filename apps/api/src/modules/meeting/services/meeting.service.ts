@@ -10,11 +10,13 @@ import { CreateMeetingDto } from '../dto/create-meeting.dto';
 import { UpdateMeetingDto } from '../dto/update-meeting.dto';
 import { MeetingRepository } from '../repositories/meeting.repository';
 import { randomBytes } from 'crypto';
+import { GoogleCalendarService } from "../../../google-calendar/google-calendar.service";
 
 @Injectable()
 export class MeetingService {
   constructor(
     private readonly meetingRepository: MeetingRepository,
+    private readonly googleCalendarService: GoogleCalendarService,
     private readonly workspaceService: WorkspaceService,
   ) {}
 
