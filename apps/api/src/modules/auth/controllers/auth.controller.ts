@@ -139,7 +139,9 @@ githubLogin() {}
     ? state
     : '/dashboard';
 
-return res.redirect(`http://localhost:3000${returnTo}`);
+return res.redirect(
+  `${process.env.FRONTEND_URL}/dashboard`,
+);
   }
 
   @Get('me')
