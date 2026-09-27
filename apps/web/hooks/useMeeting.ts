@@ -389,6 +389,10 @@ export function useMeeting({
 
     mountedRef.current = true;
 
+    if (socket.connected) {
+  setLocalSocketId(socket.id ?? null);
+}
+
     /*
      * PARTICIPANTS
      */
