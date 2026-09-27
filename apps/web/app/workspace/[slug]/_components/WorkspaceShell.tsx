@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Search, Menu } from "lucide-react";
 import { getWorkspaceBySlug, type Workspace } from "@/lib/workspace";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
@@ -19,6 +19,31 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const touchStartX = useRef<number | null>(null);
+
+  function handleShellTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    const startX = event.touches[0]?.clientX ?? 0;
+
+    if (!sidebarOpen && startX <= 24) {
+      touchStartX.current = startX;
+    }
+  }
+
+  function handleShellTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    if (touchStartX.current === null) {
+      return;
+    }
+
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const distance = endX - touchStartX.current;
+
+    if (distance > 60) {
+      setSidebarOpen(true);
+    }
+
+    touchStartX.current = null;
+  }
 
   useEffect(() => {
     if (!slug) {
@@ -56,13 +81,26 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const title = workspace?.name || slug || "Workspace";
 
   return (
-    <div className="flex h-[100dvh] min-h-0 overflow-hidden bg-[#F8F8F6] text-[#14141C]">
+    <div
+      onTouchStart={handleShellTouchStart}
+      onTouchEnd={handleShellTouchEnd}
+      className="flex h-[100dvh] min-h-0 overflow-hidden bg-[#F8F8F6] text-[#14141C]"
+    >
       <WorkspaceSidebar
         slug={slug}
         title={title}
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
+
+      {sidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close workspace navigation"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/20 md:hidden"
+        />
+      )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:px-6">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRef } from "react";
 import {
   Bell,
   FolderKanban,
@@ -42,8 +43,31 @@ export default function WorkspaceSidebar({
   const pathname = usePathname();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
 
+  const touchStartX = useRef<number | null>(null);
+
+  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  }
+
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (touchStartX.current === null) {
+      return;
+    }
+
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const distance = endX - touchStartX.current;
+
+    if (distance < -60) {
+      onMobileClose();
+    }
+
+    touchStartX.current = null;
+  }
+
   return (
     <aside
+    onTouchStart={handleTouchStart}
+    onTouchEnd={handleTouchEnd}
       className={`fixed inset-y-0 left-0 z-50 flex w-[280px] shrink-0 flex-col border-r border-[#DEDFE8]/80 bg-white/95 px-4 py-5 backdrop-blur-xl transition-transform duration-200 md:static md:z-auto md:flex ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0`}
@@ -80,7 +104,7 @@ export default function WorkspaceSidebar({
         </div>
       </div>
 
-      <nav className="mt-4 flex-1 space-y-1 overflow-hidden">
+      <nav className="mt-4 min-h-0 flex-1 space-y-1 scrollbar-none overflow-y-auto">
         {navigation.map((item) => {
           const Icon = item.icon;
           const href = item.href
