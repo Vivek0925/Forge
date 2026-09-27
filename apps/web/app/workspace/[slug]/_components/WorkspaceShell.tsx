@@ -96,10 +96,6 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
             >
               Invite
             </button>
-
-            <button className="rounded-full bg-[#EAFBF1] px-4 py-2 text-[13px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8]">
-              + New
-            </button>
           </div>
         </header>
 
