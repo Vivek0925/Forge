@@ -43,86 +43,67 @@ export default function WorkspaceSidebar({
   const pathname = usePathname();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
 
- const touchStartX = useRef<number | null>(null);
-const touchStartY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-function handleTouchStart(
-  event: React.TouchEvent<HTMLElement>,
-) {
-  touchStartX.current =
-    event.touches[0]?.clientX ?? null;
+  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
 
-  touchStartY.current =
-    event.touches[0]?.clientY ?? null;
-}
-
-function handleTouchEnd(
-  event: React.TouchEvent<HTMLElement>,
-) {
-  if (
-    touchStartX.current === null ||
-    touchStartY.current === null
-  ) {
-    return;
+    touchStartY.current = event.touches[0]?.clientY ?? null;
   }
 
-  const endX =
-    event.changedTouches[0]?.clientX ??
-    touchStartX.current;
+  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
+    if (touchStartX.current === null || touchStartY.current === null) {
+      return;
+    }
 
-  const endY =
-    event.changedTouches[0]?.clientY ??
-    touchStartY.current;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
 
-  const distanceX =
-    endX - touchStartX.current;
+    const endY = event.changedTouches[0]?.clientY ?? touchStartY.current;
 
-  const distanceY =
-    endY - touchStartY.current;
+    const distanceX = endX - touchStartX.current;
 
-  const horizontalSwipe =
-    Math.abs(distanceX) > Math.abs(distanceY);
+    const distanceY = endY - touchStartY.current;
 
-  if (
-    horizontalSwipe &&
-    distanceX < -60
-  ) {
-    onMobileClose();
+    const horizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY);
+
+    if (horizontalSwipe && distanceX < -60) {
+      onMobileClose();
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
   }
-
-  touchStartX.current = null;
-  touchStartY.current = null;
-}
   return (
     <aside
-    onTouchStart={handleTouchStart}
-    onTouchEnd={handleTouchEnd}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       className={`fixed inset-y-0 left-0 z-50 flex w-[280px] shrink-0 flex-col border-r border-[#DEDFE8]/80 bg-white/95 px-4 py-5 backdrop-blur-xl transition-transform duration-200 md:static md:z-auto md:flex ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0`}
     >
-      <div className="mb-4 flex justify-end md:hidden">
+      <div className="flex items-start justify-between px-2 pb-6">
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#EAFBF1] text-[#065F46] shadow-[0_10px_20px_rgba(5,150,105,0.12)]">
+            <Wand2 className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="text-[15px] font-semibold tracking-[-0.02em] text-[#14141C]">
+              Forge
+            </div>
+            <div className="text-[12px] text-[#5B5D6E]">Workspace shell</div>
+          </div>
+        </Link>
+
         <button
           type="button"
           onClick={onMobileClose}
-          className="rounded-xl border border-[#DEDFE8] px-3 py-2 text-sm text-[#5B5D6E]"
+          className="rounded-xl border border-[#DEDFE8] px-3 py-2 text-sm text-[#5B5D6E] md:hidden"
           aria-label="Close workspace navigation"
         >
           Close
         </button>
       </div>
-
-      <Link href="/dashboard" className="flex items-center gap-3 px-2 pb-6">
-        <span className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#EAFBF1] text-[#065F46] shadow-[0_10px_20px_rgba(5,150,105,0.12)]">
-          <Wand2 className="h-5 w-5" />
-        </span>
-        <div>
-          <div className="text-[15px] font-semibold tracking-[-0.02em] text-[#14141C]">
-            Forge
-          </div>
-          <div className="text-[12px] text-[#5B5D6E]">Workspace shell</div>
-        </div>
-      </Link>
 
       <div className="rounded-[22px] border border-[#DEDFE8] bg-[#FAFAF8] p-4">
         <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#5B5D6E]">

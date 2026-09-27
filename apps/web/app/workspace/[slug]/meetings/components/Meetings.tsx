@@ -284,11 +284,11 @@ export default function Meetings({ slug }: MeetingsProps) {
   );
 
   return (
-    <div className="flex h-full flex-col background-none rounded-xl bg-white  ">
+    <div className="flex min-h-full flex-col rounded-xl bg-white">
       {/* Header */}
 
-      <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+      <div className="sticky top-0 z-20 rounded-xl border-b border-[#ECEEF3] bg-white px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] sm:h-11 sm:w-11 sm:rounded-2xl">
               <Video size={21} className="text-[#1E8E5A]" />
@@ -305,13 +305,14 @@ export default function Meetings({ slug }: MeetingsProps) {
             </div>
           </div>
 
+          <div className="flex w-full items-center gap-2 sm:w-auto">
           <button
             type="button"
             disabled={calendarConnected}
             onClick={() => {
               window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
             }}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition ${
+            className={`inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition ${
               calendarConnected
                 ? "cursor-default border-green-200 bg-green-50 text-green-700"
                 : "border-[#E2E5EB] bg-white text-[#343844] hover:bg-[#F5F6F8]"
@@ -326,17 +327,18 @@ export default function Meetings({ slug }: MeetingsProps) {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 bg-none rounded-xl px-4 py-2.5 text-sm font-medium text-black transition hover:bg-green-50"
+            className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-black transition hover:bg-green-50 sm:px-4"
           >
             <Plus size={17} />
             New Meeting
           </button>
+          </div>
         </div>
       </div>
 
       {/* Content */}
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-8">
+      <div className="flex-1 px-4 py-5 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -349,7 +351,7 @@ export default function Meetings({ slug }: MeetingsProps) {
               Loading meetings...
             </div>
           ) : meetings.length === 0 ? (
-            <div className="flex min-h-[500px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#DCDFE7] bg-white">
+            <div className="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#DCDFE7] bg-white sm:min-h-[500px]">
               <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#F3F7F5]">
                 <Video size={30} className="text-[#1E8E5A]" />
               </div>

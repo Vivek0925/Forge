@@ -175,7 +175,7 @@ function handleShellTouchEnd(
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-6">
+        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {loading ? (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[32px] border border-[#DEDFE8] bg-white text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
               Loading workspace...
