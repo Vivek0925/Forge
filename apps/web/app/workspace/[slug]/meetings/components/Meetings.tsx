@@ -287,15 +287,15 @@ export default function Meetings({ slug }: MeetingsProps) {
     <div className="flex h-full flex-col background-none rounded-xl bg-white  ">
       {/* Header */}
 
-      <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-6 py-4">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+         <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">
               <Video size={21} className="text-[#1E8E5A]" />
             </div>
 
             <div>
-              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[#20232D]">
+              <h1 className="truncate text-2xl font-semibold tracking-[-0.02em] text-[#20232D]">
                 Meetings
               </h1>
 
@@ -337,7 +337,7 @@ export default function Meetings({ slug }: MeetingsProps) {
 
       {/* Content */}
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-8">
+      <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
