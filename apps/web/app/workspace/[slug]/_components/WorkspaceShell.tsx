@@ -56,7 +56,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const title = workspace?.name || slug || "Workspace";
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden bg-[#F8F8F6] text-[#14141C]">
+    <div className="flex h-[100dvh] min-h-0 overflow-hidden bg-[#F8F8F6] text-[#14141C]">
       <WorkspaceSidebar
         slug={slug}
         title={title}
@@ -113,7 +113,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-6">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-6 md:px-6">
           {loading ? (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[32px] border border-[#DEDFE8] bg-white text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
               Loading workspace...
