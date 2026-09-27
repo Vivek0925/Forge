@@ -312,7 +312,7 @@ export default function Meetings({ slug }: MeetingsProps) {
             onClick={() => {
               window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
             }}
-            className={`inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition ${
+            className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-medium transition sm:h-10 sm:gap-2 sm:px-3 sm:text-sm ${
               calendarConnected
                 ? "cursor-default border-green-200 bg-green-50 text-green-700"
                 : "border-[#E2E5EB] bg-white text-[#343844] hover:bg-[#F5F6F8]"
@@ -327,7 +327,7 @@ export default function Meetings({ slug }: MeetingsProps) {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium text-black transition hover:bg-green-50 sm:px-4"
+            className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-[11px] font-medium text-black transition hover:bg-green-50 sm:gap-2 sm:px-4 sm:text-sm"
           >
             <Plus size={17} />
             New Meeting
@@ -351,7 +351,7 @@ export default function Meetings({ slug }: MeetingsProps) {
               Loading meetings...
             </div>
           ) : meetings.length === 0 ? (
-            <div className="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#DCDFE7] bg-white sm:min-h-[500px]">
+            <div className="flex min-h-[280px] flex-col items-center justify-center rounded-3xl border border-dashed border-[#DCDFE7] bg-white sm:min-h-[360px]">
               <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#F3F7F5]">
                 <Video size={30} className="text-[#1E8E5A]" />
               </div>
