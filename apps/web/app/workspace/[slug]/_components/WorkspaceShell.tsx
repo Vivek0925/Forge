@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { getWorkspaceBySlug, type Workspace } from "@/lib/workspace";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
 import InviteMemberModal from "@/components/modals/InviteMemberModal";
-
 
 type WorkspaceShellProps = {
   children: React.ReactNode;
@@ -19,6 +18,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!slug) {
@@ -57,11 +57,25 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-[#F8F8F6] text-[#14141C]">
-      <WorkspaceSidebar slug={slug} title={title} />
+      <WorkspaceSidebar
+        slug={slug}
+        title={title}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:px-6">
           <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#DEDFE8] bg-white text-[#14141C] md:hidden"
+              aria-label="Open workspace navigation"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
             <div className="md:hidden">
               <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#059669]">
                 Workspace

@@ -29,17 +29,36 @@ const navigation = [
 type WorkspaceSidebarProps = {
   slug: string;
   title: string;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 };
 
 export default function WorkspaceSidebar({
   slug,
   title,
+  mobileOpen,
+  onMobileClose,
 }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
 
   return (
-    <aside className="hidden w-[280px] shrink-0 border-r border-[#DEDFE8]/80 bg-white/90 px-4 py-5 backdrop-blur-xl md:flex md:flex-col">
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 flex w-[280px] shrink-0 flex-col border-r border-[#DEDFE8]/80 bg-white/95 px-4 py-5 backdrop-blur-xl transition-transform duration-200 md:static md:z-auto md:flex ${
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0`}
+    >
+      <div className="mb-4 flex justify-end md:hidden">
+        <button
+          type="button"
+          onClick={onMobileClose}
+          className="rounded-xl border border-[#DEDFE8] px-3 py-2 text-sm text-[#5B5D6E]"
+          aria-label="Close workspace navigation"
+        >
+          Close
+        </button>
+      </div>
+
       <Link href="/dashboard" className="flex items-center gap-3 px-2 pb-6">
         <span className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#EAFBF1] text-[#065F46] shadow-[0_10px_20px_rgba(5,150,105,0.12)]">
           <Wand2 className="h-5 w-5" />
@@ -75,6 +94,7 @@ export default function WorkspaceSidebar({
             <Link
               key={item.label}
               href={href}
+              onClick={onMobileClose}
               className={`flex items-center gap-3 rounded-[18px] px-4 py-3 text-[14px] transition-colors ${
                 active
                   ? "bg-[#EAFBF1] text-[#065F46]"
