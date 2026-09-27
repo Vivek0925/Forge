@@ -33,13 +33,13 @@ export default function Dashboard() {
         <DashboardHeader />
       </Container>
 
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden py-20">
+      <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden px-1 py-12 sm:py-20">
         <Container>
           <Hero user={user} onWorkspaceCreated={addWorkspace} />
         </Container>
       </section>
 
-      <section className="border-t border-[#DEDFE8]/40 bg-[#FAFAF8]/40 py-20">
+      <section className="border-t border-[#DEDFE8]/40 bg-[#FAFAF8]/40 py-12 sm:py-20">
         <Container>
           <WorkspaceHistory
             user={user}

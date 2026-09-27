@@ -1170,7 +1170,7 @@ export default function MeetingRoom({
               >
                 <Users size={16} />
 
-                <span>
+                <span className="hidden sm:inline">
                   {participantCount}{" "}
                   {participantCount === 1 ? "participant" : "participants"}
                 </span>
@@ -1378,7 +1378,7 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && chatOpen && (
-        <aside className="absolute inset-y-16 right-0 z-40 flex w-full max-w-[380px] flex-col border-l rounded-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
+        <aside className="absolute inset-y-16 bottom-24 right-0 z-40 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
           {/* Header */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
             <div>
@@ -1499,7 +1499,7 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && participantsOpen && (
-        <div className="absolute inset-y-0 right-0 z-40 w-full max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/65 shadow-2xl backdrop-blur-xl">
+        <div className="absolute inset-y-16 bottom-24 right-0 z-40 w-[calc(100%-0.75rem)] max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
@@ -1612,7 +1612,7 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && settingsOpen && (
-        <aside className="absolute inset-y-16 right-0 z-50 flex w-full max-w-[380px] flex-col border-l rounded-l-xl border-white/[0.08] bg-[#111318]/[0.68] shadow-2xl backdrop-blur-xl">
+        <aside className="absolute inset-y-16 bottom-24 right-0 z-50 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
           {/* Header */}
 
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
@@ -1898,55 +1898,55 @@ export default function MeetingRoom({
 
       {/* LEAVE OPTIONS */}
       {showLeaveOptions && (
-  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-    <div className="w-full max-w-sm rounded-2xl bg-gray-800/50  p-5 shadow-2xl">
-      <h3 className="text-lg font-semibold text-white-500">
-        Leave meeting?
-      </h3>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-gray-800/50  p-5 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white-500">
+              Leave meeting?
+            </h3>
 
-      <p className="mt-1 text-sm text-white/50">
-        Choose what you want to do.
-      </p>
+            <p className="mt-1 text-sm text-white/50">
+              Choose what you want to do.
+            </p>
 
-      <div className="mt-5 flex flex-col gap-2">
-        {/* Leave meeting */}
-        <button
-          type="button"
-          onClick={() => {
-            setShowLeaveOptions(false);
-            void leaveMeeting();
-          }}
-          className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-900 transition hover:bg-gray-200"
-        >
-          Leave meeting
-        </button>
+            <div className="mt-5 flex flex-col gap-2">
+              {/* Leave meeting */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLeaveOptions(false);
+                  void leaveMeeting();
+                }}
+                className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-900 transition hover:bg-gray-200"
+              >
+                Leave meeting
+              </button>
 
-        {/* End meeting — host only */}
-        {isHost && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowLeaveOptions(false);
-              endMeeting();
-            }}
-            className="w-full rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
-          >
-            End meeting
-          </button>
-        )}
+              {/* End meeting — host only */}
+              {isHost && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLeaveOptions(false);
+                    endMeeting();
+                  }}
+                  className="w-full rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+                >
+                  End meeting
+                </button>
+              )}
 
-        {/* Cancel */}
-        <button
-          type="button"
-          onClick={() => setShowLeaveOptions(false)}
-          className="w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              {/* Cancel */}
+              <button
+                type="button"
+                onClick={() => setShowLeaveOptions(false)}
+                className="w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

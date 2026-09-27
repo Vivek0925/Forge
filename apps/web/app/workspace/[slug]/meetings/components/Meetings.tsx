@@ -284,11 +284,11 @@ export default function Meetings({ slug }: MeetingsProps) {
   );
 
   return (
-    <div className="flex min-h-full flex-col rounded-xl bg-white">
+    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto scrollbar-none overflow-x-hidden rounded-xl bg-white">
       {/* Header */}
 
-      <div className="sticky top-0 z-20 rounded-xl border-b border-[#ECEEF3] bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky top-0 z-30 shrink-0 rounded-xl border-b border-[#ECEEF3] bg-white px-4 py-4 shadow-[0_6px_16px_rgba(20,20,28,0.04)] sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] sm:h-11 sm:w-11 sm:rounded-2xl">
               <Video size={21} className="text-[#1E8E5A]" />
@@ -305,40 +305,40 @@ export default function Meetings({ slug }: MeetingsProps) {
             </div>
           </div>
 
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-          <button
-            type="button"
-            disabled={calendarConnected}
-            onClick={() => {
-              window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
-            }}
-            className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-medium transition sm:h-10 sm:gap-2 sm:px-3 sm:text-sm ${
-              calendarConnected
-                ? "cursor-default border-green-200 bg-green-50 text-green-700"
-                : "border-[#E2E5EB] bg-white text-[#343844] hover:bg-[#F5F6F8]"
-            }`}
-          >
-            <CalendarDays size={16} />
-            {calendarConnected
-              ? "Google Calendar Connected"
-              : "Connect Google Calendar"}
-          </button>
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+            <button
+              type="button"
+              disabled={calendarConnected}
+              onClick={() => {
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
+              }}
+              className={`inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-[11px] font-medium leading-tight transition sm:h-10 sm:gap-2 sm:px-3 sm:text-sm ${
+                calendarConnected
+                  ? "cursor-default border-green-200 bg-green-50 text-green-700"
+                  : "border-[#E2E5EB] bg-white text-[#343844] hover:bg-[#F5F6F8]"
+              }`}
+            >
+              <CalendarDays size={16} />
+              {calendarConnected
+                ? "Google Calendar Connected"
+                : "Connect Google Calendar"}
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-[11px] font-medium text-black transition hover:bg-green-50 sm:gap-2 sm:px-4 sm:text-sm"
-          >
-            <Plus size={17} />
-            New Meeting
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="flex min-h-10 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl px-2 py-2.5 text-[11px] font-medium text-black transition hover:bg-green-50 sm:gap-2 sm:px-4 sm:text-sm"
+            >
+              <Plus size={17} />
+              New Meeting
+            </button>
           </div>
         </div>
       </div>
 
       {/* Content */}
 
-      <div className="flex-1 px-4 py-5 sm:px-8 sm:py-8">
+      <div className="relative z-0 flex-1 px-3 py-5 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -356,7 +356,7 @@ export default function Meetings({ slug }: MeetingsProps) {
                 <Video size={30} className="text-[#1E8E5A]" />
               </div>
 
-              <h2 className="text-xl font-semibold text-[#20232D]">
+              <h2 className="text-center text-xl font-semibold text-[#20232D] sm:text-left">
                 No active or upcoming meetings
               </h2>
 

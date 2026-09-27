@@ -55,15 +55,15 @@ export default function MeetingCard({
     : null;
 
   return (
-    <div className="rounded-3xl border border-[#E7E9EF] bg-green-50 p-6 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)]">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF1]">
+    <div className="rounded-3xl border border-[#E7E9EF] bg-green-50 p-4 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)] sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF1] sm:h-12 sm:w-12">
             <Video size={21} className="text-[#1E8E5A]" />
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-[#20232D]">
+            <h3 className="break-words text-lg font-semibold text-[#20232D]">
               {meeting.title}
             </h3>
 
@@ -109,7 +109,7 @@ export default function MeetingCard({
         </div>
 
         <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+          className={`self-start rounded-full px-3 py-1 text-xs font-medium ${
             isActive
               ? "bg-[#E7F8EF] text-[#1E8E5A]"
               : isEnded
@@ -121,78 +121,78 @@ export default function MeetingCard({
         </span>
       </div>
 
-      <div className="mt-4 flex items-center border-t border-[#F0F1F4] pt-3">
-  <p className="text-xs text-[#85899A]">
-    Created by{" "}
-    <span className="font-medium text-[#555968]">
-      {meeting.createdBy.name}
-    </span>
-  </p>
+      <div className="mt-4 flex flex-col items-stretch gap-3 border-t border-[#F0F1F4] pt-3 sm:flex-row sm:items-center">
+        <p className="text-xs text-[#85899A]">
+          Created by{" "}
+          <span className="font-medium text-[#555968]">
+            {meeting.createdBy.name}
+          </span>
+        </p>
 
-  <div className="ml-auto flex items-center gap-2">
-    {!isEnded && (
-      <button
-        type="button"
-        onClick={() => onJoin(meeting.id)}
-        className="flex h-10 items-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-4 text-sm font-medium text-black transition hover:bg-green-300/60"
-      >
-        <Video size={16} />
-        {isActive ? "Join Meeting" : "View Meeting"}
-      </button>
-    )}
-
-    <button
-      type="button"
-      onClick={() => {
-        navigator.clipboard.writeText(
-          `${window.location.origin}/meet/${meeting.meetingCode}`,
-        );
-      }}
-      className="flex h-10 items-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-4 text-sm font-medium text-black transition hover:bg-green-300/60"
-    >
-      Copy Link
-    </button>
-
-    {meeting.status === "SCHEDULED" && isCreator && (
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setShowMenu((prev) => !prev)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ECEEF3] bg-white/40 text-[#707487] transition hover:bg-[#F3F4F7] hover:text-[#20232D]"
-          aria-label="Meeting options"
-        >
-          <MoreVertical size={18} />
-        </button>
-
-        {showMenu && (
-          <div className="absolute right-0 top-11 z-20 w-44 rounded-xl border border-[#E7E9EF] bg-white p-1.5 shadow-lg">
+        <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex sm:items-center">
+          {!isEnded && (
             <button
               type="button"
-              onClick={() => {
-                setShowMenu(false);
-                onEdit(meeting);
-              }}
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-[#20232D] transition hover:bg-[#F5F6F8]"
+              onClick={() => onJoin(meeting.id)}
+              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
             >
-              Edit meeting
+              <Video size={16} />
+              {isActive ? "Join Meeting" : "View Meeting"}
             </button>
+          )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                onCancel(meeting.id);
-              }}
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
-            >
-              Cancel meeting
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(
+                `${window.location.origin}/meet/${meeting.meetingCode}`,
+              );
+            }}
+            className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
+          >
+            Copy Link
+          </button>
+
+          {meeting.status === "SCHEDULED" && isCreator && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMenu((prev) => !prev)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ECEEF3] bg-white/40 text-[#707487] transition hover:bg-[#F3F4F7] hover:text-[#20232D]"
+                aria-label="Meeting options"
+              >
+                <MoreVertical size={18} />
+              </button>
+
+              {showMenu && (
+                <div className="absolute right-0 top-11 z-20 w-44 rounded-xl border border-[#E7E9EF] bg-white p-1.5 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onEdit(meeting);
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-[#20232D] transition hover:bg-[#F5F6F8]"
+                  >
+                    Edit meeting
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onCancel(meeting.id);
+                    }}
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50"
+                  >
+                    Cancel meeting
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    )}
-  </div>
-</div>
     </div>
   );
 }

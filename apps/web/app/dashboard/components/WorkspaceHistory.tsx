@@ -18,12 +18,12 @@ export default function WorkspaceHistory({
 }: WorkspaceHistoryProps) {
   return (
     <>
-      <div className="mb-12 flex flex-col items-start gap-4">
+      <div className="mb-8 flex flex-col items-start gap-3 sm:mb-12 sm:gap-4">
         <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#059669]">
           Workspace history
         </span>
         <div className="flex flex-col items-start gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
-          <h2 className="text-[36px] font-light tracking-[-0.02em] text-[#14141C]">
+          <h2 className="text-[30px] font-light tracking-[-0.02em] text-[#14141C] sm:text-[36px]">
             Recent workspaces
           </h2>
           <p className="text-[14px] leading-relaxed text-[#5B5D6E]">

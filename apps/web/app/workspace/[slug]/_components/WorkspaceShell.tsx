@@ -21,53 +21,38 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
-const touchStartY = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-function handleShellTouchStart(
-  event: React.TouchEvent<HTMLDivElement>,
-) {
-  if (sidebarOpen) {
-    return;
+  function handleShellTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    if (sidebarOpen) {
+      return;
+    }
+
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+    touchStartY.current = event.touches[0]?.clientY ?? null;
   }
 
-  touchStartX.current = event.touches[0]?.clientX ?? null;
-  touchStartY.current = event.touches[0]?.clientY ?? null;
-}
+  function handleShellTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    if (touchStartX.current === null || touchStartY.current === null) {
+      return;
+    }
 
-function handleShellTouchEnd(
-  event: React.TouchEvent<HTMLDivElement>,
-) {
-  if (
-    touchStartX.current === null ||
-    touchStartY.current === null
-  ) {
-    return;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+
+    const endY = event.changedTouches[0]?.clientY ?? touchStartY.current;
+
+    const distanceX = endX - touchStartX.current;
+    const distanceY = endY - touchStartY.current;
+
+    const horizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY);
+
+    if (horizontalSwipe && distanceX > 60) {
+      setSidebarOpen(true);
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
   }
-
-  const endX =
-    event.changedTouches[0]?.clientX ??
-    touchStartX.current;
-
-  const endY =
-    event.changedTouches[0]?.clientY ??
-    touchStartY.current;
-
-  const distanceX = endX - touchStartX.current;
-  const distanceY = endY - touchStartY.current;
-
-  const horizontalSwipe =
-    Math.abs(distanceX) > Math.abs(distanceY);
-
-  if (
-    horizontalSwipe &&
-    distanceX > 60
-  ) {
-    setSidebarOpen(true);
-  }
-
-  touchStartX.current = null;
-  touchStartY.current = null;
-}
 
   useEffect(() => {
     if (!slug) {
@@ -127,7 +112,7 @@ function handleShellTouchEnd(
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:px-6">
+        <header className="flex h-[68px] shrink-0 items-center justify-between gap-2 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:h-[76px] md:gap-4 md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -157,25 +142,25 @@ function handleShellTouchEnd(
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* button to redirect to dashboard */}
             <Link
               href="/dashboard"
-              className="rounded-full border border-[#DEDFE8] bg-white px-2 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[12px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-3 md:text-[13px]"
             >
               Dashboard
             </Link>
 
             <button
               onClick={() => setInviteOpen(true)}
-              className="rounded-full border border-[#DEDFE8] bg-white px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[12px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-4 md:text-[13px]"
             >
               Invite
             </button>
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 md:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 md:px-6">
           {loading ? (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[32px] border border-[#DEDFE8] bg-white text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
               Loading workspace...

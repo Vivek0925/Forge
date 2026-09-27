@@ -61,7 +61,6 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         hostId: data.hostId,
         source: "quick-join",
       });
-
     } catch (error) {
       setJoinError(
         error instanceof Error ? error.message : "Unable to join meeting.",
@@ -72,19 +71,19 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center text-center">
-      <h1 className="max-w-[800px] text-[48px] font-light leading-[1.15] tracking-[-0.03em] text-[#14141C] md:text-[64px] lg:text-[72px]">
+    <div className="flex w-full flex-col items-center justify-center text-center">
+      <h1 className="max-w-[800px] text-[38px] font-light leading-[1.1] tracking-[-0.03em] text-[#14141C] sm:text-[48px] md:text-[64px] lg:text-[72px]">
         Workspace, meetings, and collaboration in one place
       </h1>
-      <p className="mx-auto mt-6 max-w-[580px] text-[16px] leading-[1.6] text-[#5B5D6E] md:text-[18px]">
+      <p className="mx-auto mt-5 max-w-[580px] text-[15px] leading-[1.6] text-[#5B5D6E] sm:mt-6 sm:text-[18px]">
         Welcome{user?.name ? `, ${user.name}` : ""}. Create a workspace for your
         project, jump into a quick meeting, or join one using a code.
       </p>
 
-      <div className="mt-12 flex w-full max-w-[600px] flex-col items-center gap-4 sm:flex-row sm:gap-3">
+      <div className="mt-8 flex w-full max-w-[600px] flex-col items-stretch gap-3 sm:mt-12 sm:flex-row sm:items-center">
         <button
           onClick={() => setOpen(true)}
-          className="flex flex-1 items-center justify-center rounded-full border border-[#86D9A8] bg-[#EAFBF1] px-8 py-3 text-[16px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8]"
+          className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#86D9A8] bg-[#EAFBF1] px-6 py-3 text-[15px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8] sm:px-8 sm:text-[16px]"
         >
           <svg
             className="mr-2 h-5 w-5"
@@ -101,7 +100,7 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
           </svg>
           Create workspace
         </button>
-        <button className="flex flex-1 items-center justify-center rounded-full border border-[#DEDFE8] bg-transparent px-8 py-3 text-[16px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8]">
+        <button className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#DEDFE8] bg-transparent px-6 py-3 text-[15px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] sm:px-8 sm:text-[16px]">
           <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
@@ -109,8 +108,8 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         </button>
       </div>
 
-      <div className="mt-8 w-full max-w-[500px]">
-        <div className="flex gap-2">
+      <div className="mt-6 w-full max-w-[500px] sm:mt-8">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="text"
             value={meetingCode}
@@ -124,13 +123,13 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
               }
             }}
             placeholder="Enter a code or meeting link"
-            className="flex-1 rounded-full border-2 border-[#DEDFE8] bg-white px-6 py-3 text-[14px] placeholder-[#5B5D6E] transition-all focus:border-[#059669] focus:outline-none"
+            className="min-w-0 flex-1 rounded-full border-2 border-[#DEDFE8] bg-white px-5 py-3 text-[14px] placeholder-[#5B5D6E] transition-all focus:border-[#059669] focus:outline-none sm:px-6"
           />
           <button
             type="button"
             onClick={() => void handleJoinMeeting()}
             disabled={joining}
-            className="rounded-full bg-[#FAFAF8] px-6 py-3 text-[14px] font-medium text-[#5B5D6E] transition-all hover:bg-[#DEDFE8] disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-11 rounded-full bg-[#FAFAF8] px-6 py-3 text-[14px] font-medium text-[#5B5D6E] transition-all hover:bg-[#DEDFE8] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0"
           >
             {joining ? "Joining..." : "Join"}
           </button>
@@ -141,8 +140,8 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         <p className="mt-2 px-4 text-left text-sm text-red-500">{joinError}</p>
       )}
 
-      <div className="mt-16 flex items-center justify-center">
-        <div className="relative h-[280px] w-[280px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-8">
+      <div className="mt-12 flex items-center justify-center sm:mt-16">
+        <div className="relative h-[220px] w-[220px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-7 sm:h-[280px] sm:w-[280px] sm:p-8">
           <svg
             viewBox="0 0 200 200"
             className="h-full w-full text-[#059669]/30"
