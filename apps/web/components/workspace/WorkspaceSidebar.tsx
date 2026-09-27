@@ -43,27 +43,56 @@ export default function WorkspaceSidebar({
   const pathname = usePathname();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
 
-  const touchStartX = useRef<number | null>(null);
+ const touchStartX = useRef<number | null>(null);
+const touchStartY = useRef<number | null>(null);
 
-  function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
-    touchStartX.current = event.touches[0]?.clientX ?? null;
+function handleTouchStart(
+  event: React.TouchEvent<HTMLElement>,
+) {
+  touchStartX.current =
+    event.touches[0]?.clientX ?? null;
+
+  touchStartY.current =
+    event.touches[0]?.clientY ?? null;
+}
+
+function handleTouchEnd(
+  event: React.TouchEvent<HTMLElement>,
+) {
+  if (
+    touchStartX.current === null ||
+    touchStartY.current === null
+  ) {
+    return;
   }
 
-  function handleTouchEnd(event: React.TouchEvent<HTMLElement>) {
-    if (touchStartX.current === null) {
-      return;
-    }
+  const endX =
+    event.changedTouches[0]?.clientX ??
+    touchStartX.current;
 
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const distance = endX - touchStartX.current;
+  const endY =
+    event.changedTouches[0]?.clientY ??
+    touchStartY.current;
 
-    if (distance < -60) {
-      onMobileClose();
-    }
+  const distanceX =
+    endX - touchStartX.current;
 
-    touchStartX.current = null;
+  const distanceY =
+    endY - touchStartY.current;
+
+  const horizontalSwipe =
+    Math.abs(distanceX) > Math.abs(distanceY);
+
+  if (
+    horizontalSwipe &&
+    distanceX < -60
+  ) {
+    onMobileClose();
   }
 
+  touchStartX.current = null;
+  touchStartY.current = null;
+}
   return (
     <aside
     onTouchStart={handleTouchStart}

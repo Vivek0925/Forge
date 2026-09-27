@@ -288,18 +288,18 @@ export default function Meetings({ slug }: MeetingsProps) {
       {/* Header */}
 
       <div className="border-b border-[#ECEEF3] bg-white rounded-xl px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-         <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EAFBF1]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] sm:h-11 sm:w-11 sm:rounded-2xl">
               <Video size={21} className="text-[#1E8E5A]" />
             </div>
 
             <div>
-              <h1 className="truncate text-2xl font-semibold tracking-[-0.02em] text-[#20232D]">
+              <h1 className="truncate text-xl font-semibold tracking-[-0.02em] text-[#20232D] sm:text-2xl">
                 Meetings
               </h1>
 
-              <p className="mt-1 text-sm text-[#707487]">
+              <p className="mt-1 hidden text-sm text-[#707487] sm:block">
                 Meet, collaborate, and stay connected with your workspace.
               </p>
             </div>
@@ -309,8 +309,7 @@ export default function Meetings({ slug }: MeetingsProps) {
             type="button"
             disabled={calendarConnected}
             onClick={() => {
-             window.location.href =
-  `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
+              window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
             }}
             className={`inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-medium transition ${
               calendarConnected

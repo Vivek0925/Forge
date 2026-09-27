@@ -21,29 +21,53 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
+const touchStartY = useRef<number | null>(null);
 
-  function handleShellTouchStart(event: React.TouchEvent<HTMLDivElement>) {
-    const startX = event.touches[0]?.clientX ?? 0;
-
-    if (!sidebarOpen && startX <= 24) {
-      touchStartX.current = startX;
-    }
+function handleShellTouchStart(
+  event: React.TouchEvent<HTMLDivElement>,
+) {
+  if (sidebarOpen) {
+    return;
   }
 
-  function handleShellTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
-    if (touchStartX.current === null) {
-      return;
-    }
+  touchStartX.current = event.touches[0]?.clientX ?? null;
+  touchStartY.current = event.touches[0]?.clientY ?? null;
+}
 
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const distance = endX - touchStartX.current;
-
-    if (distance > 60) {
-      setSidebarOpen(true);
-    }
-
-    touchStartX.current = null;
+function handleShellTouchEnd(
+  event: React.TouchEvent<HTMLDivElement>,
+) {
+  if (
+    touchStartX.current === null ||
+    touchStartY.current === null
+  ) {
+    return;
   }
+
+  const endX =
+    event.changedTouches[0]?.clientX ??
+    touchStartX.current;
+
+  const endY =
+    event.changedTouches[0]?.clientY ??
+    touchStartY.current;
+
+  const distanceX = endX - touchStartX.current;
+  const distanceY = endY - touchStartY.current;
+
+  const horizontalSwipe =
+    Math.abs(distanceX) > Math.abs(distanceY);
+
+  if (
+    horizontalSwipe &&
+    distanceX > 60
+  ) {
+    setSidebarOpen(true);
+  }
+
+  touchStartX.current = null;
+  touchStartY.current = null;
+}
 
   useEffect(() => {
     if (!slug) {
