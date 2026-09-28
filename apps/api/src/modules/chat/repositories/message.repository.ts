@@ -126,4 +126,120 @@ export class MessageRepository {
       },
     });
   }
+
+  async updateOwnedMessage(
+    messageId: string,
+    senderId: string,
+    content: string,
+  ) {
+    const ownedMessage = await this.prisma.message.findFirst({
+      where: {
+        id: messageId,
+        senderId,
+      },
+    });
+
+    if (!ownedMessage) {
+      return null;
+    }
+
+    return this.prisma.message.update({
+      where: {
+        id: messageId,
+      },
+      data: {
+        content,
+        edited: true,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        attachments: true,
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async deleteOwnedMessage(messageId: string, senderId: string) {
+    const ownedMessage = await this.prisma.message.findFirst({
+      where: {
+        id: messageId,
+        senderId,
+      },
+    });
+
+    if (!ownedMessage) {
+      return null;
+    }
+
+    return this.prisma.message.delete({
+      where: {
+        id: messageId,
+      },
+    });
+  }
+
+  async toggleReaction(messageId: string, userId: string, emoji: string) {
+    const message = await this.prisma.message.findUniqueOrThrow({
+      where: { id: messageId },
+    });
+
+    const reactions =
+      message.reactions && typeof message.reactions === 'object'
+        ? (message.reactions as Record<string, string[]>)
+        : {};
+
+    const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
+
+    reactions[emoji] = users.includes(userId)
+      ? users.filter((id) => id !== userId)
+      : [...users, userId];
+
+    if (reactions[emoji].length === 0) {
+      delete reactions[emoji];
+    }
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { reactions },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        attachments: true,
+        replyTo: {
+          select: {
+            id: true,
+            content: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
 }

@@ -38,6 +38,7 @@ export interface Message {
   replyTo?: ReplyMessage | null;
 
   edited: boolean;
+  reactions?: Record<string, string[]>;
 
   createdAt: string;
   updatedAt: string;

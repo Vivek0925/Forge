@@ -21,14 +21,15 @@ import { PrismaService } from '../../../database/prisma.service';
 
 import { ChatService } from '../../chat/services/chat.service';
 import { SendMessageDto } from '../../chat/dto/send-message.dto';
+import { EditMessageDto } from '../../chat/dto/edit-message.dto';
+import { ReactMessageDto } from '../../chat/dto/react-message.dto';
 
 import { MeetingRoomService } from '../../meeting/services/meeting-room.service';
 import { MeetingRepository } from '../../meeting/repositories/meeting.repository';
 
 @WebSocketGateway({
   cors: {
-    origin:
-      process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   },
 })
@@ -207,6 +208,57 @@ export class RealtimeGateway
     this.server
       .to(`workspace:${message.workspaceId}`)
       .emit('chat:new', message);
+
+    return message;
+  }
+
+  @SubscribeMessage('chat:edit')
+  async handleChatEdit(
+    @MessageBody() dto: EditMessageDto,
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    const message = await this.chatService.editMessage(
+      socket.data.currentUser.id,
+      dto,
+    );
+
+    this.server
+      .to(`workspace:${message.workspaceId}`)
+      .emit('chat:updated', message);
+
+    return message;
+  }
+
+  @SubscribeMessage('chat:delete')
+  async handleChatDelete(
+    @MessageBody() data: { messageId: string },
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    const message = await this.chatService.deleteMessage(
+      socket.data.currentUser.id,
+      data.messageId,
+    );
+
+    this.server
+      .to(`workspace:${message.workspaceId}`)
+      .emit('chat:deleted', { messageId: message.id });
+
+    return { messageId: message.id };
+  }
+
+  @SubscribeMessage('chat:react')
+  async handleChatReaction(
+    @MessageBody() dto: ReactMessageDto,
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    const message = await this.chatService.reactToMessage(
+      socket.data.currentUser.id,
+      dto,
+    );
+
+    this.server
+      .to(`workspace:${message.workspaceId}`)
+      .emit('chat:updated', message);
 
     return message;
   }
@@ -783,45 +835,35 @@ export class RealtimeGateway
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
 
-  @SubscribeMessage("meeting:cancelled")
-async handleMeetingCancelled(
-  @ConnectedSocket() socket: Socket,
-  @MessageBody()
-  data: { meetingId: string; workspaceSlug: string },
-) {
-  const meeting = await this.meetingRepository.findById(
-    data.meetingId,
-  );
+  @SubscribeMessage('meeting:cancelled')
+  async handleMeetingCancelled(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    data: { meetingId: string; workspaceSlug: string },
+  ) {
+    const meeting = await this.meetingRepository.findById(data.meetingId);
 
-  if (!meeting) return;
+    if (!meeting) return;
 
-  if (meeting.workspace.slug !== data.workspaceSlug) return;
+    if (meeting.workspace.slug !== data.workspaceSlug) return;
 
-  this.emitMeetingUpdated(
-    meeting.workspaceId,
-    meeting.id,
-  );
-}
+    this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
+  }
 
-@SubscribeMessage("meeting:updated")
-async handleMeetingUpdated(
-  @ConnectedSocket() socket: Socket,
-  @MessageBody()
-  data: { meetingId: string; workspaceSlug: string },
-) {
-  const meeting = await this.meetingRepository.findById(
-    data.meetingId,
-  );
+  @SubscribeMessage('meeting:updated')
+  async handleMeetingUpdated(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody()
+    data: { meetingId: string; workspaceSlug: string },
+  ) {
+    const meeting = await this.meetingRepository.findById(data.meetingId);
 
-  if (!meeting) return;
+    if (!meeting) return;
 
-  if (meeting.workspace.slug !== data.workspaceSlug) return;
+    if (meeting.workspace.slug !== data.workspaceSlug) return;
 
-  this.emitMeetingUpdated(
-    meeting.workspaceId,
-    meeting.id,
-  );
-}
+    this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
+  }
 
   private emitMeetingUpdated(workspaceId: string, meetingId: string) {
     this.server.to(`workspace:${workspaceId}`).emit('meeting:updated', {

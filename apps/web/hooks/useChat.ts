@@ -41,10 +41,26 @@ export function useChat(slug: string) {
       setMessages((prev) => [...prev, message]);
     }
 
+    function handleUpdatedMessage(message: Message) {
+      setMessages((prev) =>
+        prev.map((item) => (item.id === message.id ? message : item)),
+      );
+    }
+
+    function handleDeletedMessage(data: { messageId: string }) {
+      setMessages((prev) =>
+        prev.filter((message) => message.id !== data.messageId),
+      );
+    }
+
     socket.on("chat:new", handleNewMessage);
+    socket.on("chat:updated", handleUpdatedMessage);
+    socket.on("chat:deleted", handleDeletedMessage);
 
     return () => {
       socket.off("chat:new", handleNewMessage);
+      socket.off("chat:updated", handleUpdatedMessage);
+      socket.off("chat:deleted", handleDeletedMessage);
     };
   }, []);
 
@@ -61,9 +77,27 @@ export function useChat(slug: string) {
     });
   };
 
+  const editMessage = (messageId: string, content: string) => {
+    socket.emit("chat:edit", {
+      messageId,
+      content,
+    });
+  };
+
+  const deleteMessage = (messageId: string) => {
+    socket.emit("chat:delete", { messageId });
+  };
+
+  const reactToMessage = (messageId: string, emoji: string) => {
+    socket.emit("chat:react", { messageId, emoji });
+  };
+
   return {
     messages,
     loading,
     sendMessage,
+    editMessage,
+    deleteMessage,
+    reactToMessage,
   };
 }

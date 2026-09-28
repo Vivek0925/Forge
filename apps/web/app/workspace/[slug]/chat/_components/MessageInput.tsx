@@ -138,9 +138,25 @@ export default function MessageInput({
                 key={index}
                 className="flex items-center gap-2 rounded-xl border border-[#E6E8EF] bg-white px-2.5 py-1.5 text-xs shadow-sm sm:px-3 sm:py-2 sm:text-sm"
               >
-                <span className="text-sm">📎 {attachment.fileName}</span>
+                {attachment.mimeType.startsWith("image/") ? (
+                  <img
+                    src={attachment.url}
+                    alt={attachment.fileName}
+                    className="h-10 w-10 rounded-lg border border-[#E6E8EF] object-cover"
+                  />
+                ) : (
+                  <span className="text-sm">📎</span>
+                )}
 
-                <button onClick={() => removeAttachment(index)}>
+                <span className="max-w-[180px] truncate">
+                  {attachment.fileName}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(index)}
+                  aria-label={`Remove ${attachment.fileName}`}
+                >
                   <X size={15} className="text-zinc-500 hover:text-red-500" />
                 </button>
               </div>

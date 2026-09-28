@@ -1,5 +1,6 @@
 import clsx from "clsx";
-import { Reply } from "lucide-react";
+import { MoreVertical, Pencil, Reply, Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { Message } from "@/types/chats";
 
 interface MessageItemProps {
@@ -7,6 +8,12 @@ interface MessageItemProps {
   previousMessage?: Message;
   currentUserId?: string;
   onReply: (message: Message) => void;
+
+  onEdit: (message: Message) => void;
+
+  onDelete: (message: Message) => void;
+
+  onReact: (message: Message, emoji: string) => void;
 }
 
 export default function MessageItem({
@@ -14,8 +21,15 @@ export default function MessageItem({
   previousMessage,
   currentUserId,
   onReply,
+  onEdit,
+  onDelete,
+  onReact,
 }: MessageItemProps) {
   const isMine = message.sender.id === currentUserId;
+
+  const [actionsOpen, setActionsOpen] = useState(false);
+
+  const reactionOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -70,6 +84,91 @@ export default function MessageItem({
         )}
 
         <div className="group relative">
+          <div
+            className={clsx(
+              "absolute top-2 z-30",
+              isMine ? "right-2" : "left-2",
+            )}
+          >
+            <button
+              type="button"
+              onClick={() => setActionsOpen((open) => !open)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/25 text-white/80 opacity-100 transition hover:bg-black/40 sm:opacity-0 sm:group-hover:opacity-100"
+              aria-label="Message actions"
+            >
+              <MoreVertical size={15} />
+            </button>
+
+            {actionsOpen && (
+              <div
+                className={clsx(
+                  "absolute top-8 w-44 rounded-xl border border-zinc-200 bg-white p-1.5 text-left shadow-xl",
+                  isMine ? "right-0" : "left-0",
+                )}
+              >
+                <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                  React
+                </p>
+
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  {reactionOptions.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        onReact(message, emoji);
+                        setActionsOpen(false);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition hover:bg-zinc-100"
+                      aria-label={`React ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+
+                {isMine && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const content = window.prompt(
+                          "Edit message",
+                          message.content,
+                        );
+
+                        if (content?.trim()) {
+                          onEdit({ ...message, content: content.trim() });
+                        }
+
+                        setActionsOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-zinc-700 transition hover:bg-zinc-100"
+                    >
+                      <Pencil size={14} />
+                      Edit message
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Delete this message?")) {
+                          onDelete(message);
+                        }
+
+                        setActionsOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-red-600 transition hover:bg-red-50"
+                    >
+                      <Trash2 size={14} />
+                      Delete message
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => onReply(message)}
             className={clsx(
@@ -130,7 +229,7 @@ export default function MessageItem({
                         key={attachment.id ?? index}
                         src={attachment.url}
                         alt={attachment.fileName}
-                        className="max-h-80 w-full rounded-xl border object-cover"
+                        className="max-h-80 w-full rounded-xl border bg-zinc-50 object-contain"
                       />
                     );
                   }
@@ -197,6 +296,21 @@ export default function MessageItem({
               </p>
             )}
           </div>
+
+          {message.reactions && Object.keys(message.reactions).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {Object.entries(message.reactions).map(([emoji, users]) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => onReact(message, emoji)}
+                  className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] shadow-sm transition hover:bg-zinc-50"
+                >
+                  {emoji} {users.length}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {isMine && !shouldGroup && (

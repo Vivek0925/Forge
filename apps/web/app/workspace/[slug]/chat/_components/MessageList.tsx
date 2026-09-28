@@ -13,9 +13,21 @@ interface MessageListProps {
   messages: Message[];
 
   onReply: (message: Message) => void;
+
+  onEdit: (message: Message) => void;
+
+  onDelete: (message: Message) => void;
+
+  onReact: (message: Message, emoji: string) => void;
 }
 
-export default function MessageList({ messages, onReply }: MessageListProps) {
+export default function MessageList({
+  messages,
+  onReply,
+  onEdit,
+  onDelete,
+  onReact,
+}: MessageListProps) {
   const { user } = useAuth();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -49,6 +61,9 @@ export default function MessageList({ messages, onReply }: MessageListProps) {
                 previousMessage={previous}
                 currentUserId={user?.id}
                 onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onReact={onReact}
               />
             </div>
           );

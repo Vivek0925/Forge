@@ -14,7 +14,14 @@ interface WorkspaceChatProps {
 }
 
 export default function WorkspaceChat({ slug }: WorkspaceChatProps) {
-  const { messages, loading, sendMessage } = useChat(slug);
+  const {
+    messages,
+    loading,
+    sendMessage,
+    editMessage,
+    deleteMessage,
+    reactToMessage,
+  } = useChat(slug);
 
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
@@ -48,7 +55,13 @@ export default function WorkspaceChat({ slug }: WorkspaceChatProps) {
             </p>
           </div>
         ) : (
-          <MessageList messages={messages} onReply={setReplyingTo} />
+          <MessageList
+            messages={messages}
+            onReply={setReplyingTo}
+            onEdit={(message) => editMessage(message.id, message.content)}
+            onDelete={(message) => deleteMessage(message.id)}
+            onReact={(message, emoji) => reactToMessage(message.id, emoji)}
+          />
         )}
       </div>
 

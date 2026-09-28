@@ -134,6 +134,7 @@ model Message {
   sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   edited Boolean @default(false)
+  reactions Json @default("{}")
 
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
