@@ -1954,17 +1954,17 @@ export default function MeetingRoom({
 
       {/* LEAVE OPTIONS */}
       {showLeaveOptions && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-gray-800/50  p-5 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white-500">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-xs rounded-2xl border border-white/10 bg-gray-800/70 p-4 shadow-2xl">
+            <h3 className="text-base font-semibold text-white">
               Leave meeting?
             </h3>
 
-            <p className="mt-1 text-sm text-white/50">
+            <p className="mt-1 text-xs text-white/50">
               Choose what you want to do.
             </p>
 
-            <div className="mt-5 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-1.5">
               {/* Leave meeting */}
               <button
                 type="button"
@@ -1972,7 +1972,7 @@ export default function MeetingRoom({
                   setShowLeaveOptions(false);
                   void leaveMeeting();
                 }}
-                className="w-full rounded-xl bg-gray-100 px-4 py-3 text-sm font-medium text-gray-900 transition hover:bg-gray-200"
+                className="w-full rounded-xl bg-gray-100 px-4 py-2.5 text-xs font-medium text-gray-900 transition hover:bg-gray-200"
               >
                 Leave meeting
               </button>
@@ -1985,7 +1985,7 @@ export default function MeetingRoom({
                     setShowLeaveOptions(false);
                     endMeeting();
                   }}
-                  className="w-full rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-red-600"
+                  className="w-full rounded-xl bg-red-500 px-4 py-2.5 text-xs font-medium text-white transition hover:bg-red-600"
                 >
                   End meeting
                 </button>
@@ -1995,7 +1995,7 @@ export default function MeetingRoom({
               <button
                 type="button"
                 onClick={() => setShowLeaveOptions(false)}
-                className="w-full rounded-xl px-4 py-3 text-sm font-medium text-gray-500 transition hover:bg-gray-100"
+                className="w-full rounded-xl px-4 py-2.5 text-xs font-medium text-white/50 transition hover:bg-white/10 hover:text-white"
               >
                 Cancel
               </button>
