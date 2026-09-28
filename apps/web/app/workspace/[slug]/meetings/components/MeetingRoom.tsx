@@ -157,6 +157,33 @@ export default function MeetingRoom({
     speakers: [],
   });
 
+  useEffect(() => {
+    if (!participantsOpen && !chatOpen && !settingsOpen) {
+      return;
+    }
+
+    function handleOutsidePanelPointerDown(event: PointerEvent) {
+      const target = event.target;
+
+      if (target instanceof Element && target.closest("[data-meeting-panel]")) {
+        return;
+      }
+
+      setParticipantsOpen(false);
+      setChatOpen(false);
+      setSettingsOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handleOutsidePanelPointerDown);
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        handleOutsidePanelPointerDown,
+      );
+    };
+  }, [chatOpen, participantsOpen, settingsOpen]);
+
   /*
    * =========================================================
    * MEETING HOOK
@@ -711,6 +738,8 @@ export default function MeetingRoom({
     }, 2000);
   };
 
+  const displayMeetingLink = `meeting/${meetingCode}`;
+
   /*
    * =========================================================
    * MICROPHONE
@@ -1110,7 +1139,7 @@ export default function MeetingRoom({
         onPointerUp={endMiniDrag}
         onPointerCancel={endMiniDrag}
         className={`flex shrink-0 select-none items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-3 backdrop-blur-xl ${
-          minimized ? "h-11 cursor-move" : "h-16 sm:px-5"
+          minimized ? "h-11 cursor-move" : "h-14 sm:h-16 sm:px-5"
         }`}
       >
         {/* LEFT */}
@@ -1120,10 +1149,11 @@ export default function MeetingRoom({
             <button
               type="button"
               onClick={onMinimize}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/[0.08] hover:text-white sm:h-9 sm:w-9 sm:rounded-xl"
               title="Minimize meeting"
             >
-              <Minimize size={18} />
+              <ArrowLeft size={17} className="sm:hidden" />
+              <Minimize size={18} className="hidden sm:block" />
             </button>
           ) : (
             <div className="flex items-center gap-1 text-white/25">
@@ -1133,22 +1163,26 @@ export default function MeetingRoom({
           )}
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-white">Meeting</p>
+            <p className="truncate text-xs font-semibold text-white sm:text-sm">
+              Meeting
+            </p>
 
             {!minimized && (
-              <div className="mt-0.5 flex items-center gap-2">
-                <p className="text-xs tracking-wider text-white/35">
-                  {`${window.location.origin}/meet/${meetingCode}`}
+              <div className="mt-0.5 flex min-w-0 items-center gap-1">
+                <p className="truncate text-[10px] tracking-wide text-white/35 sm:text-xs sm:tracking-wider">
+                  {displayMeetingLink}
                 </p>
 
                 <button
                   type="button"
                   onClick={() => void copyMeetingCode()}
-                  className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[4px] text-white/40 transition hover:bg-white/[0.08] hover:text-white"
+                  className="flex shrink-0 items-center gap-1 rounded-md px-1 py-1 text-[10px] text-white/40 transition hover:bg-white/[0.08] hover:text-white sm:px-1.5 sm:text-xs"
                   title="Copy meeting link"
                 >
                   <Copy size={12} />
-                  {copied ? "Copied" : "Copy"}
+                  <span className="hidden sm:inline">
+                    {copied ? "Copied" : "Copy"}
+                  </span>
                 </button>
               </div>
             )}
@@ -1157,7 +1191,7 @@ export default function MeetingRoom({
 
         {/* RIGHT */}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {!minimized ? (
             <>
               {/* PARTICIPANTS */}
@@ -1165,13 +1199,13 @@ export default function MeetingRoom({
               <button
                 type="button"
                 onClick={() => setParticipantsOpen(true)}
-                className="flex h-9 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white"
+                className="flex h-8 items-center gap-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 text-[10px] text-white/60 transition hover:bg-white/[0.08] hover:text-white sm:h-9 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-xs"
                 title="View participants"
               >
                 <Users size={16} />
 
+                <span>{participantCount}</span>
                 <span className="hidden sm:inline">
-                  {participantCount}{" "}
                   {participantCount === 1 ? "participant" : "participants"}
                 </span>
               </button>
@@ -1182,7 +1216,7 @@ export default function MeetingRoom({
                 type="button"
                 onClick={() => setChatOpen((previous) => !previous)}
                 title="Meeting chat"
-                className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition sm:h-9 sm:w-9 sm:rounded-xl ${
                   chatOpen
                     ? "bg-white/[0.12] text-white"
                     : "text-white/50 hover:bg-white/[0.08] hover:text-white"
@@ -1196,7 +1230,7 @@ export default function MeetingRoom({
               <button
                 type="button"
                 onClick={() => setSettingsOpen((previous) => !previous)}
-                className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition sm:h-9 sm:w-9 sm:rounded-xl ${
                   settingsOpen
                     ? "bg-white/[0.10] text-white"
                     : "text-white/50 hover:bg-white/[0.08] hover:text-white"
@@ -1212,7 +1246,7 @@ export default function MeetingRoom({
                 type="button"
                 onClick={toggleFullscreen}
                 title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white"
+                className="hidden h-9 w-9 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/[0.08] hover:text-white sm:flex"
               >
                 {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
               </button>
@@ -1253,19 +1287,19 @@ export default function MeetingRoom({
 
       <main
         className={`relative min-h-0 flex-1 overflow-hidden ${
-          minimized ? "p-1.5" : "p-3 sm:p-5"
+          minimized ? "p-1.5" : "p-2 sm:p-5"
         }`}
       >
         <div
           className={`grid h-full min-h-0 w-full auto-rows-fr ${
             minimized ? "grid-cols-1" : gridClass
-          } gap-3`}
+          } gap-2 sm:gap-3`}
         >
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
           {/* ============================================= */}
 
-          <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+          <div className="relative min-h-0 overflow-hidden rounded-2xl bg-[#171A20] sm:rounded-3xl">
             {loading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
                 <div className="text-center">
@@ -1302,6 +1336,19 @@ export default function MeetingRoom({
 
             {!error && (
               <>
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-black/45 text-white/80 backdrop-blur-md transition hover:bg-black/65 sm:hidden"
+                >
+                  {isFullscreen ? (
+                    <Minimize size={14} />
+                  ) : (
+                    <Maximize size={14} />
+                  )}
+                </button>
+
                 <video
                   ref={videoRef}
                   autoPlay
@@ -1378,7 +1425,10 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && chatOpen && (
-        <aside className="absolute inset-y-16 bottom-24 right-0 z-40 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
+        <aside
+          data-meeting-panel
+          className="absolute inset-y-16 bottom-24 right-0 z-40 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0"
+        >
           {/* Header */}
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
             <div>
@@ -1499,7 +1549,10 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && participantsOpen && (
-        <div className="absolute inset-y-16 bottom-24 right-0 z-40 w-[calc(100%-0.75rem)] max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
+        <div
+          data-meeting-panel
+          className="absolute inset-y-16 bottom-24 right-0 z-40 w-[calc(100%-0.75rem)] max-w-[360px] rounded-l-2xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0"
+        >
           <div className="flex h-full flex-col">
             {/* Header */}
             <div className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-5 py-4">
@@ -1612,7 +1665,10 @@ export default function MeetingRoom({
       {/* ================================================= */}
 
       {!minimized && settingsOpen && (
-        <aside className="absolute inset-y-16 bottom-24 right-0 z-50 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0">
+        <aside
+          data-meeting-panel
+          className="absolute inset-y-16 bottom-24 right-0 z-50 flex w-[calc(100%-0.75rem)] max-w-[380px] flex-col rounded-l-xl border-l border-white/[0.08] bg-[#111318]/[0.92] shadow-2xl backdrop-blur-xl md:bottom-0"
+        >
           {/* Header */}
 
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5">
@@ -1803,14 +1859,14 @@ export default function MeetingRoom({
         className={
           minimized
             ? "flex h-14 shrink-0 items-center justify-center border-t border-white/[0.08] bg-[#111318] px-2"
-            : "flex h-24 shrink-0 items-center justify-center bg-[#0B0D11] px-4"
+            : "flex h-20 shrink-0 items-center justify-center bg-[#0B0D11] px-2 sm:h-24 sm:px-4"
         }
       >
         <div
           className={
             minimized
               ? "flex items-center gap-2"
-              : "flex items-center gap-3 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl"
+              : "flex items-center gap-2 rounded-3xl border border-white/[0.08] bg-[#171A20] px-3 py-3 shadow-2xl sm:gap-3"
           }
         >
           {/* MICROPHONE */}
@@ -1821,7 +1877,7 @@ export default function MeetingRoom({
             disabled={loading || !!error}
             title={micEnabled ? "Mute microphone" : "Unmute microphone"}
             className={`flex ${
-              minimized ? "h-10 w-10" : "h-12 w-12"
+              minimized ? "h-10 w-10" : "h-14 w-14 sm:h-12 sm:w-12"
             } items-center justify-center rounded-full transition ${
               micEnabled
                 ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
@@ -1843,7 +1899,7 @@ export default function MeetingRoom({
             disabled={loading || !!error}
             title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
             className={`flex ${
-              minimized ? "h-10 w-10" : "h-12 w-12"
+              minimized ? "h-10 w-10" : "h-14 w-14 sm:h-12 sm:w-12"
             } items-center justify-center rounded-full transition ${
               cameraEnabled
                 ? "bg-white/[0.08] text-white hover:bg-white/[0.14]"
@@ -1871,7 +1927,7 @@ export default function MeetingRoom({
             disabled={loading || !!error}
             title={isScreenSharing ? "Stop sharing" : "Share screen"}
             className={`flex ${
-              minimized ? "h-10 w-10" : "h-12 w-12"
+              minimized ? "h-10 w-10" : "h-14 w-14 sm:h-12 sm:w-12"
             } items-center justify-center rounded-full transition ${
               isScreenSharing
                 ? "bg-emerald-500 text-white hover:bg-emerald-600"
@@ -1888,7 +1944,7 @@ export default function MeetingRoom({
             onClick={() => setShowLeaveOptions(true)}
             title={isHost ? "Leave meeting" : "Leave meeting"}
             className={`flex ${
-              minimized ? "h-10 w-10" : "h-12 w-12"
+              minimized ? "h-10 w-10" : "h-14 w-14 sm:h-12 sm:w-12"
             } items-center justify-center rounded-full bg-[#EF4444] text-white transition hover:bg-[#DC2626]`}
           >
             <PhoneOff size={minimized ? 17 : 19} />
@@ -1976,7 +2032,7 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
 
     video.autoplay = true;
     video.playsInline = true;
-    video.muted = true;
+    video.muted = false;
 
     const playVideo = async () => {
       try {
@@ -2068,7 +2124,6 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
         ref={videoRef}
         autoPlay
         playsInline
-        muted
         className={`h-full w-full object-cover ${
           participant.cameraEnabled ? "block" : "hidden"
         }`}
