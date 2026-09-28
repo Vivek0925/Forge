@@ -31,6 +31,8 @@ export default function MessageItem({
 
   const actionsRef = useRef<HTMLDivElement>(null);
 
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const reactionOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   useEffect(() => {
@@ -66,6 +68,20 @@ export default function MessageItem({
     new Date(message.createdAt).getTime() -
       new Date(previousMessage.createdAt).getTime() <
       5 * 60 * 1000;
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }
+
+  function handleMessageTouchStart() {
+    clearLongPressTimer();
+    longPressTimerRef.current = setTimeout(() => {
+      setActionsOpen(true);
+    }, 2000);
+  }
 
   return (
     <div
@@ -106,92 +122,6 @@ export default function MessageItem({
         )}
 
         <div className="group relative">
-          <div
-            ref={actionsRef}
-            className={clsx(
-              "absolute top-1 z-30",
-              isMine ? "-right-7" : "-left-7",
-            )}
-          >
-            <button
-              type="button"
-              onClick={() => setActionsOpen((open) => !open)}
-              className="flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 opacity-0 shadow-sm transition hover:text-zinc-700 group-hover:opacity-100 group-focus-within:opacity-100 sm:h-7 sm:w-7"
-              aria-label="Message actions"
-            >
-              <ChevronDown size={14} />
-            </button>
-
-            {actionsOpen && (
-              <div
-                className={clsx(
-                  "absolute top-8 w-44 rounded-xl border border-zinc-200 bg-white p-1.5 text-left shadow-xl",
-                  isMine ? "right-0" : "left-0",
-                )}
-              >
-                <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
-                  React
-                </p>
-
-                <div className="flex items-center gap-1 px-1 pb-1">
-                  {reactionOptions.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => {
-                        onReact(message, emoji);
-                        setActionsOpen(false);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition hover:bg-zinc-100"
-                      aria-label={`React ${emoji}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-
-                {isMine && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const content = window.prompt(
-                          "Edit message",
-                          message.content,
-                        );
-
-                        if (content?.trim()) {
-                          onEdit({ ...message, content: content.trim() });
-                        }
-
-                        setActionsOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-zinc-700 transition hover:bg-zinc-100"
-                    >
-                      <Pencil size={14} />
-                      Edit message
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm("Delete this message?")) {
-                          onDelete(message);
-                        }
-
-                        setActionsOpen(false);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-red-600 transition hover:bg-red-50"
-                    >
-                      <Trash2 size={14} />
-                      Delete message
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
           <button
             onClick={() => onReply(message)}
             className={clsx(
@@ -206,16 +136,111 @@ export default function MessageItem({
 
           <div
             className={clsx(
-              "relative rounded-2xl px-3 py-1.5 transition-colors sm:px-4",
+              "relative rounded-2xl border px-3 py-1.5 transition-colors sm:px-4",
               isMine
-                ? "bg-[#20232D] text-white"
+                ? "border-[#BDE7CC] bg-[#EAFBF1] text-[#065F46]"
                 : "border border-zinc-200 bg-white text-zinc-700",
               shouldGroup &&
                 (isMine
                   ? "rounded-tr-2xl rounded-br-md"
                   : "rounded-tl-2xl rounded-bl-md"),
             )}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setActionsOpen(true);
+            }}
+            onTouchStart={handleMessageTouchStart}
+            onTouchEnd={clearLongPressTimer}
+            onTouchCancel={clearLongPressTimer}
           >
+            <div
+              ref={actionsRef}
+              className={clsx(
+                "absolute top-0 z-30",
+                isMine ? "right-1" : "left-1",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => setActionsOpen((open) => !open)}
+                className={`absolute top-1 hidden h-6 w-6 items-center justify-center p-0 text-zinc-400 opacity-0 transition hover:text-zinc-700 group-hover:opacity-100 group-focus-within:opacity-100 sm:flex sm:h-7 sm:w-7
+      ${isMine ? "-right-8" : "-left-8"}
+    `}
+                aria-label="Message actions"
+              >
+                <ChevronDown size={15} />
+              </button>
+
+              {actionsOpen && (
+                <div
+                  className={clsx(
+                    "absolute top-8 w-44 rounded-xl border border-zinc-200 bg-white p-1.5 text-left shadow-xl",
+                    isMine ? "right-0" : "left-0",
+                  )}
+                >
+                  <p className="px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-400">
+                    React
+                  </p>
+
+                  <div className="flex items-center gap-1 px-1 pb-1">
+                    {reactionOptions.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          onReact(message, emoji);
+                          setActionsOpen(false);
+                        }}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition hover:bg-zinc-100"
+                        aria-label={`React ${emoji}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+
+                  {isMine && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const content = window.prompt(
+                            "Edit message",
+                            message.content,
+                          );
+
+                          if (content?.trim()) {
+                            onEdit({ ...message, content: content.trim() });
+                          }
+
+                          setActionsOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-zinc-700 transition hover:bg-zinc-100"
+                      >
+                        <Pencil size={14} />
+                        Edit message
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm("Delete this message?")) {
+                            onDelete(message);
+                          }
+
+                          setActionsOpen(false);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-xs text-red-600 transition hover:bg-red-50"
+                      >
+                        <Trash2 size={14} />
+                        Delete message
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
             {message.replyTo && (
               <div
                 className={clsx(
