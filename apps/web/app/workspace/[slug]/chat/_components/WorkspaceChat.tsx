@@ -13,23 +13,16 @@ interface WorkspaceChatProps {
   slug: string;
 }
 
-export default function WorkspaceChat({
-  slug,
-}: WorkspaceChatProps) {
-  const {
-    messages,
-    loading,
-    sendMessage,
-  } = useChat(slug);
+export default function WorkspaceChat({ slug }: WorkspaceChatProps) {
+  const { messages, loading, sendMessage } = useChat(slug);
 
-  const [replyingTo, setReplyingTo] =
-    useState<Message | null>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-[32px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
       {/* Header */}
-      <div className="border-b border-[#ECEEF3] px-5 py-3">
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-[#20232D]">
+      <div className="border-b border-[#ECEEF3] px-4 py-2.5 sm:px-5 sm:py-3">
+        <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-[#20232D] sm:text-[26px]">
           Workspace Chat
         </h1>
       </div>
@@ -42,41 +35,28 @@ export default function WorkspaceChat({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#F3F7F5]">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#F3F7F5] sm:mb-6 sm:h-20 sm:w-20">
               💬
             </div>
 
-            <h2 className="text-[22px] font-semibold text-[#20232D]">
+            <h2 className="text-lg font-semibold text-[#20232D] sm:text-[22px]">
               No conversations yet
             </h2>
 
-            <p className="mt-3 max-w-md text-center text-[15px] leading-7 text-[#707487]">
+            <p className="mt-2 max-w-md px-4 text-center text-[13px] leading-6 text-[#707487] sm:mt-3 sm:px-0 sm:text-[15px] sm:leading-7">
               Start collaborating with everyone in this workspace.
             </p>
           </div>
         ) : (
-          <MessageList
-            messages={messages}
-            onReply={setReplyingTo}
-          />
+          <MessageList messages={messages} onReply={setReplyingTo} />
         )}
       </div>
 
       <MessageInput
         replyingTo={replyingTo}
-        onCancelReply={() =>
-          setReplyingTo(null)
-        }
-        onSend={(
-          content,
-          attachments,
-          replyToId,
-        ) => {
-          sendMessage(
-            content,
-            attachments,
-            replyToId,
-          );
+        onCancelReply={() => setReplyingTo(null)}
+        onSend={(content, attachments, replyToId) => {
+          sendMessage(content, attachments, replyToId);
 
           setReplyingTo(null);
         }}

@@ -36,30 +36,34 @@ export default function MessageItem({
       className={clsx(
         "flex",
         isMine ? "justify-end" : "justify-start",
-        shouldGroup ? "mt-1" : "mt-6",
+        shouldGroup ? "mt-1" : "mt-4 sm:mt-6",
       )}
     >
       <div
         className={clsx(
-          "flex max-w-[70%] flex-col",
+          "flex max-w-[86%] flex-col sm:max-w-[70%]",
           isMine ? "items-end" : "items-start",
         )}
       >
         {!isMine && !shouldGroup && (
-          <div className="mb-2 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+          <div className="mb-1.5 flex items-center gap-2 sm:mb-2 sm:gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700 sm:h-9 sm:w-9 sm:text-sm">
               {message.sender.name.charAt(0).toUpperCase()}
             </div>
 
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-[#20232D]">
+            <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+              <h3 className="truncate text-[13px] font-medium text-[#20232D] sm:text-base">
                 {message.sender.name}
               </h3>
 
-              <span className="text-xs text-zinc-400">{time}</span>
+              <span className="shrink-0 text-[10px] text-zinc-400 sm:text-xs">
+                {time}
+              </span>
 
               {message.edited && (
-                <span className="text-xs text-zinc-400">edited</span>
+                <span className="text-[10px] text-zinc-400 sm:text-xs">
+                  edited
+                </span>
               )}
             </div>
           </div>
@@ -80,7 +84,7 @@ export default function MessageItem({
 
           <div
             className={clsx(
-              "rounded-2xl px-4 py-1.5 transition-colors",
+              "rounded-2xl px-3 py-1.5 transition-colors sm:px-4",
               isMine
                 ? "bg-[#20232D] text-white"
                 : "border border-zinc-200 bg-white text-zinc-700",
@@ -188,7 +192,7 @@ export default function MessageItem({
             )}
 
             {message.content && (
-              <p className="whitespace-pre-wrap text-[15px] leading-7">
+              <p className="whitespace-pre-wrap text-[13px] leading-6 sm:text-[15px] sm:leading-7">
                 {message.content}
               </p>
             )}
@@ -196,7 +200,7 @@ export default function MessageItem({
         </div>
 
         {isMine && !shouldGroup && (
-          <div className="mt-1 text-xs text-zinc-400">
+          <div className="mt-1 text-[10px] text-zinc-400 sm:text-xs">
             You • {time}
             {message.edited && " • edited"}
           </div>

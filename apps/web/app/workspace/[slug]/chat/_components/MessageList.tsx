@@ -15,10 +15,7 @@ interface MessageListProps {
   onReply: (message: Message) => void;
 }
 
-export default function MessageList({
-  messages,
-  onReply,
-}: MessageListProps) {
+export default function MessageList({ messages, onReply }: MessageListProps) {
   const { user } = useAuth();
 
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -30,31 +27,22 @@ export default function MessageList({
   }, [messages]);
 
   return (
-    <div className="h-full overflow-y-auto px-8 py-6">
-      <div className="space-y-2">
+    <div className="h-full overflow-y-auto scrollbar-none px-3 py-4 sm:px-8 sm:py-6">
+      <div className="space-y-1.5 sm:space-y-2">
         {messages.map((message, index) => {
           const previous = messages[index - 1];
 
-          const currentDate = new Date(
-            message.createdAt,
-          ).toDateString();
+          const currentDate = new Date(message.createdAt).toDateString();
 
           const previousDate = previous
-            ? new Date(
-                previous.createdAt,
-              ).toDateString()
+            ? new Date(previous.createdAt).toDateString()
             : null;
 
-          const showDate =
-            currentDate !== previousDate;
+          const showDate = currentDate !== previousDate;
 
           return (
             <div key={message.id}>
-              {showDate && (
-                <DateSeparator
-                  date={message.createdAt}
-                />
-              )}
+              {showDate && <DateSeparator date={message.createdAt} />}
 
               <MessageItem
                 message={message}
