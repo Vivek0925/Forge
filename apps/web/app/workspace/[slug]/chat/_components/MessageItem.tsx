@@ -126,7 +126,7 @@ export default function MessageItem({
             onClick={() => onReply(message)}
             className={clsx(
               "absolute bottom-2 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-md transition-all",
-              "opacity-0 group-hover:opacity-100 hover:bg-zinc-100",
+              "opacity-100 group-hover:opacity-100 hover:bg-zinc-100 sm:opacity-0",
               isMine ? "-left-10" : "-right-10",
             )}
             title="Reply"
@@ -191,7 +191,7 @@ export default function MessageItem({
                           onReact(message, emoji);
                           setActionsOpen(false);
                         }}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-sm transition hover:bg-zinc-100"
+                        className="flex h-6 w-6 items-center justify-center rounded-lg text-xs transition hover:bg-zinc-100 sm:h-7 sm:w-7 sm:text-sm"
                         aria-label={`React ${emoji}`}
                       >
                         {emoji}
@@ -356,7 +356,7 @@ export default function MessageItem({
                     key={emoji}
                     type="button"
                     onClick={() => onReact(message, emoji)}
-                    className="rounded-full border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] shadow-sm transition hover:bg-zinc-50 sm:px-2 sm:text-[11px]"
+                    className="rounded-full border border-zinc-200 bg-white px-1 py-0.5 text-[9px] shadow-sm transition hover:bg-zinc-50 sm:px-2 sm:text-[11px]"
                   >
                     {emoji}
                     {users.length > 1 && ` ${users.length}`}

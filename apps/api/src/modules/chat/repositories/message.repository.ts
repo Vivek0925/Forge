@@ -207,6 +207,20 @@ export class MessageRepository {
 
     const users = Array.isArray(reactions[emoji]) ? reactions[emoji] : [];
 
+    if (!users.includes(userId)) {
+      for (const [reactionEmoji, reactionUsers] of Object.entries(reactions)) {
+        if (reactionEmoji === emoji || !Array.isArray(reactionUsers)) {
+          continue;
+        }
+
+        reactions[reactionEmoji] = reactionUsers.filter((id) => id !== userId);
+
+        if (reactions[reactionEmoji].length === 0) {
+          delete reactions[reactionEmoji];
+        }
+      }
+    }
+
     reactions[emoji] = users.includes(userId)
       ? users.filter((id) => id !== userId)
       : [...users, userId];
