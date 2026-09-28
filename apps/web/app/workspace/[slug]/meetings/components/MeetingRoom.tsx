@@ -1001,8 +1001,8 @@ export default function MeetingRoom({
                     muted
                     playsInline
                     className={`h-full w-full object-cover ${
-                      cameraEnabled ? "block" : "hidden"
-                    }`}
+                      isScreenSharing ? "" : "-scale-x-100"
+                    } ${cameraEnabled ? "block" : "hidden"}`}
                   />
 
                   {!cameraEnabled && (
@@ -1355,8 +1355,8 @@ export default function MeetingRoom({
                   muted
                   playsInline
                   className={`h-full w-full object-cover ${
-                    cameraEnabled ? "block" : "hidden"
-                  }`}
+                    isScreenSharing ? "" : "-scale-x-100"
+                  } ${cameraEnabled ? "block" : "hidden"}`}
                 />
 
                 {!cameraEnabled && (
