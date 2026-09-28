@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import { MoreVertical, Pencil, Reply, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Pencil, Reply, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { Message } from "@/types/chats";
 
 interface MessageItemProps {
@@ -29,7 +29,29 @@ export default function MessageItem({
 
   const [actionsOpen, setActionsOpen] = useState(false);
 
+  const actionsRef = useRef<HTMLDivElement>(null);
+
   const reactionOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+
+  useEffect(() => {
+    if (!actionsOpen) {
+      return;
+    }
+
+    function closeActionsOnOutsidePointer(event: PointerEvent) {
+      const target = event.target;
+
+      if (target instanceof Node && !actionsRef.current?.contains(target)) {
+        setActionsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", closeActionsOnOutsidePointer);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeActionsOnOutsidePointer);
+    };
+  }, [actionsOpen]);
 
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
@@ -85,18 +107,19 @@ export default function MessageItem({
 
         <div className="group relative">
           <div
+            ref={actionsRef}
             className={clsx(
-              "absolute top-2 z-30",
-              isMine ? "right-2" : "left-2",
+              "absolute top-1 z-30",
+              isMine ? "-right-7" : "-left-7",
             )}
           >
             <button
               type="button"
               onClick={() => setActionsOpen((open) => !open)}
-              className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/25 text-white/80 opacity-100 transition hover:bg-black/40 sm:opacity-0 sm:group-hover:opacity-100"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 opacity-0 shadow-sm transition hover:text-zinc-700 group-hover:opacity-100 group-focus-within:opacity-100 sm:h-7 sm:w-7"
               aria-label="Message actions"
             >
-              <MoreVertical size={15} />
+              <ChevronDown size={14} />
             </button>
 
             {actionsOpen && (
@@ -183,7 +206,7 @@ export default function MessageItem({
 
           <div
             className={clsx(
-              "rounded-2xl px-3 py-1.5 transition-colors sm:px-4",
+              "relative rounded-2xl px-3 py-1.5 transition-colors sm:px-4",
               isMine
                 ? "bg-[#20232D] text-white"
                 : "border border-zinc-200 bg-white text-zinc-700",
@@ -295,22 +318,28 @@ export default function MessageItem({
                 {message.content}
               </p>
             )}
-          </div>
 
-          {message.reactions && Object.keys(message.reactions).length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {Object.entries(message.reactions).map(([emoji, users]) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => onReact(message, emoji)}
-                  className="rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[11px] shadow-sm transition hover:bg-zinc-50"
-                >
-                  {emoji} {users.length}
-                </button>
-              ))}
-            </div>
-          )}
+            {message.reactions && Object.keys(message.reactions).length > 0 && (
+              <div
+                className={clsx(
+                  "absolute -bottom-4 z-10 flex flex-wrap gap-1",
+                  isMine ? "right-2" : "left-2",
+                )}
+              >
+                {Object.entries(message.reactions).map(([emoji, users]) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => onReact(message, emoji)}
+                    className="rounded-full border border-zinc-200 bg-white px-1.5 py-0.5 text-[10px] shadow-sm transition hover:bg-zinc-50 sm:px-2 sm:text-[11px]"
+                  >
+                    {emoji}
+                    {users.length > 1 && ` ${users.length}`}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {isMine && !shouldGroup && (
