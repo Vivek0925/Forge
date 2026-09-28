@@ -55,7 +55,7 @@ export default function MeetingCard({
     : null;
 
   return (
-    <div className="rounded-3xl border border-[#E7E9EF] bg-green-50 p-4 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)] sm:p-6">
+    <div className="rounded-3xl border border-[#E7E9EF] bg-green-50 p-3.5 shadow-[0_10px_35px_rgba(20,20,28,0.04)] transition hover:shadow-[0_16px_40px_rgba(20,20,28,0.07)] sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAFBF1] sm:h-12 sm:w-12">
@@ -73,7 +73,7 @@ export default function MeetingCard({
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[#85899A]">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#85899A]">
               <span className="flex items-center gap-1.5">
                 <Users size={14} />
                 {meeting.participants.length}{" "}
@@ -104,21 +104,21 @@ export default function MeetingCard({
                   })}
                 </span>
               )}
+
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  isActive
+                    ? "bg-[#E7F8EF] text-[#1E8E5A]"
+                    : isEnded
+                      ? "bg-zinc-100 text-zinc-500"
+                      : "bg-[#F3F4F7] text-[#656979]"
+                }`}
+              >
+                {meeting.status}
+              </span>
             </div>
           </div>
         </div>
-
-        <span
-          className={`self-start rounded-full px-3 py-1 text-xs font-medium ${
-            isActive
-              ? "bg-[#E7F8EF] text-[#1E8E5A]"
-              : isEnded
-                ? "bg-zinc-100 text-zinc-500"
-                : "bg-[#F3F4F7] text-[#656979]"
-          }`}
-        >
-          {meeting.status}
-        </span>
       </div>
 
       <div className="mt-4 flex flex-col items-stretch gap-3 border-t border-[#F0F1F4] pt-3 sm:flex-row sm:items-center">
@@ -134,7 +134,7 @@ export default function MeetingCard({
             <button
               type="button"
               onClick={() => onJoin(meeting.id)}
-              className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
+              className="flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
             >
               <Video size={16} />
               {isActive ? "Join Meeting" : "View Meeting"}
@@ -148,7 +148,7 @@ export default function MeetingCard({
                 `${window.location.origin}/meet/${meeting.meetingCode}`,
               );
             }}
-            className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
+            className="flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-[#ECEEF3] bg-white/40 px-3 text-center text-xs font-medium text-black transition hover:bg-green-300/60 sm:px-4 sm:text-sm"
           >
             Copy Link
           </button>

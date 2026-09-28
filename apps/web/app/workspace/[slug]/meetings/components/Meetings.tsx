@@ -284,7 +284,7 @@ export default function Meetings({ slug }: MeetingsProps) {
   );
 
   return (
-    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto scrollbar-none overflow-x-hidden rounded-xl bg-white">
+    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto scrollbar-none overflow-x-hidden rounded-[32px] border border-[#DEDFE8] bg-white">
       {/* Header */}
 
       <div className="sticky top-0 z-30 shrink-0 rounded-xl border-b border-[#ECEEF3] bg-white px-4 py-4 shadow-[0_6px_16px_rgba(20,20,28,0.04)] sm:px-6">
@@ -320,8 +320,8 @@ export default function Meetings({ slug }: MeetingsProps) {
             >
               <CalendarDays size={16} />
               {calendarConnected
-                ? "Google Calendar Connected"
-                : "Connect Google Calendar"}
+                ? "Calendar connected"
+                : "Connect calendar"}
             </button>
 
             <button

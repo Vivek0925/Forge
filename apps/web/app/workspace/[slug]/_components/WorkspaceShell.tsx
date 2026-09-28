@@ -153,7 +153,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
 
             <button
               onClick={() => setInviteOpen(true)}
-              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[12px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-4 md:text-[13px]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[11px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-4 md:text-[11px]"
             >
               Invite
             </button>
