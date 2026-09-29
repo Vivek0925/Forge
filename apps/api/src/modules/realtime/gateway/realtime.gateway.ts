@@ -378,6 +378,7 @@ export class RealtimeGateway
       socketId: socket.id,
       userId: currentUser.id,
       name: currentUser.name,
+      avatar: currentUser.avatar,
       micEnabled: true,
       cameraEnabled: true,
     });
@@ -435,6 +436,7 @@ export class RealtimeGateway
         socketId: socket.id,
         userId: currentUser.id,
         name: currentUser.name,
+        avatar: currentUser.avatar,
         micEnabled: true,
         cameraEnabled: true,
       },

@@ -1,19 +1,17 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
 export interface MeetingParticipant {
   socketId: string;
   userId: string;
   name: string;
+  avatar: string | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
 }
 
 @Injectable()
 export class MeetingRoomService {
-  private readonly rooms = new Map<
-    string,
-    Map<string, MeetingParticipant>
-  >();
+  private readonly rooms = new Map<string, Map<string, MeetingParticipant>>();
 
   /**
    * Add a participant to a meeting.
@@ -37,10 +35,7 @@ export class MeetingRoomService {
   /**
    * Remove a participant from a meeting.
    */
-  leave(
-    meetingId: string,
-    socketId: string,
-  ): MeetingParticipant[] {
+  leave(meetingId: string, socketId: string): MeetingParticipant[] {
     const room = this.rooms.get(meetingId);
 
     if (!room) {
@@ -98,9 +93,7 @@ export class MeetingRoomService {
   /**
    * Get every participant in a meeting.
    */
-  getParticipants(
-    meetingId: string,
-  ): MeetingParticipant[] {
+  getParticipants(meetingId: string): MeetingParticipant[] {
     const room = this.rooms.get(meetingId);
 
     if (!room) {
@@ -117,21 +110,14 @@ export class MeetingRoomService {
     meetingId: string,
     socketId: string,
   ): MeetingParticipant | undefined {
-    return this.rooms
-      .get(meetingId)
-      ?.get(socketId);
+    return this.rooms.get(meetingId)?.get(socketId);
   }
 
   /**
    * Find which meeting a socket currently belongs to.
    */
-  getMeetingForSocket(
-    socketId: string,
-  ): string | undefined {
-    for (const [
-      meetingId,
-      room,
-    ] of this.rooms.entries()) {
+  getMeetingForSocket(socketId: string): string | undefined {
+    for (const [meetingId, room] of this.rooms.entries()) {
       if (room.has(socketId)) {
         return meetingId;
       }
@@ -144,23 +130,14 @@ export class MeetingRoomService {
    * Check whether a socket is already inside
    * a specific meeting.
    */
-  hasParticipant(
-    meetingId: string,
-    socketId: string,
-  ): boolean {
-    return (
-      this.rooms
-        .get(meetingId)
-        ?.has(socketId) ?? false
-    );
+  hasParticipant(meetingId: string, socketId: string): boolean {
+    return this.rooms.get(meetingId)?.has(socketId) ?? false;
   }
 
   /**
    * Remove the entire meeting room.
    */
-  clearMeeting(
-    meetingId: string,
-  ): void {
+  clearMeeting(meetingId: string): void {
     this.rooms.delete(meetingId);
   }
 
@@ -170,13 +147,8 @@ export class MeetingRoomService {
    * Useful as a safety net when a browser refreshes
    * or the socket disconnects unexpectedly.
    */
-  removeSocket(
-    socketId: string,
-  ): string | undefined {
-    for (const [
-      meetingId,
-      room,
-    ] of this.rooms.entries()) {
+  removeSocket(socketId: string): string | undefined {
+    for (const [meetingId, room] of this.rooms.entries()) {
       if (!room.has(socketId)) {
         continue;
       }

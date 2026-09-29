@@ -39,6 +39,7 @@ interface Participant {
   socketId: string;
   userId: string;
   name: string;
+  avatar: string | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
 }
@@ -1362,7 +1363,15 @@ export default function MeetingRoom({
                 {!cameraEnabled && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
                     <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-                      V
+                      {localParticipant?.avatar ? (
+                        <img
+                          src={localParticipant.avatar}
+                          alt={localParticipant.name}
+                          className="h-full w-full rounded-full object-cover"
+                        />
+                      ) : (
+                        (localParticipant?.name?.charAt(0).toUpperCase() ?? "?")
+                      )}
                     </div>
                   </div>
                 )}
@@ -1589,7 +1598,15 @@ export default function MeetingRoom({
                     >
                       {/* Avatar */}
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E7F8EF] text-sm font-semibold text-[#1E8E5A]">
-                        {participant.name?.charAt(0).toUpperCase() ?? "?"}
+                        {participant.avatar ? (
+                          <img
+                            src={participant.avatar}
+                            alt={participant.name}
+                            className="h-full w-full rounded-full object-cover"
+                          />
+                        ) : (
+                          (participant.name?.charAt(0).toUpperCase() ?? "?")
+                        )}
                       </div>
 
                       {/* Name */}
@@ -2136,7 +2153,15 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
       {!participant.cameraEnabled && (
         <div className="absolute inset-0 flex items-center justify-center bg-[#171A20]">
           <div className="flex h-28 w-28 items-center justify-center rounded-full bg-[#E7F8EF] text-4xl font-semibold text-[#1E8E5A]">
-            {participant.name?.charAt(0).toUpperCase() ?? "?"}
+            {participant.avatar ? (
+              <img
+                src={participant.avatar}
+                alt={participant.name}
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              (participant.name?.charAt(0).toUpperCase() ?? "?")
+            )}
           </div>
         </div>
       )}
@@ -2196,7 +2221,15 @@ function RemoteWaitingTile({ participant }: { participant: Participant }) {
     <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#E7F8EF] text-3xl font-semibold text-[#1E8E5A]">
-          {participant.name?.charAt(0).toUpperCase() ?? "?"}
+          {participant.avatar ? (
+            <img
+              src={participant.avatar}
+              alt={participant.name}
+              className="h-full w-full rounded-full object-cover"
+            />
+          ) : (
+            (participant.name?.charAt(0).toUpperCase() ?? "?")
+          )}
         </div>
 
         <p className="mt-4 text-sm text-white/50">Connecting...</p>
