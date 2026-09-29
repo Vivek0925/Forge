@@ -23,7 +23,16 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
   const { openMeeting } = useActiveMeeting();
 
   async function handleJoinMeeting() {
-    const code = meetingCode.trim();
+    const input = meetingCode.trim();
+    let code = input;
+
+    try {
+      const url = new URL(input);
+      const pathParts = url.pathname.split("/").filter(Boolean);
+      code = pathParts.at(-1) ?? input;
+    } catch {
+      // Treat non-URL input as a meeting code.
+    }
 
     if (!code) {
       setJoinError("Enter a meeting code.");
