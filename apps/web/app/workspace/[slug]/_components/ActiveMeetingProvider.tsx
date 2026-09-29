@@ -10,7 +10,7 @@ import {
 
 interface ActiveMeeting {
   meetingId: string;
-  slug: string;
+  slug: string | null;
   meetingCode: string;
   hostId: string;
   source: "workspace" | "quick-join";

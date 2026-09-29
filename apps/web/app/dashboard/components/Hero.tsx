@@ -79,6 +79,44 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
     }
   }
 
+  async function handleQuickMeeting() {
+    setJoinError("");
+
+    try {
+      setJoining(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/meetings/quick`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to create quick meeting.");
+      }
+
+      openMeeting({
+        meetingId: data.meetingId,
+        slug: data.workspaceSlug,
+        meetingCode: data.meetingCode,
+        hostId: data.hostId,
+        source: "quick-join",
+      });
+    } catch (error) {
+      setJoinError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create quick meeting.",
+      );
+    } finally {
+      setJoining(false);
+    }
+  }
+
   return (
     <div className="flex w-full flex-col items-center justify-center text-center">
       <h1 className="max-w-[800px] text-[38px] font-light leading-[1.1] tracking-[-0.03em] text-[#14141C] sm:text-[48px] md:text-[64px] lg:text-[72px]">
@@ -109,7 +147,11 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
           </svg>
           Create workspace
         </button>
-        <button className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#DEDFE8] bg-transparent px-6 py-3 text-[15px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] sm:px-8 sm:text-[16px]">
+        <button
+          type="button"
+          onClick={handleQuickMeeting}
+          className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#DEDFE8] bg-transparent px-6 py-3 text-[15px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] sm:px-8 sm:text-[16px]"
+        >
           <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>

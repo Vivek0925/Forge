@@ -29,6 +29,11 @@ export class MeetingController {
     return this.meetingService.create(req.user.id, slug, dto);
   }
 
+  @Post('quick')
+  async createQuickMeeting(@Request() req: any) {
+    return this.meetingService.createQuick(req.user.id);
+  }
+
   @Patch(':id')
   async updateMeeting(
     @Param('id') id: string,
@@ -46,16 +51,10 @@ export class MeetingController {
     return this.meetingService.joinByCode(meetingCode, req.user.id);
   }
 
-  @Post(":id/cancel")
-async cancelMeeting(
-  @Param("id") id: string,
-  @Request() req: any,
-) {
-  return this.meetingService.cancel(
-    id,
-    req.user.id,
-  );
-}
+  @Post(':id/cancel')
+  async cancelMeeting(@Param('id') id: string, @Request() req: any) {
+    return this.meetingService.cancel(id, req.user.id);
+  }
 
   @Get(':id')
   async getMeeting(@Param('id') id: string) {

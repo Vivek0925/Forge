@@ -72,6 +72,24 @@ export class MeetingService {
     return meeting;
   }
 
+  async createQuick(userId: string) {
+    const meeting = await this.meetingRepository.create({
+      title: 'Quick Meeting',
+      status: 'ACTIVE',
+      startedAt: new Date(),
+      createdById: userId,
+      meetingCode: randomBytes(4).toString('hex').toUpperCase(),
+      isQuick: true,
+    });
+
+    return {
+      meetingId: meeting.id,
+      meetingCode: meeting.meetingCode,
+      hostId: userId,
+      workspaceSlug: null,
+    };
+  }
+
   async findById(id: string) {
     const meeting = await this.meetingRepository.findById(id);
 
@@ -144,7 +162,7 @@ export class MeetingService {
     return {
       meetingId: meeting.id,
       meetingCode: meeting.meetingCode,
-      workspaceSlug: meeting.workspace.slug,
+      workspaceSlug: meeting.workspace?.slug ?? null,
       hostId: meeting.createdBy.id,
     };
   }

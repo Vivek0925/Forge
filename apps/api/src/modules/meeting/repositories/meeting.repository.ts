@@ -12,9 +12,10 @@ export class MeetingRepository {
     scheduledAt?: Date;
     startedAt?: Date;
     status: 'SCHEDULED' | 'ACTIVE';
-    workspaceId: string;
+    workspaceId?: string;
     createdById: string;
     meetingCode: string;
+    isQuick?: boolean;
   }) {
     return this.prisma.meeting.create({
       data: {
@@ -23,9 +24,10 @@ export class MeetingRepository {
         scheduledAt: data.scheduledAt,
         startedAt: data.startedAt,
         status: data.status,
-        workspaceId: data.workspaceId,
+        ...(data.workspaceId ? { workspaceId: data.workspaceId } : {}),
         createdById: data.createdById,
         meetingCode: data.meetingCode,
+        isQuick: data.isQuick ?? false,
       },
 
       include: {
@@ -194,47 +196,47 @@ export class MeetingRepository {
   }
 
   update(
-  id: string,
-  data: {
-    title?: string;
-    description?: string;
-    scheduledAt?: Date;
-  },
-) {
-  return this.prisma.meeting.update({
-    where: {
-      id,
-    },
-
+    id: string,
     data: {
-      title: data.title,
-      description: data.description,
-      scheduledAt: data.scheduledAt,
+      title?: string;
+      description?: string;
+      scheduledAt?: Date;
     },
-
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
+  ) {
+    return this.prisma.meeting.update({
+      where: {
+        id,
       },
 
-      participants: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
+      data: {
+        title: data.title,
+        description: data.description,
+        scheduledAt: data.scheduledAt,
+      },
+
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
             },
           },
         },
       },
-    },
-  });
-}
+    });
+  }
 
   end(id: string) {
     return this.prisma.meeting.update({
@@ -271,40 +273,46 @@ export class MeetingRepository {
     });
   }
 
+  delete(id: string) {
+    return this.prisma.meeting.delete({
+      where: { id },
+    });
+  }
+
   cancel(id: string) {
-  return this.prisma.meeting.update({
-    where: {
-      id,
-    },
-
-    data: {
-      status: "CANCELLED",
-      endedAt: new Date(),
-    },
-
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
+    return this.prisma.meeting.update({
+      where: {
+        id,
       },
 
-      participants: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
+      data: {
+        status: 'CANCELLED',
+        endedAt: new Date(),
+      },
+
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+
+        participants: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
             },
           },
         },
       },
-    },
-  });
-}
+    });
+  }
 
   async join(meetingId: string, userId: string) {
     return this.prisma.meetingParticipant.upsert({
@@ -352,18 +360,18 @@ export class MeetingRepository {
       },
     });
   }
-  
+
   async updateCalendarEventId(
-  meetingId: string,
-  googleCalendarEventId: string,
-) {
-  return this.prisma.meeting.update({
-    where: {
-      id: meetingId,
-    },
-    data: {
-      googleCalendarEventId,
-    },
-  });
-}
+    meetingId: string,
+    googleCalendarEventId: string,
+  ) {
+    return this.prisma.meeting.update({
+      where: {
+        id: meetingId,
+      },
+      data: {
+        googleCalendarEventId,
+      },
+    });
+  }
 }

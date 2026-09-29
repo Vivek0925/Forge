@@ -23,7 +23,7 @@ import { useMeeting } from "@/hooks/useMeeting";
 import { socket } from "@/lib/socket";
 
 interface MeetingRoomProps {
-  slug: string;
+  slug: string | null;
   meetingId: string;
   meetingCode: string;
   hostId: string;
@@ -812,7 +812,9 @@ export default function MeetingRoom({
     }
 
     window.location.href =
-      source === "quick-join" ? "/dashboard" : `/workspace/${slug}/meetings`;
+      source === "quick-join"
+        ? "/dashboard"
+        : `/workspace/${slug ?? ""}/meetings`;
   }
 
   const endMeeting = () => {

@@ -319,9 +319,7 @@ export default function Meetings({ slug }: MeetingsProps) {
               }`}
             >
               <CalendarDays size={16} />
-              {calendarConnected
-                ? "Calendar connected"
-                : "Connect calendar"}
+              {calendarConnected ? "Calendar connected" : "Connect calendar"}
             </button>
 
             <button

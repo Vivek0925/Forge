@@ -389,7 +389,7 @@ export class RealtimeGateway
       data.meetingId,
     );
 
-    if (updatedMeeting) {
+    if (updatedMeeting?.workspaceId) {
       this.emitMeetingUpdated(updatedMeeting.workspaceId, updatedMeeting.id);
     }
 
@@ -710,18 +710,22 @@ export class RealtimeGateway
 
     const endedAt = new Date();
 
-    await this.prisma.meeting.update({
-      where: {
-        id: data.meetingId,
-      },
+    if (meeting.isQuick) {
+      await this.meetingRepository.delete(data.meetingId);
+    } else {
+      await this.prisma.meeting.update({
+        where: {
+          id: data.meetingId,
+        },
 
-      data: {
-        status: 'ENDED',
-        endedAt,
-      },
-    });
+        data: {
+          status: 'ENDED',
+          endedAt,
+        },
+      });
 
-    this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
+      this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
+    }
 
     /*
      * Tell everyone that the meeting ended.
@@ -739,7 +743,7 @@ export class RealtimeGateway
     this.meetingRoomService.clearMeeting(data.meetingId);
 
     this.logger.log(
-      `Meeting ended: ${data.meetingId} by ${socket.data.currentUser.name}`,
+      `${meeting.isQuick ? 'Quick meeting removed' : 'Meeting ended'}: ${data.meetingId} by ${socket.data.currentUser.name}`,
     );
   }
 
@@ -830,7 +834,7 @@ export class RealtimeGateway
 
     // Make sure the meeting belongs to the workspace
     // the socket is currently connected to.
-    if (meeting.workspace.slug !== data.workspaceSlug) {
+    if (!meeting.workspace || meeting.workspace.slug !== data.workspaceSlug) {
       return;
     }
 
@@ -847,7 +851,8 @@ export class RealtimeGateway
 
     if (!meeting) return;
 
-    if (meeting.workspace.slug !== data.workspaceSlug) return;
+    if (!meeting.workspace || meeting.workspace.slug !== data.workspaceSlug)
+      return;
 
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
@@ -862,12 +867,17 @@ export class RealtimeGateway
 
     if (!meeting) return;
 
-    if (meeting.workspace.slug !== data.workspaceSlug) return;
+    if (!meeting.workspace || meeting.workspace.slug !== data.workspaceSlug)
+      return;
 
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
 
-  private emitMeetingUpdated(workspaceId: string, meetingId: string) {
+  private emitMeetingUpdated(workspaceId: string | null, meetingId: string) {
+    if (!workspaceId) {
+      return;
+    }
+
     this.server.to(`workspace:${workspaceId}`).emit('meeting:updated', {
       meetingId,
     });
@@ -890,13 +900,15 @@ export class RealtimeGateway
       return;
     }
 
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+      select: {
+        createdById: true,
+        isQuick: true,
+      },
+    });
+
     await this.meetingRepository.leave(meetingId, participant.userId);
-
-    const updatedMeeting = await this.meetingRepository.findById(meetingId);
-
-    if (updatedMeeting) {
-      this.emitMeetingUpdated(updatedMeeting.workspaceId, updatedMeeting.id);
-    }
 
     /*
      * Remove from server-side room.
@@ -904,11 +916,28 @@ export class RealtimeGateway
 
     const participants = this.meetingRoomService.leave(meetingId, socket.id);
 
+    const shouldRemoveQuickMeeting =
+      meeting?.isQuick &&
+      (participant.userId === meeting.createdById || participants.length === 0);
+
+    if (shouldRemoveQuickMeeting) {
+      await this.meetingRepository.delete(meetingId);
+    }
+
     /*
      * Remove from Socket.IO room.
      */
 
     socket.leave(`meeting:${meetingId}`);
+
+    if (shouldRemoveQuickMeeting) {
+      this.server.to(`meeting:${meetingId}`).emit('meeting:ended', {
+        meetingId,
+        endedAt: new Date().toISOString(),
+      });
+      this.meetingRoomService.clearMeeting(meetingId);
+      return;
+    }
 
     /*
      * Tell everyone else that this exact
@@ -928,6 +957,12 @@ export class RealtimeGateway
     this.server.to(`meeting:${meetingId}`).emit('meeting:participants', {
       participants,
     });
+
+    const updatedMeeting = await this.meetingRepository.findById(meetingId);
+
+    if (updatedMeeting?.workspaceId) {
+      this.emitMeetingUpdated(updatedMeeting.workspaceId, updatedMeeting.id);
+    }
 
     this.logger.log(
       `${participant.name} left meeting ${meetingId} (${socket.id})`,
