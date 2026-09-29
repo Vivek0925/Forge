@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res, Get, UseGuards, ExecutionContext, Query} from '@nestjs/common';
+import { Body, Controller, Post, Res, Get, UseGuards, ExecutionContext, Query, Header} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -147,8 +147,9 @@ return res.redirect(
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
-  getMe(@CurrentUser() user: CurrentUserData) {
-    return user;
-  }
+@Header('Cache-Control', 'no-store')
+@UseGuards(JwtAuthGuard)
+getMe(@CurrentUser() user: CurrentUserData) {
+  return user;
+}
 }
