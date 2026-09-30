@@ -11,6 +11,7 @@ export interface MeetingParticipant {
   avatar: string | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing: boolean;
 }
 
 interface UseMeetingOptions {
@@ -18,6 +19,7 @@ interface UseMeetingOptions {
   stream: MediaStream | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing: boolean;
   shouldJoin: boolean;
 }
 
@@ -26,6 +28,7 @@ export function useMeeting({
   stream,
   micEnabled,
   cameraEnabled,
+  screenSharing,
   shouldJoin,
 }: UseMeetingOptions) {
   const [participants, setParticipants] = useState<MeetingParticipant[]>([]);
@@ -475,6 +478,7 @@ export function useMeeting({
                 name: updated.name,
                 micEnabled: updated.micEnabled,
                 cameraEnabled: updated.cameraEnabled,
+                screenSharing: updated.screenSharing,
               }
             : participant,
         ),
@@ -778,8 +782,9 @@ export function useMeeting({
       meetingId,
       micEnabled,
       cameraEnabled,
+      screenSharing,
     });
-  }, [meetingId, shouldJoin, micEnabled, cameraEnabled]);
+  }, [meetingId, shouldJoin, micEnabled, cameraEnabled, screenSharing]);
 
   /*
    * =========================================================

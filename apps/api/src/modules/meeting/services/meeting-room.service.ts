@@ -7,6 +7,7 @@ export interface MeetingParticipant {
   avatar: string | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing: boolean;
 }
 
 @Injectable()
@@ -61,6 +62,7 @@ export class MeetingRoomService {
     state: {
       micEnabled?: boolean;
       cameraEnabled?: boolean;
+      screenSharing?: boolean;
     },
   ): MeetingParticipant | undefined {
     const room = this.rooms.get(meetingId);
@@ -82,6 +84,9 @@ export class MeetingRoomService {
       }),
       ...(state.cameraEnabled !== undefined && {
         cameraEnabled: state.cameraEnabled,
+      }),
+      ...(state.screenSharing !== undefined && {
+        screenSharing: state.screenSharing,
       }),
     };
 

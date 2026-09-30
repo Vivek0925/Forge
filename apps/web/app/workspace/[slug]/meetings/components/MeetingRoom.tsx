@@ -48,6 +48,7 @@ interface RemoteVideoProps {
   stream: MediaStream | undefined;
   participant: Participant;
   hostId: string;
+  isStage: boolean;
 }
 
 interface MeetingChatMessage {
@@ -204,6 +205,7 @@ export default function MeetingRoom({
     stream,
     micEnabled,
     cameraEnabled,
+    screenSharing: isScreenSharing,
     shouldJoin: joined,
   });
 
@@ -857,6 +859,12 @@ export default function MeetingRoom({
     (participant) => participant.socketId !== localSocketId,
   );
 
+  const remoteScreenSharer = remoteParticipants.find(
+    (participant) => participant.screenSharing,
+  );
+
+  const hasSharedScreen = isScreenSharing || !!remoteScreenSharer;
+
   /*
    * The participant count should represent
    * actual users in the meeting.
@@ -865,8 +873,9 @@ export default function MeetingRoom({
 
   const totalVideoTiles = 1 + remoteParticipants.length;
 
-  const gridClass =
-    totalVideoTiles === 1
+  const gridClass = hasSharedScreen
+    ? "grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(120px,28%)] md:grid-cols-[minmax(0,1fr)_minmax(180px,24%)] md:grid-rows-1"
+    : totalVideoTiles === 1
       ? "grid-cols-1"
       : totalVideoTiles === 2
         ? "grid-cols-1 md:grid-cols-2"
@@ -1302,7 +1311,11 @@ export default function MeetingRoom({
           {/* LOCAL VIDEO */}
           {/* ============================================= */}
 
-          <div className="relative min-h-0 overflow-hidden rounded-2xl bg-[#171A20] sm:rounded-3xl">
+          <div
+            className={`relative min-h-0 overflow-hidden rounded-2xl bg-[#171A20] sm:rounded-3xl ${
+              hasSharedScreen ? (isScreenSharing ? "order-1" : "order-2") : ""
+            }`}
+          >
             {loading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#171A20]">
                 <div className="text-center">
@@ -1357,7 +1370,9 @@ export default function MeetingRoom({
                   autoPlay
                   muted
                   playsInline
-                  className={`h-full w-full object-cover ${
+                  className={`h-full w-full ${
+                    isScreenSharing ? "object-contain" : "object-cover"
+                  } ${
                     isScreenSharing ? "" : "-scale-x-100"
                   } ${cameraEnabled ? "block" : "hidden"}`}
                 />
@@ -1415,6 +1430,7 @@ export default function MeetingRoom({
                   <RemoteWaitingTile
                     key={participant.userId}
                     participant={participant}
+                    isStage={hasSharedScreen && participant.screenSharing}
                   />
                 );
               }
@@ -1425,6 +1441,7 @@ export default function MeetingRoom({
                   stream={remoteStream}
                   participant={participant}
                   hostId={hostId}
+                  isStage={hasSharedScreen && participant.screenSharing}
                 />
               );
             })}
@@ -2030,7 +2047,12 @@ export default function MeetingRoom({
 /* REMOTE VIDEO */
 /* ========================================================= */
 
-function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
+function RemoteVideo({
+  stream,
+  participant,
+  hostId,
+  isStage,
+}: RemoteVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -2134,7 +2156,11 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
   }, [participant.cameraEnabled, stream]);
 
   return (
-    <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+    <div
+      className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
+        isStage ? "order-1" : "order-2"
+      }`}
+    >
       {/* ================================================= */}
       {/* VIDEO */}
       {/* ================================================= */}
@@ -2143,9 +2169,9 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
         ref={videoRef}
         autoPlay
         playsInline
-        className={`h-full w-full object-cover ${
-          participant.cameraEnabled ? "block" : "hidden"
-        }`}
+        className={`h-full w-full ${
+          isStage ? "object-contain" : "object-cover"
+        } ${participant.cameraEnabled ? "block" : "hidden"}`}
       />
 
       {/* ================================================= */}
@@ -2218,9 +2244,19 @@ function RemoteVideo({ stream, participant, hostId }: RemoteVideoProps) {
 /* REMOTE WAITING TILE */
 /* ========================================================= */
 
-function RemoteWaitingTile({ participant }: { participant: Participant }) {
+function RemoteWaitingTile({
+  participant,
+  isStage,
+}: {
+  participant: Participant;
+  isStage: boolean;
+}) {
   return (
-    <div className="relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20]">
+    <div
+      className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
+        isStage ? "order-1" : "order-2"
+      }`}
+    >
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#E7F8EF] text-3xl font-semibold text-[#1E8E5A]">
           {participant.avatar ? (

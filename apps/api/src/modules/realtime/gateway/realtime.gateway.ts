@@ -381,6 +381,7 @@ export class RealtimeGateway
       avatar: currentUser.avatar,
       micEnabled: true,
       cameraEnabled: true,
+      screenSharing: false,
     });
 
     await this.meetingRepository.join(data.meetingId, currentUser.id);
@@ -439,6 +440,7 @@ export class RealtimeGateway
         avatar: currentUser.avatar,
         micEnabled: true,
         cameraEnabled: true,
+        screenSharing: false,
       },
     });
 
@@ -625,6 +627,7 @@ export class RealtimeGateway
       meetingId: string;
       micEnabled?: boolean;
       cameraEnabled?: boolean;
+      screenSharing?: boolean;
     },
 
     @ConnectedSocket()
@@ -650,6 +653,7 @@ export class RealtimeGateway
       {
         micEnabled: data.micEnabled,
         cameraEnabled: data.cameraEnabled,
+        screenSharing: data.screenSharing,
       },
     );
 
