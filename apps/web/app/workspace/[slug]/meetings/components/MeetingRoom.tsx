@@ -915,13 +915,14 @@ export default function MeetingRoom({
   const layoutGap = 12;
   const availableWidth = participantGridSize.width || 1200;
   const availableHeight = participantGridSize.height || 700;
-  const preferredColumns = Math.sqrt(
-    (layoutParticipantCount * availableWidth) /
-      Math.max(1, availableHeight * (16 / 9)),
-  );
+  const balancedColumns = Math.ceil(Math.sqrt(layoutParticipantCount));
+  const widthLimitedColumns = Math.max(1, Math.floor(availableWidth / 240));
+  const heightLimitedColumns = Math.max(1, Math.floor(availableHeight / 180));
   const layoutColumns = Math.min(
     layoutParticipantCount,
-    Math.max(layoutParticipantCount > 1 ? 2 : 1, Math.round(preferredColumns)),
+    balancedColumns,
+    widthLimitedColumns,
+    heightLimitedColumns,
   );
   const layoutRows = Math.ceil(layoutParticipantCount / layoutColumns);
   const sharedTileCount = Math.max(1, totalVideoTiles - 1);
