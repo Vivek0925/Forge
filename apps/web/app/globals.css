@@ -80,6 +80,20 @@ img {
   padding-block: 8rem;
 }
 
+.meeting-shared-grid {
+  grid-template-columns: repeat(var(--meeting-tile-count), minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(84px, 26%);
+}
+
+.meeting-shared-stage {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.meeting-shared-tile {
+  grid-row: 2;
+}
+
 @media (min-width: 1024px) {
   .section {
     padding-block: 10rem;
