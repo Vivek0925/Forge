@@ -43,6 +43,8 @@ export function useMeeting({
 
   const streamRef = useRef<MediaStream | null>(stream);
 
+  const activeVideoTrackRef = useRef<MediaStreamTrack | null>(null);
+
   const peerConnections = useRef<Record<string, RTCPeerConnection>>({});
 
   const pendingIceCandidates = useRef<Record<string, RTCIceCandidateInit[]>>(
@@ -61,6 +63,7 @@ export function useMeeting({
 
   useEffect(() => {
     streamRef.current = stream;
+    activeVideoTrackRef.current = null;
 
     if (!stream) {
       return;
@@ -126,15 +129,18 @@ export function useMeeting({
     const senders = peer.getSenders();
 
     localStream.getTracks().forEach((track) => {
+      const outgoingTrack =
+        track.kind === "video" ? (activeVideoTrackRef.current ?? track) : track;
+
       const alreadyAdded = senders.some(
-        (sender) => sender.track?.id === track.id,
+        (sender) => sender.track?.id === outgoingTrack.id,
       );
 
       if (alreadyAdded) {
         return;
       }
 
-      peer.addTrack(track, localStream);
+      peer.addTrack(outgoingTrack, localStream);
     });
   }, []);
 
@@ -955,6 +961,8 @@ export function useMeeting({
    */
 
   const replaceVideoTrack = useCallback(async (track: MediaStreamTrack) => {
+    activeVideoTrackRef.current = track;
+
     const peers = Object.values(peerConnections.current);
 
     for (const peer of peers) {
