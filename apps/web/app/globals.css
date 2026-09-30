@@ -85,3 +85,22 @@ img {
     padding-block: 10rem;
   }
 }
+
+@media (min-width: 768px) {
+  .meeting-shared-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 24%);
+    grid-template-rows: repeat(
+      var(--meeting-tile-count),
+      minmax(0, 1fr)
+    );
+  }
+
+  .meeting-shared-stage {
+    grid-column: 1;
+    grid-row: 1 / -1;
+  }
+
+  .meeting-shared-tile {
+    grid-column: 2;
+  }
+}

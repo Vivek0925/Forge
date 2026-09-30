@@ -1304,8 +1304,15 @@ export default function MeetingRoom({
       >
         <div
           className={`grid h-full min-h-0 w-full auto-rows-fr ${
-            minimized ? "grid-cols-1" : gridClass
-          } gap-2 sm:gap-3`}
+            hasSharedScreen ? "meeting-shared-grid" : ""
+          } ${minimized ? "grid-cols-1" : gridClass} gap-2 sm:gap-3`}
+          style={
+            hasSharedScreen
+              ? ({
+                  "--meeting-tile-count": Math.max(1, totalVideoTiles - 1),
+                } as React.CSSProperties)
+              : undefined
+          }
         >
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
@@ -1313,7 +1320,13 @@ export default function MeetingRoom({
 
           <div
             className={`relative min-h-0 overflow-hidden rounded-2xl bg-[#171A20] sm:rounded-3xl ${
-              hasSharedScreen ? (isScreenSharing ? "order-1" : "order-2") : ""
+              hasSharedScreen
+                ? `${
+                    isScreenSharing
+                      ? "meeting-shared-stage order-1"
+                      : "meeting-shared-tile order-2"
+                  }`
+                : ""
             }`}
           >
             {loading && (
@@ -2158,7 +2171,7 @@ function RemoteVideo({
   return (
     <div
       className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
-        isStage ? "order-1" : "order-2"
+        isStage ? "meeting-shared-stage order-1" : "meeting-shared-tile order-2"
       }`}
     >
       {/* ================================================= */}
@@ -2254,7 +2267,7 @@ function RemoteWaitingTile({
   return (
     <div
       className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
-        isStage ? "order-1" : "order-2"
+        isStage ? "meeting-shared-stage order-1" : "meeting-shared-tile order-2"
       }`}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center">
