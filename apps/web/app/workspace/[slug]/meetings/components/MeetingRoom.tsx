@@ -42,6 +42,7 @@ interface Participant {
   avatar: string | null;
   micEnabled: boolean;
   cameraEnabled: boolean;
+  screenSharing: boolean;
 }
 
 interface RemoteVideoProps {
@@ -49,6 +50,7 @@ interface RemoteVideoProps {
   participant: Participant;
   hostId: string;
   isStage: boolean;
+  isSharedScreen: boolean;
 }
 
 interface MeetingChatMessage {
@@ -77,6 +79,8 @@ export default function MeetingRoom({
   hostId,
 }: MeetingRoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const participantGridRef = useRef<HTMLDivElement>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -122,6 +126,11 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  const [participantGridSize, setParticipantGridSize] = useState({
+    width: 0,
+    height: 0,
+  });
 
   const [participantsOpen, setParticipantsOpen] = useState(false);
 
@@ -185,6 +194,30 @@ export default function MeetingRoom({
       );
     };
   }, [chatOpen, participantsOpen, settingsOpen]);
+
+  useEffect(() => {
+    const grid = participantGridRef.current;
+
+    if (!grid) {
+      return;
+    }
+
+    const updateGridSize = () => {
+      const rect = grid.getBoundingClientRect();
+
+      setParticipantGridSize({
+        width: rect.width,
+        height: rect.height,
+      });
+    };
+
+    updateGridSize();
+
+    const observer = new ResizeObserver(updateGridSize);
+    observer.observe(grid);
+
+    return () => observer.disconnect();
+  }, [joined]);
 
   /*
    * =========================================================
@@ -873,15 +906,32 @@ export default function MeetingRoom({
 
   const totalVideoTiles = 1 + remoteParticipants.length;
 
-  const gridClass = hasSharedScreen
-    ? "grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(120px,28%)] md:grid-cols-[minmax(0,1fr)_minmax(180px,24%)] md:grid-rows-1"
-    : totalVideoTiles === 1
-      ? "grid-cols-1"
-      : totalVideoTiles === 2
-        ? "grid-cols-1 md:grid-cols-2"
-        : totalVideoTiles <= 4
-          ? "grid-cols-1 md:grid-cols-2"
-          : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+  const cameraOnCount =
+    (cameraEnabled ? 1 : 0) +
+    remoteParticipants.filter((participant) => participant.cameraEnabled)
+      .length;
+
+  const layoutParticipantCount = Math.max(1, cameraOnCount);
+  const layoutGap = 12;
+  const availableWidth = participantGridSize.width || 1200;
+  const availableHeight = participantGridSize.height || 700;
+  const preferredColumns = Math.sqrt(
+    (layoutParticipantCount * availableWidth) /
+      Math.max(1, availableHeight * (16 / 9)),
+  );
+  const layoutColumns = Math.min(
+    layoutParticipantCount,
+    Math.max(layoutParticipantCount > 1 ? 2 : 1, Math.round(preferredColumns)),
+  );
+  const layoutRows = Math.ceil(layoutParticipantCount / layoutColumns);
+  const sharedTileCount = Math.max(1, totalVideoTiles - 1);
+
+  const participantGridStyle = {
+    "--participant-columns": layoutColumns,
+    "--participant-rows": layoutRows,
+    "--meeting-tile-count": sharedTileCount,
+    "--participant-gap": `${layoutGap}px`,
+  } as React.CSSProperties;
 
   function startMiniDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!minimized) {
@@ -1303,16 +1353,11 @@ export default function MeetingRoom({
         }`}
       >
         <div
-          className={`grid h-full min-h-0 w-full auto-rows-fr ${
-            hasSharedScreen ? "meeting-shared-grid" : ""
-          } ${minimized ? "grid-cols-1" : gridClass} gap-2 sm:gap-3`}
-          style={
-            hasSharedScreen
-              ? ({
-                  "--meeting-tile-count": Math.max(1, totalVideoTiles - 1),
-                } as React.CSSProperties)
-              : undefined
-          }
+          ref={participantGridRef}
+          className={`grid h-full min-h-0 w-full gap-2 sm:gap-3 ${
+            hasSharedScreen ? "meeting-shared-grid" : "meeting-auto-grid"
+          } ${minimized ? "grid-cols-1" : ""}`}
+          style={participantGridStyle}
         >
           {/* ============================================= */}
           {/* LOCAL VIDEO */}
@@ -1326,7 +1371,11 @@ export default function MeetingRoom({
                       ? "meeting-shared-stage order-1"
                       : "meeting-shared-tile order-2"
                   }`
-                : ""
+                : `participant-grid-tile ${
+                    cameraEnabled
+                      ? "participant-video-tile"
+                      : "participant-identity-tile"
+                  }`
             }`}
           >
             {loading && (
@@ -1444,6 +1493,7 @@ export default function MeetingRoom({
                     key={participant.userId}
                     participant={participant}
                     isStage={hasSharedScreen && participant.screenSharing}
+                    isSharedScreen={hasSharedScreen}
                   />
                 );
               }
@@ -1455,6 +1505,7 @@ export default function MeetingRoom({
                   participant={participant}
                   hostId={hostId}
                   isStage={hasSharedScreen && participant.screenSharing}
+                  isSharedScreen={hasSharedScreen}
                 />
               );
             })}
@@ -2065,6 +2116,7 @@ function RemoteVideo({
   participant,
   hostId,
   isStage,
+  isSharedScreen,
 }: RemoteVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -2171,7 +2223,15 @@ function RemoteVideo({
   return (
     <div
       className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
-        isStage ? "meeting-shared-stage order-1" : "meeting-shared-tile order-2"
+        isSharedScreen
+          ? isStage
+            ? "meeting-shared-stage order-1"
+            : "meeting-shared-tile order-2"
+          : `participant-grid-tile ${
+              participant.cameraEnabled
+                ? "participant-video-tile"
+                : "participant-identity-tile"
+            }`
       }`}
     >
       {/* ================================================= */}
@@ -2260,14 +2320,24 @@ function RemoteVideo({
 function RemoteWaitingTile({
   participant,
   isStage,
+  isSharedScreen,
 }: {
   participant: Participant;
   isStage: boolean;
+  isSharedScreen: boolean;
 }) {
   return (
     <div
       className={`relative min-h-0 overflow-hidden rounded-3xl bg-[#171A20] ${
-        isStage ? "meeting-shared-stage order-1" : "meeting-shared-tile order-2"
+        isSharedScreen
+          ? isStage
+            ? "meeting-shared-stage order-1"
+            : "meeting-shared-tile order-2"
+          : `participant-grid-tile ${
+              participant.cameraEnabled
+                ? "participant-video-tile"
+                : "participant-identity-tile"
+            }`
       }`}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center">

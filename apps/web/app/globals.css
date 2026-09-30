@@ -80,6 +80,29 @@ img {
   padding-block: 8rem;
 }
 
+.meeting-auto-grid {
+  grid-template-columns: repeat(
+    var(--participant-columns),
+    minmax(0, 1fr)
+  );
+  grid-template-rows: repeat(
+    var(--participant-rows),
+    minmax(0, 1fr)
+  );
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.participant-video-tile {
+  order: 1;
+}
+
+.participant-identity-tile {
+  order: 2;
+  align-self: start;
+  aspect-ratio: 16 / 9;
+  max-height: 170px;
+}
+
 .meeting-shared-grid {
   grid-template-columns: repeat(var(--meeting-tile-count), minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr) minmax(84px, 26%);
@@ -116,5 +139,22 @@ img {
 
   .meeting-shared-tile {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 767px) {
+  .meeting-auto-grid {
+    grid-template-rows: repeat(
+      var(--participant-rows),
+      minmax(0, 1fr)
+    );
+  }
+
+  .meeting-shared-grid {
+    grid-template-columns: repeat(
+      var(--meeting-tile-count),
+      minmax(0, 1fr)
+    );
+    grid-template-rows: minmax(0, 1fr) minmax(84px, 26%);
   }
 }
