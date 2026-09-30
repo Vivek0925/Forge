@@ -139,6 +139,7 @@ img {
 
   .meeting-shared-tile {
     grid-column: 2;
+    grid-row: auto;
   }
 }
 
@@ -152,9 +153,16 @@ img {
 
   .meeting-shared-grid {
     grid-template-columns: repeat(
-      var(--meeting-tile-count),
+      min(3, var(--meeting-tile-count)),
       minmax(0, 1fr)
     );
-    grid-template-rows: minmax(0, 1fr) minmax(84px, 26%);
+    grid-template-rows: minmax(0, 1fr) repeat(
+      2,
+      minmax(84px, 22%)
+    );
+  }
+
+  .meeting-shared-tile {
+    grid-row: auto;
   }
 }

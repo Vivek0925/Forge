@@ -7,6 +7,8 @@ import {
   Camera,
   Copy,
   CameraOff,
+  ChevronLeft,
+  ChevronRight,
   Maximize,
   Minimize,
   MessageCircle,
@@ -126,6 +128,8 @@ export default function MeetingRoom({
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+
+  const [screenSharePage, setScreenSharePage] = useState(0);
 
   const [participantGridSize, setParticipantGridSize] = useState({
     width: 0,
@@ -906,6 +910,35 @@ export default function MeetingRoom({
 
   const totalVideoTiles = 1 + remoteParticipants.length;
 
+  const screenShareRailParticipants = uniqueParticipants.filter(
+    (participant) =>
+      !participant.screenSharing &&
+      !(participant.socketId === localSocketId && isScreenSharing),
+  );
+  const screenSharePageSize = 6;
+  const screenSharePageCount = Math.max(
+    1,
+    Math.ceil(screenShareRailParticipants.length / screenSharePageSize),
+  );
+  const visibleScreenShareParticipants = hasSharedScreen
+    ? screenShareRailParticipants.slice(
+        screenSharePage * screenSharePageSize,
+        (screenSharePage + 1) * screenSharePageSize,
+      )
+    : [];
+  const visibleScreenShareParticipantIds = new Set(
+    visibleScreenShareParticipants.map((participant) => participant.userId),
+  );
+  const localTileVisible =
+    !hasSharedScreen ||
+    isScreenSharing ||
+    (localParticipant &&
+      visibleScreenShareParticipantIds.has(localParticipant.userId));
+
+  useEffect(() => {
+    setScreenSharePage((page) => Math.min(page, screenSharePageCount - 1));
+  }, [screenSharePageCount]);
+
   const cameraOnCount =
     (cameraEnabled ? 1 : 0) +
     remoteParticipants.filter((participant) => participant.cameraEnabled)
@@ -925,7 +958,12 @@ export default function MeetingRoom({
     heightLimitedColumns,
   );
   const layoutRows = Math.ceil(layoutParticipantCount / layoutColumns);
-  const sharedTileCount = Math.max(1, totalVideoTiles - 1);
+  const sharedTileCount = Math.max(
+    1,
+    hasSharedScreen
+      ? visibleScreenShareParticipants.length
+      : totalVideoTiles - 1,
+  );
 
   const participantGridStyle = {
     "--participant-columns": layoutColumns,
@@ -1366,6 +1404,8 @@ export default function MeetingRoom({
 
           <div
             className={`relative min-h-0 overflow-hidden rounded-2xl bg-[#171A20] sm:rounded-3xl ${
+              !localTileVisible ? "hidden" : ""
+            } ${
               hasSharedScreen
                 ? `${
                     isScreenSharing
@@ -1485,32 +1525,73 @@ export default function MeetingRoom({
           {/* ============================================= */}
 
           {!minimized &&
-            remoteParticipants.map((participant) => {
-              const remoteStream = remoteStreams[participant.socketId];
+            remoteParticipants
+              .filter(
+                (participant) =>
+                  !hasSharedScreen ||
+                  participant.screenSharing ||
+                  visibleScreenShareParticipantIds.has(participant.userId),
+              )
+              .map((participant) => {
+                const remoteStream = remoteStreams[participant.socketId];
 
-              if (!remoteStream) {
+                if (!remoteStream) {
+                  return (
+                    <RemoteWaitingTile
+                      key={participant.userId}
+                      participant={participant}
+                      isStage={hasSharedScreen && participant.screenSharing}
+                      isSharedScreen={hasSharedScreen}
+                    />
+                  );
+                }
+
                 return (
-                  <RemoteWaitingTile
+                  <RemoteVideo
                     key={participant.userId}
+                    stream={remoteStream}
                     participant={participant}
+                    hostId={hostId}
                     isStage={hasSharedScreen && participant.screenSharing}
                     isSharedScreen={hasSharedScreen}
                   />
                 );
-              }
-
-              return (
-                <RemoteVideo
-                  key={participant.userId}
-                  stream={remoteStream}
-                  participant={participant}
-                  hostId={hostId}
-                  isStage={hasSharedScreen && participant.screenSharing}
-                  isSharedScreen={hasSharedScreen}
-                />
-              );
-            })}
+              })}
         </div>
+
+        {!minimized && hasSharedScreen && screenSharePageCount > 1 && (
+          <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#171A20]/90 p-1 shadow-xl backdrop-blur-md sm:bottom-6 sm:right-6">
+            <button
+              type="button"
+              onClick={() =>
+                setScreenSharePage((page) => Math.max(0, page - 1))
+              }
+              disabled={screenSharePage === 0}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/[0.1] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              title="Previous participants"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            <span className="px-1 text-[11px] text-white/60">
+              {screenSharePage + 1} / {screenSharePageCount}
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setScreenSharePage((page) =>
+                  Math.min(screenSharePageCount - 1, page + 1),
+                )
+              }
+              disabled={screenSharePage === screenSharePageCount - 1}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/[0.1] hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+              title="Next participants"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
       </main>
 
       {/* ================================================= */}
