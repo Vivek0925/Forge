@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
 
 function GithubIcon() {
   return (
@@ -16,10 +17,22 @@ function GithubIcon() {
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.42-.22-2.05H12v3.72h6.6c-.13 1.1-.85 2.75-2.45 3.86l-.02.15 3.56 2.76.25.02c2.26-2.09 3.58-5.17 3.58-8.46Z" />
-      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.78-2.93c-1.01.7-2.37 1.19-4.15 1.19-3.18 0-5.87-2.1-6.83-5.01l-.14.01-3.71 2.87-.05.14C3.24 21.3 7.28 24 12 24Z" />
-      <path fill="#FBBC05" d="M5.17 14.33a7.35 7.35 0 0 1-.39-2.33c0-.81.14-1.6.38-2.33l-.01-.16-3.75-2.9-.12.06A11.98 11.98 0 0 0 0 12c0 1.93.47 3.76 1.28 5.38l3.89-3.05Z" />
-      <path fill="#EA4335" d="M12 4.75c2.26 0 3.79.97 4.66 1.79l3.4-3.31C17.94 1.19 15.24 0 12 0 7.28 0 3.24 2.7 1.28 6.62l3.89 3.05c.96-2.91 3.65-4.92 6.83-4.92Z" />
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.82-.07-1.42-.22-2.05H12v3.72h6.6c-.13 1.1-.85 2.75-2.45 3.86l-.02.15 3.56 2.76.25.02c2.26-2.09 3.58-5.17 3.58-8.46Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.93-2.92l-3.78-2.93c-1.01.7-2.37 1.19-4.15 1.19-3.18 0-5.87-2.1-6.83-5.01l-.14.01-3.71 2.87-.05.14C3.24 21.3 7.28 24 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.17 14.33a7.35 7.35 0 0 1-.39-2.33c0-.81.14-1.6.38-2.33l-.01-.16-3.75-2.9-.12.06A11.98 11.98 0 0 0 0 12c0 1.93.47 3.76 1.28 5.38l3.89-3.05Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c2.26 0 3.79.97 4.66 1.79l3.4-3.31C17.94 1.19 15.24 0 12 0 7.28 0 3.24 2.7 1.28 6.62l3.89 3.05c.96-2.91 3.65-4.92 6.83-4.92Z"
+      />
     </svg>
   );
 }
@@ -29,66 +42,67 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
 
   const router = useRouter();
+  const { refreshUser } = useAuth();
 
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-const handleGoogleSignup = () => {
-  const returnTo =
-    new URLSearchParams(window.location.search).get("returnTo");
+  const handleGoogleSignup = () => {
+    const returnTo = new URLSearchParams(window.location.search).get(
+      "returnTo",
+    );
 
-  const url = new URL(
-    `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
-  );
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`);
 
-  if (returnTo) {
-    url.searchParams.set("returnTo", returnTo);
-  }
-
-  window.location.href = url.toString();
-};
-
-const handleGithubSignup = () => {
-  const returnTo =
-    new URLSearchParams(window.location.search).get("returnTo");
-
-  const url = new URL(
-    `${process.env.NEXT_PUBLIC_API_URL}/auth/github`,
-  );
-
-  if (returnTo) {
-    url.searchParams.set("returnTo", returnTo);
-  }
-
-  window.location.href = url.toString();
-};
-
- async function handleSubmit(e: React.FormEvent) {
-  e.preventDefault();
-
-  try {
-    setLoading(true);
-    setError("");
-
-    await login({
-  email,
-  password,
-});
-
-const params = new URLSearchParams(window.location.search);
-const returnTo = params.get("returnTo");
-
-router.push(returnTo || "/dashboard");
-  } catch (err) {
-    if (err instanceof Error) {
-      setError(err.message);
-    } else {
-      setError("Login failed");
+    if (returnTo) {
+      url.searchParams.set("returnTo", returnTo);
     }
-  } finally {
-    setLoading(false);
+
+    window.location.href = url.toString();
+  };
+
+  const handleGithubSignup = () => {
+    const returnTo = new URLSearchParams(window.location.search).get(
+      "returnTo",
+    );
+
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/auth/github`);
+
+    if (returnTo) {
+      url.searchParams.set("returnTo", returnTo);
+    }
+
+    window.location.href = url.toString();
+  };
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+      setError("");
+
+      await login({
+        email,
+        password,
+      });
+
+      await refreshUser();
+
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get("returnTo");
+
+      router.replace(returnTo || "/dashboard");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Login failed");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   return (
     <div className="flex w-full max-w-[380px] flex-col">
@@ -96,7 +110,9 @@ router.push(returnTo || "/dashboard");
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-text">
           <span className="h-[9px] w-[9px] rounded-[2px] bg-primary" />
         </span>
-        <span className="text-[15px] font-medium tracking-tight text-text">Forge</span>
+        <span className="text-[15px] font-medium tracking-tight text-text">
+          Forge
+        </span>
       </div>
 
       <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
@@ -154,7 +170,10 @@ router.push(returnTo || "/dashboard");
 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-[13px] font-medium text-text">
+            <label
+              htmlFor="password"
+              className="text-[13px] font-medium text-text"
+            >
               Password
             </label>
             <Link
@@ -176,14 +195,14 @@ router.push(returnTo || "/dashboard");
         </div>
 
         {error && (
-  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-    {error}
-  </div>
-)}
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
         <button
-  type="submit"
-  disabled={loading}
+          type="submit"
+          disabled={loading}
           className="mt-2 h-11 rounded-[var(--radius-sm)] bg-primary text-[14px] font-medium text-black transition-colors hover:bg-primary-hover"
         >
           {loading ? "Signing in..." : "Sign in"}
@@ -192,7 +211,10 @@ router.push(returnTo || "/dashboard");
 
       <p className="mt-8 text-center text-[13px] text-text-secondary">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-text hover:text-primary">
+        <Link
+          href="/signup"
+          className="font-medium text-text hover:text-primary"
+        >
           Join the beta
         </Link>
       </p>

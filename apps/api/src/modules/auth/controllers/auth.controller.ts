@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Res, Get, UseGuards, ExecutionContext, Query, Header} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Res,
+  Get,
+  UseGuards,
+  ExecutionContext,
+  Query,
+  Header,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -15,6 +25,17 @@ interface GoogleUser {
   name: string;
   avatar?: string;
 }
+
+const secureAuthCookie =
+  process.env.NODE_ENV === 'production' ||
+  process.env.FRONTEND_URL?.startsWith('https://') === true;
+
+const authCookieOptions = {
+  httpOnly: true,
+  secure: secureAuthCookie,
+  sameSite: secureAuthCookie ? ('none' as const) : ('lax' as const),
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
 
 class GoogleAuthGuard extends AuthGuard('google') {
   getAuthenticateOptions(context: ExecutionContext) {
@@ -65,12 +86,7 @@ export class AuthController {
   ) {
     const { token, user } = await this.authService.login(loginDto);
 
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('access_token', token, authCookieOptions);
 
     return {
       message: 'Login successful',
@@ -80,76 +96,62 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
+    res.clearCookie('access_token', authCookieOptions);
     return {
       message: 'Logout successful',
     };
   }
 
- @Get('google')
-@UseGuards(GoogleAuthGuard)
-googleLogin() {}
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  googleLogin() {}
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
- async googleCallback(
-  @CurrentUser() googleUser: GoogleUser,
-  @Query('state') state: string,
-  @Res({ passthrough: true }) res: Response,
-) {
+  async googleCallback(
+    @CurrentUser() googleUser: GoogleUser,
+    @Query('state') state: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { token } = await this.authService.googleLogin(googleUser);
 
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('access_token', token, authCookieOptions);
 
     const returnTo =
-  state && state.startsWith('/') && !state.startsWith('//')
-    ? state
-    : '/dashboard';
+      state && state.startsWith('/') && !state.startsWith('//')
+        ? state
+        : '/dashboard';
 
-return res.redirect(
-  `${process.env.FRONTEND_URL}${returnTo}`,
-);
+    return res.redirect(`${process.env.FRONTEND_URL}${returnTo}`);
   }
 
- @Get('github')
-@UseGuards(GithubAuthGuard)
-githubLogin() {}
+  @Get('github')
+  @UseGuards(GithubAuthGuard)
+  githubLogin() {}
 
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
- async githubCallback(
-  @CurrentUser() githubUser: GoogleUser,
-  @Query('state') state: string,
-  @Res({ passthrough: true }) res: Response,
-) {
+  async githubCallback(
+    @CurrentUser() githubUser: GoogleUser,
+    @Query('state') state: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { token } = await this.authService.githubLogin(githubUser);
 
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('access_token', token, authCookieOptions);
 
     const returnTo =
-  state && state.startsWith('/') && !state.startsWith('//')
-    ? state
-    : '/dashboard';
+      state && state.startsWith('/') && !state.startsWith('//')
+        ? state
+        : '/dashboard';
 
-return res.redirect(
-  `${process.env.FRONTEND_URL}${returnTo}`,
-);
+    return res.redirect(`${process.env.FRONTEND_URL}${returnTo}`);
   }
 
   @Get('me')
-@Header('Cache-Control', 'no-store')
-@UseGuards(JwtAuthGuard)
-getMe(@CurrentUser() user: CurrentUserData) {
-  return user;
-}
+  @Header('Cache-Control', 'no-store')
+  @UseGuards(JwtAuthGuard)
+  getMe(@CurrentUser() user: CurrentUserData) {
+    return user;
+  }
 }
