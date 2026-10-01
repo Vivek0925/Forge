@@ -86,7 +86,7 @@ export class RealtimeGateway
     const meetingId = this.meetingRoomService.getMeetingForSocket(socket.id);
 
     if (meetingId) {
-      this.removeMeetingParticipant(meetingId, socket);
+      this.removeMeetingParticipant(meetingId, socket, false);
     }
 
     /*
@@ -894,6 +894,7 @@ export class RealtimeGateway
   private async removeMeetingParticipant(
     meetingId: string,
     socket: AuthenticatedSocket,
+    removeQuickMeeting = true,
   ) {
     const participant = this.meetingRoomService.getParticipant(
       meetingId,
@@ -921,6 +922,7 @@ export class RealtimeGateway
     const participants = this.meetingRoomService.leave(meetingId, socket.id);
 
     const shouldRemoveQuickMeeting =
+      removeQuickMeeting &&
       meeting?.isQuick &&
       (participant.userId === meeting.createdById || participants.length === 0);
 
