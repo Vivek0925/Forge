@@ -176,7 +176,7 @@ export default function MessageItem({
           <button
             onClick={() => onReply(message)}
             className={clsx(
-              "absolute bottom-2 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-md transition-all",
+              "absolute bottom-2 z-20 hidden h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white shadow-md transition-all sm:flex",
               "opacity-100 group-hover:opacity-100 hover:bg-zinc-100 sm:opacity-0",
               isMine ? "-left-10" : "-right-10",
             )}
