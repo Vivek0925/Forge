@@ -23,6 +23,7 @@ import {
 
 import { useMeeting } from "@/hooks/useMeeting";
 import { socket } from "@/lib/socket";
+import { useActiveMeeting } from "../../_components/ActiveMeetingProvider";
 
 interface MeetingRoomProps {
   slug: string | null;
@@ -80,6 +81,8 @@ export default function MeetingRoom({
   onHide,
   hostId,
 }: MeetingRoomProps) {
+  const { closeMeeting } = useActiveMeeting();
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const participantGridRef = useRef<HTMLDivElement>(null);
@@ -835,6 +838,7 @@ export default function MeetingRoom({
      * Tell the socket layer first.
      */
     leaveSocketMeeting();
+    closeMeeting();
 
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());

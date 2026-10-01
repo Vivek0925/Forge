@@ -4,9 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
+
+const ACTIVE_MEETING_STORAGE_KEY = "forge-active-meeting";
 
 interface ActiveMeeting {
   meetingId: string;
@@ -41,6 +44,39 @@ export function ActiveMeetingProvider({ children }: { children: ReactNode }) {
   const [minimized, setMinimized] = useState(false);
 
   const [meetingHidden, setMeetingHidden] = useState(false);
+
+  const [storageHydrated, setStorageHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const storedMeeting = window.localStorage.getItem(
+        ACTIVE_MEETING_STORAGE_KEY,
+      );
+
+      if (storedMeeting) {
+        setActiveMeeting(JSON.parse(storedMeeting) as ActiveMeeting);
+      }
+    } catch {
+      window.localStorage.removeItem(ACTIVE_MEETING_STORAGE_KEY);
+    } finally {
+      setStorageHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!storageHydrated) {
+      return;
+    }
+
+    if (activeMeeting) {
+      window.localStorage.setItem(
+        ACTIVE_MEETING_STORAGE_KEY,
+        JSON.stringify(activeMeeting),
+      );
+    } else {
+      window.localStorage.removeItem(ACTIVE_MEETING_STORAGE_KEY);
+    }
+  }, [activeMeeting, storageHydrated]);
 
   const openMeeting = useCallback((meeting: ActiveMeeting) => {
     setActiveMeeting(meeting);
