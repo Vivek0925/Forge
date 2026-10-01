@@ -132,6 +132,8 @@ export default function MeetingRoom({
 
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
+  const [screenShareError, setScreenShareError] = useState<string | null>(null);
+
   const [screenSharePage, setScreenSharePage] = useState(0);
 
   const [participantGridSize, setParticipantGridSize] = useState({
@@ -635,8 +637,28 @@ export default function MeetingRoom({
       return;
     }
 
+    setScreenShareError(null);
+
     try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      if (!window.isSecureContext) {
+        setScreenShareError(
+          "Screen sharing requires a secure HTTPS connection.",
+        );
+
+        return;
+      }
+
+      const getDisplayMedia = navigator.mediaDevices?.getDisplayMedia;
+
+      if (!getDisplayMedia) {
+        setScreenShareError(
+          "Screen sharing is not supported by this mobile browser. Try Chrome or Safari on a desktop device.",
+        );
+
+        return;
+      }
+
+      const screenStream = await getDisplayMedia.call(navigator.mediaDevices, {
         video: true,
         audio: false,
       });
@@ -702,6 +724,9 @@ export default function MeetingRoom({
         return;
       }
 
+      setScreenShareError(
+        "Unable to start screen sharing. Check browser permissions and try again.",
+      );
       console.error("[ScreenShare] Failed to start:", error);
     }
   }
@@ -2137,6 +2162,23 @@ export default function MeetingRoom({
           </button>
         </div>
       </footer>
+
+      {screenShareError && (
+        <div
+          role="status"
+          className="absolute bottom-24 left-1/2 z-[60] flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-3 rounded-xl border border-amber-300/20 bg-[#252118] px-4 py-3 text-xs text-amber-100 shadow-xl sm:bottom-28"
+        >
+          <span>{screenShareError}</span>
+          <button
+            type="button"
+            onClick={() => setScreenShareError(null)}
+            className="shrink-0 text-amber-200/70 hover:text-amber-100"
+            aria-label="Dismiss screen sharing message"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* LEAVE OPTIONS */}
       {showLeaveOptions && (
