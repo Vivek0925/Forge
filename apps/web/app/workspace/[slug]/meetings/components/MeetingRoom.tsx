@@ -85,6 +85,28 @@ export default function MeetingRoom({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (hidden || minimized) {
+      return;
+    }
+
+    const documentElement = document.documentElement;
+    const body = document.body;
+    const previousDocumentOverflow = documentElement.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyOverscrollBehavior = body.style.overscrollBehavior;
+
+    documentElement.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+
+    return () => {
+      documentElement.style.overflow = previousDocumentOverflow;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+    };
+  }, [hidden, minimized]);
+
   const participantGridRef = useRef<HTMLDivElement>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -1256,7 +1278,7 @@ export default function MeetingRoom({
           ? "hidden"
           : minimized
             ? "fixed bottom-5 right-5 z-[100] flex h-[240px] w-[360px] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40"
-            : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0B0D11] text-white"
+            : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden overscroll-none bg-[#0B0D11] text-white"
       }
     >
       {/* ================================================= */}
