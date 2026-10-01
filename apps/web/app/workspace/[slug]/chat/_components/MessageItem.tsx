@@ -33,6 +33,10 @@ export default function MessageItem({
 
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
   const reactionOptions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   useEffect(() => {
@@ -76,11 +80,58 @@ export default function MessageItem({
     }
   }
 
-  function handleMessageTouchStart() {
+  function handleMessageTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    const touch = event.touches[0];
+
+    if (!touch) {
+      return;
+    }
+
     clearLongPressTimer();
+
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+
+    setSwipeOffset(0);
+
     longPressTimerRef.current = setTimeout(() => {
       setActionsOpen(true);
     }, 2000);
+  }
+
+  function handleMessageTouchMove(event: React.TouchEvent<HTMLDivElement>) {
+    const start = touchStartRef.current;
+    const touch = event.touches[0];
+
+    if (!start || !touch) {
+      return;
+    }
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+
+    if (Math.abs(deltaX) > 8 || Math.abs(deltaY) > 8) {
+      clearLongPressTimer();
+    }
+
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
+
+    setSwipeOffset(deltaX > 0 ? Math.min(deltaX, 72) : 0);
+  }
+
+  function handleMessageTouchEnd() {
+    clearLongPressTimer();
+
+    if (swipeOffset >= 56) {
+      onReply(message);
+    }
+
+    touchStartRef.current = null;
+    setSwipeOffset(0);
   }
 
   return (
@@ -136,7 +187,7 @@ export default function MessageItem({
 
           <div
             className={clsx(
-              "relative rounded-2xl border px-3 py-1.5 transition-colors sm:px-4",
+              "relative touch-pan-y rounded-2xl border px-3 py-1.5 transition-[transform,colors] sm:px-4",
               isMine
                 ? "border-[#BDE7CC] bg-[#EAFBF1] text-[#065F46]"
                 : "border border-zinc-200 bg-white text-zinc-700",
@@ -145,13 +196,19 @@ export default function MessageItem({
                   ? "rounded-tr-2xl rounded-br-md"
                   : "rounded-tl-2xl rounded-bl-md"),
             )}
+            style={{ transform: `translateX(${swipeOffset}px)` }}
             onContextMenu={(event) => {
               event.preventDefault();
               setActionsOpen(true);
             }}
             onTouchStart={handleMessageTouchStart}
-            onTouchEnd={clearLongPressTimer}
-            onTouchCancel={clearLongPressTimer}
+            onTouchMove={handleMessageTouchMove}
+            onTouchEnd={handleMessageTouchEnd}
+            onTouchCancel={() => {
+              clearLongPressTimer();
+              touchStartRef.current = null;
+              setSwipeOffset(0);
+            }}
           >
             <div
               ref={actionsRef}
