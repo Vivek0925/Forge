@@ -23,6 +23,8 @@ interface UploadedAttachment {
 }
 
 interface MessageInputProps {
+  workspaceSlug: string;
+
   replyingTo: Message | null;
 
   onCancelReply: () => void;
@@ -35,6 +37,7 @@ interface MessageInputProps {
 }
 
 export default function MessageInput({
+  workspaceSlug,
   replyingTo,
   onCancelReply,
   onSend,
@@ -55,7 +58,10 @@ export default function MessageInput({
     try {
       setUploading(true);
 
-      const uploaded = (await uploadFile(file)) as UploadedAttachment;
+      const uploaded = (await uploadFile(
+        file,
+        workspaceSlug,
+      )) as UploadedAttachment;
 
       setAttachments((prev) => [...prev, uploaded]);
     } catch (error) {

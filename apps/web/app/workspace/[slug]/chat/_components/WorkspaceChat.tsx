@@ -66,6 +66,7 @@ export default function WorkspaceChat({ slug }: WorkspaceChatProps) {
       </div>
 
       <MessageInput
+        workspaceSlug={slug}
         replyingTo={replyingTo}
         onCancelReply={() => setReplyingTo(null)}
         onSend={(content, attachments, replyToId) => {
