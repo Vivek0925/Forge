@@ -1055,8 +1055,8 @@ export default function MeetingRoom({
     const width = containerRef.current?.offsetWidth ?? 360;
     const height = containerRef.current?.offsetHeight ?? 220;
 
-    const maxX = window.innerWidth - width - 8;
-    const maxY = window.innerHeight - height - 8;
+    const maxX = Math.max(8, window.innerWidth - width - 8);
+    const maxY = Math.max(8, window.innerHeight - height - 8);
 
     const nextX = Math.min(
       Math.max(8, event.clientX - dragStateRef.current.offsetX),
@@ -1277,7 +1277,7 @@ export default function MeetingRoom({
         hidden
           ? "hidden"
           : minimized
-            ? "fixed bottom-5 right-5 z-[100] flex h-[240px] w-[360px] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40"
+            ? "fixed bottom-4 right-4 z-[100] flex h-[min(240px,calc(100dvh-2rem))] w-[min(360px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-white/[0.12] bg-[#0B0D11] text-white shadow-2xl ring-1 ring-black/40 sm:bottom-5 sm:right-5"
             : "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden overscroll-none bg-[#0B0D11] text-white"
       }
     >
@@ -1290,7 +1290,7 @@ export default function MeetingRoom({
         onPointerMove={moveMiniDrag}
         onPointerUp={endMiniDrag}
         onPointerCancel={endMiniDrag}
-        className={`flex shrink-0 select-none items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-3 backdrop-blur-xl ${
+        className={`flex shrink-0 touch-none select-none items-center justify-between border-b border-white/[0.08] bg-[#111318]/95 px-3 backdrop-blur-xl ${
           minimized ? "h-11 cursor-move" : "h-14 sm:h-16 sm:px-5"
         }`}
       >
