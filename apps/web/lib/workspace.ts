@@ -17,6 +17,14 @@ export interface Workspace {
   icon?: string;
 }
 
+export interface WorkspaceMember {
+  userId: string;
+  user: {
+    name: string;
+    avatar: string | null;
+  };
+}
+
 async function request<T>(endpoint: string, options: RequestInit): Promise<T> {
   return api<T>(endpoint, options);
 }
@@ -52,6 +60,12 @@ export function deleteWorkspace(workspaceId: string) {
 
 export function getMyWorkspaces() {
   return request<Workspace[]>("/workspaces", {
+    method: "GET",
+  });
+}
+
+export function getWorkspaceMembers(slug: string) {
+  return request<WorkspaceMember[]>(`/workspaces/${slug}/members`, {
     method: "GET",
   });
 }

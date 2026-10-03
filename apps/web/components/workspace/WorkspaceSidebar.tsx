@@ -2,18 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bell,
+  ChevronDown,
   FolderKanban,
   Grid2x2,
   LayoutDashboard,
   LayoutList,
   Settings,
   Sparkles,
-  Users,
   Wand2,
 } from "lucide-react";
+import { socket } from "@/lib/socket";
+import {
+  getWorkspaceMembers,
+  type WorkspaceMember,
+} from "@/lib/workspace";
 
 const navigation = [
   { label: "Overview", href: "", icon: LayoutDashboard },
@@ -42,9 +47,104 @@ export default function WorkspaceSidebar({
 }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [membersExpanded, setMembersExpanded] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [membersError, setMembersError] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+
+  useEffect(() => {
+    setMembersExpanded(false);
+    setMembers([]);
+    setOnlineUserIds(new Set());
+    setMembersLoading(true);
+    setMembersError(false);
+
+    let ignore = false;
+
+    async function loadMembers() {
+      try {
+        const data = await getWorkspaceMembers(slug);
+
+        if (!ignore) {
+          setMembers(data);
+        }
+      } catch {
+        if (!ignore) {
+          setMembersError(true);
+        }
+      } finally {
+        if (!ignore) {
+          setMembersLoading(false);
+        }
+      }
+    }
+
+    if (slug) {
+      void loadMembers();
+    } else {
+      setMembersLoading(false);
+    }
+
+    return () => {
+      ignore = true;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    const handlePresenceUpdate = (data: unknown) => {
+      if (
+        !data ||
+        typeof data !== "object" ||
+        !("users" in data) ||
+        !Array.isArray(data.users)
+      ) {
+        return;
+      }
+
+      const userIds = data.users.flatMap((user) => {
+        if (
+          user &&
+          typeof user === "object" &&
+          "userId" in user &&
+          typeof user.userId === "string"
+        ) {
+          return [user.userId];
+        }
+
+        return [];
+      });
+
+      setOnlineUserIds(new Set(userIds));
+    };
+
+    socket.on("presence:update", handlePresenceUpdate);
+
+    return () => {
+      socket.off("presence:update", handlePresenceUpdate);
+    };
+  }, [slug]);
+
+  const sortedMembers = useMemo(
+    () =>
+      [...members].sort((a, b) => {
+        const onlineDifference =
+          Number(onlineUserIds.has(b.userId)) -
+          Number(onlineUserIds.has(a.userId));
+
+        return onlineDifference || a.user.name.localeCompare(b.user.name);
+      }),
+    [members, onlineUserIds],
+  );
+
+  const activeMemberCount = members.filter((member) =>
+    onlineUserIds.has(member.userId),
+  ).length;
 
   function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -142,15 +242,88 @@ export default function WorkspaceSidebar({
         })}
       </nav>
 
-      <div className="mt-4 rounded-[22px] border border-[#DEDFE8] bg-[#FAFAF8] p-4">
-        <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
-          Members
+      <button
+        type="button"
+        aria-expanded={membersExpanded}
+        onClick={() => setMembersExpanded((expanded) => !expanded)}
+        className="mt-4 w-full rounded-[22px] border border-[#DEDFE8] bg-[#FAFAF8] p-4 text-left transition-colors hover:border-[#C9CDC6]"
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
+            Members
+          </div>
+          <ChevronDown
+            className={`h-4 w-4 text-[#5B5D6E] transition-transform duration-200 ${
+              membersExpanded ? "rotate-180" : ""
+            }`}
+            aria-hidden="true"
+          />
         </div>
+
         <div className="mt-2 flex items-center gap-2 text-[13px] text-[#5B5D6E]">
-          <Users className="h-4 w-4" />
-          Team access and invites will live here.
+          <span className="h-2 w-2 rounded-full bg-[#059669]" aria-hidden="true" />
+          {membersLoading
+            ? "Loading members..."
+            : membersError
+              ? "Unable to load members"
+              : `${activeMemberCount} active · ${members.length} total`}
         </div>
-      </div>
+
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+            membersExpanded ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="border-t border-[#DEDFE8] pt-3">
+              {membersError ? (
+                <div className="text-[12px] text-[#B91C1C]">
+                  Try again after refreshing the workspace.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sortedMembers.map((member) => {
+                    const isOnline = onlineUserIds.has(member.userId);
+                    const initials = member.user.name
+                      .split(/\s+/)
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase();
+
+                    return (
+                      <div
+                        key={member.userId}
+                        className="flex items-center gap-2.5 text-[13px] text-[#14141C]"
+                      >
+                        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#EAFBF1] text-[10px] font-medium text-[#065F46]">
+                          {member.user.avatar ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={member.user.avatar}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            initials
+                          )}
+                          <span
+                            className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-[#FAFAF8] ${
+                              isOnline ? "bg-[#059669]" : "bg-[#A7A9B5]"
+                            }`}
+                            aria-label={isOnline ? "Online" : "Offline"}
+                          />
+                        </div>
+                        <span className="truncate">{member.user.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </button>
     </aside>
   );
 }

@@ -80,6 +80,21 @@ async findMember(workspaceId: string, userId: string) {
   });
 }
 
+async findMembers(workspaceId: string) {
+  return this.prisma.workspaceMember.findMany({
+    where: { workspaceId },
+    select: {
+      userId: true,
+      user: {
+        select: {
+          name: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+}
+
 async findMemberByEmail(
   workspaceId: string,
   email: string,
@@ -123,5 +138,4 @@ async addMember(data: {
     });
   }
 }
-
 

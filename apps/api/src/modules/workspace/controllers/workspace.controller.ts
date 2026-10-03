@@ -54,6 +54,14 @@ export class WorkspaceController {
     return this.workspaceService.findMyWorkspaces(user.id);
   }
 
+  @Get(':slug/members')
+  findMembers(
+    @CurrentUser() user: CurrentUserData,
+    @Param('slug') slug: string,
+  ) {
+    return this.workspaceService.findMembers(user.id, slug);
+  }
+
   @Get(':slug')
   findOneBySlug(
     @CurrentUser() user: CurrentUserData,

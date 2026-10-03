@@ -83,6 +83,12 @@ export class WorkspaceService {
     return workspace;
   }
 
+  async findMembers(userId: string, slug: string) {
+    const workspace = await this.findAccessibleWorkspace(userId, slug);
+
+    return this.workspaceRepository.findMembers(workspace.id);
+  }
+
   async update(ownerId: string, workspaceId: string, dto: UpdateWorkspaceDto) {
     const workspace = await this.workspaceRepository.findById(workspaceId);
 
