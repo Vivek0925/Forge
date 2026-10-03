@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { useActiveMeeting } from "./ActiveMeetingProvider";
+import { api } from "@/lib/api";
 
 interface MeetingRoomLauncherProps {
   slug: string;
@@ -20,18 +21,10 @@ export default function MeetingRoomLauncher({
 
     async function loadMeeting() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/meetings/${meetingId}`,
-          {
-            credentials: "include",
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load meeting.");
-        }
-
-        const data = await response.json();
+        const data = await api<{
+          meetingCode: string;
+          createdBy: { id: string };
+        }>(`/meetings/${meetingId}`);
 
         if (cancelled) {
           return;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CreateWorkspaceModal } from "@/components/workspace";
+import { api } from "@/lib/api";
 import type { Workspace } from "@/lib/workspace";
 import { useActiveMeeting } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
 
@@ -43,25 +44,15 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
       setJoining(true);
       setJoinError("");
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/meetings/join-code`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            meetingCode: code,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to join meeting.");
-      }
+      const data = await api<{
+        meetingId: string;
+        workspaceSlug: string;
+        meetingCode: string;
+        hostId: string;
+      }>("/meetings/join-code", {
+        method: "POST",
+        body: JSON.stringify({ meetingCode: code }),
+      });
 
       openMeeting({
         meetingId: data.meetingId,
@@ -85,19 +76,12 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
     try {
       setJoining(true);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/meetings/quick`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to create quick meeting.");
-      }
+      const data = await api<{
+        meetingId: string;
+        workspaceSlug: string;
+        meetingCode: string;
+        hostId: string;
+      }>("/meetings/quick", { method: "POST" });
 
       openMeeting({
         meetingId: data.meetingId,

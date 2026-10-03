@@ -6,9 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { api } from "@/lib/api";
 
 type User = {
   id: string;
@@ -35,16 +33,7 @@ export function AuthProvider({
 
   async function refreshUser() {
     try {
-      const res = await fetch(`${API_URL}/auth/me`, {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        setUser(null);
-        return;
-      }
-
-      const data = await res.json();
+      const data = await api<User>("/auth/me");
       setUser(data);
     } catch {
       setUser(null);
@@ -53,16 +42,15 @@ export function AuthProvider({
     }
   }
 
- async function logout() {
-  try {
-    await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-  } finally {
-    setUser(null);
+  async function logout() {
+    try {
+      await api("/auth/logout", {
+        method: "POST",
+      });
+    } finally {
+      setUser(null);
+    }
   }
-}
 
   useEffect(() => {
     refreshUser();

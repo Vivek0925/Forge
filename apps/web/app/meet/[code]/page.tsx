@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useActiveMeeting } from "@/app/workspace/[slug]/_components/ActiveMeetingProvider";
 import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 
 export default function JoinMeetingPage({
   params,
@@ -25,25 +26,15 @@ if (!user) {
 }
 
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/meetings/join-code`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify({
-              meetingCode: code.toUpperCase(),
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error("Meeting not found or unavailable.");
-        }
-
-        const data = await response.json();
+        const data = await api<{
+          meetingId: string;
+          workspaceSlug: string;
+          meetingCode: string;
+          hostId: string;
+        }>("/meetings/join-code", {
+          method: "POST",
+          body: JSON.stringify({ meetingCode: code.toUpperCase() }),
+        });
 
         openMeeting({
           meetingId: data.meetingId,

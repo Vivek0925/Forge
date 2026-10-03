@@ -1,5 +1,4 @@
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { api } from "./api";
 
 export interface RegisterPayload {
   name: string;
@@ -16,21 +15,7 @@ async function request<T>(
   endpoint: string,
   options: RequestInit,
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    ...options,
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed");
-  }
-
-  return data;
+  return api<T>(endpoint, options);
 }
 
 export function register(data: RegisterPayload) {

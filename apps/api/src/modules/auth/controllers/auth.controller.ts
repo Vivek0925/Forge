@@ -42,6 +42,14 @@ const authCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+const csrfCookieOptions = {
+  httpOnly: false,
+  secure: secureAuthCookie,
+  sameSite: secureAuthCookie ? ('none' as const) : ('lax' as const),
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 const oauthCookieOptions = {
   httpOnly: true,
   secure: secureAuthCookie,
@@ -176,6 +184,13 @@ export class AuthController {
   @Post('register')
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Get('csrf-token')
+  csrfToken(@Res({ passthrough: true }) res: Response) {
+    const token = randomBytes(32).toString('base64url');
+    res.cookie('csrf_token', token, csrfCookieOptions);
+    return { csrfToken: token };
   }
 
   @Post('login')
