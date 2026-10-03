@@ -13,7 +13,7 @@ import { s3 } from './s3.client';
 export const MAX_UPLOAD_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_FILE_TYPES = new Map([
-  ['jpg', new Set(['image/jpeg'])],
+  ['jpg', new Set(['image/jpeg', 'image/jpg'])],
   ['jpeg', new Set(['image/jpeg'])],
   ['png', new Set(['image/png'])],
   ['gif', new Set(['image/gif'])],
@@ -95,14 +95,21 @@ export class StorageService {
 
     const key = `${folder}/${randomUUID()}.${extension}`;
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET,
-        Key: key,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      }),
-    );
+    try {
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET,
+          Key: key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+        }),
+      );
+    } catch (error) {
+      console.error('Failed to upload file to object storage', error);
+      throw new ServiceUnavailableException(
+        'File storage is temporarily unavailable. Please try again later.',
+      );
+    }
 
     return {
       fileName: file.originalname,

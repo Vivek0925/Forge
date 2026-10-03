@@ -66,7 +66,11 @@ export default function MessageInput({
       setAttachments((prev) => [...prev, uploaded]);
     } catch (error) {
       console.error(error);
-      alert("Failed to upload file.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload file.",
+      );
     } finally {
       setUploading(false);
 
