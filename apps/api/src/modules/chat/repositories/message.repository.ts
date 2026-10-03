@@ -21,6 +21,13 @@ interface CreateMessageInput {
 export class MessageRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findById(messageId: string) {
+    return this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { id: true, workspaceId: true },
+    });
+  }
+
   create({
     content,
     workspaceId,

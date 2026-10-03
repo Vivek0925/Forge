@@ -21,8 +21,10 @@ export class MeetingService {
   ) {}
 
   async create(userId: string, workspaceSlug: string, dto: CreateMeetingDto) {
-    const workspace =
-      await this.workspaceService.findWorkspaceBySlug(workspaceSlug);
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
     const scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : undefined;
 
@@ -100,6 +102,24 @@ export class MeetingService {
     return meeting;
   }
 
+  async findAccessibleById(id: string, userId: string) {
+    const meeting = await this.findById(id);
+
+    if (meeting.workspaceId) {
+      await this.workspaceService.findAccessibleWorkspaceById(
+        userId,
+        meeting.workspaceId,
+      );
+    } else if (
+      meeting.createdById !== userId &&
+      !meeting.participants.some((participant) => participant.userId === userId)
+    ) {
+      throw new NotFoundException('Meeting not found.');
+    }
+
+    return meeting;
+  }
+
   async update(id: string, userId: string, dto: UpdateMeetingDto) {
     const meeting = await this.findById(id);
 
@@ -159,6 +179,8 @@ export class MeetingService {
       throw new BadRequestException('Meeting has not started yet');
     }
 
+    await this.meetingRepository.join(meeting.id, userId);
+
     return {
       meetingId: meeting.id,
       meetingCode: meeting.meetingCode,
@@ -167,9 +189,11 @@ export class MeetingService {
     };
   }
 
-  async findWorkspaceMeetings(workspaceSlug: string) {
-    const workspace =
-      await this.workspaceService.findWorkspaceBySlug(workspaceSlug);
+  async findWorkspaceMeetings(userId: string, workspaceSlug: string) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
     /*
      * Only currently relevant meetings are shown.
@@ -181,8 +205,12 @@ export class MeetingService {
     return this.meetingRepository.findByWorkspace(workspace.id);
   }
 
-  async start(id: string) {
+  async start(id: string, userId: string) {
     const meeting = await this.findById(id);
+
+    if (meeting.createdById !== userId) {
+      throw new NotFoundException('Meeting not found.');
+    }
 
     if (meeting.status === 'ENDED') {
       throw new BadRequestException('Meeting has already ended');
@@ -195,8 +223,12 @@ export class MeetingService {
     return this.meetingRepository.start(id);
   }
 
-  async end(id: string) {
+  async end(id: string, userId: string) {
     const meeting = await this.findById(id);
+
+    if (meeting.createdById !== userId) {
+      throw new NotFoundException('Meeting not found.');
+    }
 
     if (meeting.status === 'ENDED') {
       throw new BadRequestException('Meeting has already ended');
@@ -227,6 +259,13 @@ export class MeetingService {
 
   async join(meetingId: string, userId: string) {
     const meeting = await this.findById(meetingId);
+
+    if (meeting.workspaceId) {
+      await this.workspaceService.findAccessibleWorkspaceById(
+        userId,
+        meeting.workspaceId,
+      );
+    }
 
     if (meeting.status === 'ENDED') {
       throw new BadRequestException('Meeting has ended');

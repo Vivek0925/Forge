@@ -57,23 +57,23 @@ export class MeetingController {
   }
 
   @Get(':id')
-  async getMeeting(@Param('id') id: string) {
-    return this.meetingService.findById(id);
+  async getMeeting(@Param('id') id: string, @Request() req: any) {
+    return this.meetingService.findAccessibleById(id, req.user.id);
   }
 
   @Get('workspace/:slug')
-  async getWorkspaceMeetings(@Param('slug') slug: string) {
-    return this.meetingService.findWorkspaceMeetings(slug);
+  async getWorkspaceMeetings(@Param('slug') slug: string, @Request() req: any) {
+    return this.meetingService.findWorkspaceMeetings(req.user.id, slug);
   }
 
   @Post(':id/start')
-  async startMeeting(@Param('id') id: string) {
-    return this.meetingService.start(id);
+  async startMeeting(@Param('id') id: string, @Request() req: any) {
+    return this.meetingService.start(id, req.user.id);
   }
 
   @Post(':id/end')
-  async endMeeting(@Param('id') id: string) {
-    return this.meetingService.end(id);
+  async endMeeting(@Param('id') id: string, @Request() req: any) {
+    return this.meetingService.end(id, req.user.id);
   }
 
   @Post(':id/join')

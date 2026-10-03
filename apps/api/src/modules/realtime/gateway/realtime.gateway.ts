@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 
 import { Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 
 import { PresenceService } from '../services/presence.service';
 import { SocketAuthService } from '../services/socket-auth.service';
@@ -26,6 +26,7 @@ import { ReactMessageDto } from '../../chat/dto/react-message.dto';
 
 import { MeetingRoomService } from '../../meeting/services/meeting-room.service';
 import { MeetingRepository } from '../../meeting/repositories/meeting.repository';
+import { WorkspaceService } from '../../workspace/services/workspace.service';
 
 @WebSocketGateway({
   cors: {
@@ -48,6 +49,7 @@ export class RealtimeGateway
     private readonly chatService: ChatService,
     private readonly meetingRoomService: MeetingRoomService,
     private readonly meetingRepository: MeetingRepository,
+    private readonly workspaceService: WorkspaceService,
   ) {}
 
   // =========================================================
@@ -61,7 +63,7 @@ export class RealtimeGateway
       socket.data.currentUser = currentUser;
 
       this.logger.log(`${currentUser.name} connected (${socket.id})`);
-    } catch (error) {
+    } catch {
       this.logger.warn(`Unauthorized socket connection: ${socket.id}`);
 
       socket.disconnect(true);
@@ -122,15 +124,14 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const workspace = await this.prisma.workspace.findUnique({
-      where: {
-        slug: dto.workspaceSlug,
-      },
-    });
-
-    if (!workspace) {
+    let workspace;
+    try {
+      workspace = await this.workspaceService.findAccessibleWorkspace(
+        socket.data.currentUser.id,
+        dto.workspaceSlug,
+      );
+    } catch {
       this.logger.warn(`Workspace not found: ${dto.workspaceSlug}`);
-
       return;
     }
 
@@ -165,13 +166,13 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
-    const workspace = await this.prisma.workspace.findUnique({
-      where: {
-        slug: dto.workspaceSlug,
-      },
-    });
-
-    if (!workspace) {
+    let workspace;
+    try {
+      workspace = await this.workspaceService.findAccessibleWorkspace(
+        socket.data.currentUser.id,
+        dto.workspaceSlug,
+      );
+    } catch {
       return;
     }
 
@@ -277,6 +278,11 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!(await this.isAuthorizedMeetingSocket(data.meetingId, socket))) {
+      socket.emit('meeting:error', { message: 'Meeting access denied' });
+      return;
+    }
+
     const meeting = await this.prisma.meeting.findUnique({
       where: {
         id: data.meetingId,
@@ -613,6 +619,9 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!this.meetingRoomService.getParticipant(data.meetingId, socket.id)) {
+      return;
+    }
     this.removeMeetingParticipant(data.meetingId, socket);
   }
 
@@ -695,6 +704,9 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!this.meetingRoomService.getParticipant(data.meetingId, socket.id)) {
+      return;
+    }
     const meeting = await this.prisma.meeting.findUnique({
       where: {
         id: data.meetingId,
@@ -766,6 +778,12 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!this.canSignal(data.targetSocketId, socket)) {
+      socket.emit('meeting:error', {
+        message: 'Signaling target is not authorized',
+      });
+      return;
+    }
     /*
      * Forward offer directly to the target.
      *
@@ -794,6 +812,12 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!this.canSignal(data.targetSocketId, socket)) {
+      socket.emit('meeting:error', {
+        message: 'Signaling target is not authorized',
+      });
+      return;
+    }
     this.server.to(data.targetSocketId).emit('webrtc:answer', {
       senderSocketId: socket.id,
       answer: data.answer,
@@ -815,6 +839,12 @@ export class RealtimeGateway
     @ConnectedSocket()
     socket: AuthenticatedSocket,
   ) {
+    if (!this.canSignal(data.targetSocketId, socket)) {
+      socket.emit('meeting:error', {
+        message: 'Signaling target is not authorized',
+      });
+      return;
+    }
     this.server.to(data.targetSocketId).emit('webrtc:ice-candidate', {
       senderSocketId: socket.id,
       candidate: data.candidate,
@@ -823,7 +853,7 @@ export class RealtimeGateway
 
   @SubscribeMessage('meeting:created')
   async handleMeetingCreated(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody()
     data: {
       meetingId: string;
@@ -842,12 +872,21 @@ export class RealtimeGateway
       return;
     }
 
+    try {
+      await this.workspaceService.findAccessibleWorkspace(
+        socket.data.currentUser.id,
+        data.workspaceSlug,
+      );
+    } catch {
+      return;
+    }
+
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
 
   @SubscribeMessage('meeting:cancelled')
   async handleMeetingCancelled(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody()
     data: { meetingId: string; workspaceSlug: string },
   ) {
@@ -857,13 +896,22 @@ export class RealtimeGateway
 
     if (!meeting.workspace || meeting.workspace.slug !== data.workspaceSlug)
       return;
+
+    try {
+      await this.workspaceService.findAccessibleWorkspace(
+        socket.data.currentUser.id,
+        data.workspaceSlug,
+      );
+    } catch {
+      return;
+    }
 
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
 
   @SubscribeMessage('meeting:updated')
   async handleMeetingUpdated(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody()
     data: { meetingId: string; workspaceSlug: string },
   ) {
@@ -873,6 +921,15 @@ export class RealtimeGateway
 
     if (!meeting.workspace || meeting.workspace.slug !== data.workspaceSlug)
       return;
+
+    try {
+      await this.workspaceService.findAccessibleWorkspace(
+        socket.data.currentUser.id,
+        data.workspaceSlug,
+      );
+    } catch {
+      return;
+    }
 
     this.emitMeetingUpdated(meeting.workspaceId, meeting.id);
   }
@@ -885,6 +942,59 @@ export class RealtimeGateway
     this.server.to(`workspace:${workspaceId}`).emit('meeting:updated', {
       meetingId,
     });
+  }
+
+  private async isAuthorizedMeetingSocket(
+    meetingId: string,
+    socket: AuthenticatedSocket,
+  ) {
+    const meeting = await this.prisma.meeting.findUnique({
+      where: { id: meetingId },
+      select: {
+        workspaceId: true,
+        createdById: true,
+        participants: {
+          where: { userId: socket.data.currentUser.id, leftAt: null },
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!meeting) {
+      return false;
+    }
+
+    if (!meeting.workspaceId) {
+      return (
+        meeting.createdById === socket.data.currentUser.id ||
+        meeting.participants.length > 0
+      );
+    }
+
+    try {
+      await this.workspaceService.findAccessibleWorkspaceById(
+        socket.data.currentUser.id,
+        meeting.workspaceId,
+      );
+      return true;
+    } catch {
+      return meeting.participants.length > 0;
+    }
+  }
+
+  private canSignal(targetSocketId: string, socket: AuthenticatedSocket) {
+    const meetingId = this.meetingRoomService.getMeetingForSocket(socket.id);
+    if (!meetingId) {
+      return false;
+    }
+
+    const sender = this.meetingRoomService.getParticipant(meetingId, socket.id);
+    const target = this.meetingRoomService.getParticipant(
+      meetingId,
+      targetSocketId,
+    );
+
+    return Boolean(sender && target);
   }
 
   // =========================================================

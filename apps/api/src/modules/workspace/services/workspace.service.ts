@@ -12,15 +12,12 @@ import {
 
 @Injectable()
 export class WorkspaceService {
-  constructor(
-    private readonly workspaceRepository: WorkspaceRepository,
-  ) {}
+  constructor(private readonly workspaceRepository: WorkspaceRepository) {}
 
   async create(ownerId: string, dto: CreateWorkspaceDto) {
     const slug = this.generateSlug(dto.name);
 
-    const existingWorkspace =
-      await this.workspaceRepository.findBySlug(slug);
+    const existingWorkspace = await this.workspaceRepository.findBySlug(slug);
 
     if (existingWorkspace) {
       throw new BadRequestException(
@@ -36,17 +33,16 @@ export class WorkspaceService {
     });
   }
 
- async findMyWorkspaces(userId: string) {
-  return this.workspaceRepository.findUserWorkspaces(userId);
-}
+  async findMyWorkspaces(userId: string) {
+    return this.workspaceRepository.findUserWorkspaces(userId);
+  }
 
   /**
    * Used internally by other modules
    * (Chat, Meetings, AI, Files, etc.)
    */
   async findWorkspaceBySlug(slug: string) {
-    const workspace =
-      await this.workspaceRepository.findBySlug(slug);
+    const workspace = await this.workspaceRepository.findBySlug(slug);
 
     if (!workspace) {
       throw new NotFoundException('Workspace not found.');
@@ -59,34 +55,36 @@ export class WorkspaceService {
    * Used by workspace REST endpoints.
    * Ensures the requester owns the workspace.
    */
- async findAccessibleWorkspace(
-  userId: string,
-  slug: string,
-) {
-  const workspace = await this.findWorkspaceBySlug(slug);
+  async findAccessibleWorkspace(userId: string, slug: string) {
+    const workspace = await this.findWorkspaceBySlug(slug);
 
-  const membership =
-    await this.workspaceRepository.findMember(
+    const membership = await this.workspaceRepository.findMember(
       workspace.id,
       userId,
     );
 
-  if (!membership) {
-    throw new NotFoundException(
-      'Workspace not found.',
-    );
+    if (!membership) {
+      throw new NotFoundException('Workspace not found.');
+    }
+
+    return workspace;
   }
 
-  return workspace;
-}
+  async findAccessibleWorkspaceById(userId: string, workspaceId: string) {
+    const workspace = await this.workspaceRepository.findById(workspaceId);
+    const membership = workspace
+      ? await this.workspaceRepository.findMember(workspace.id, userId)
+      : null;
 
-  async update(
-    ownerId: string,
-    workspaceId: string,
-    dto: UpdateWorkspaceDto,
-  ) {
-    const workspace =
-      await this.workspaceRepository.findById(workspaceId);
+    if (!workspace || !membership) {
+      throw new NotFoundException('Workspace not found.');
+    }
+
+    return workspace;
+  }
+
+  async update(ownerId: string, workspaceId: string, dto: UpdateWorkspaceDto) {
+    const workspace = await this.workspaceRepository.findById(workspaceId);
 
     if (!workspace || workspace.ownerId !== ownerId) {
       throw new NotFoundException('Workspace not found.');
@@ -94,13 +92,9 @@ export class WorkspaceService {
 
     const slug = this.generateSlug(dto.name);
 
-    const existingWorkspace =
-      await this.workspaceRepository.findBySlug(slug);
+    const existingWorkspace = await this.workspaceRepository.findBySlug(slug);
 
-    if (
-      existingWorkspace &&
-      existingWorkspace.id !== workspaceId
-    ) {
+    if (existingWorkspace && existingWorkspace.id !== workspaceId) {
       throw new BadRequestException(
         'A workspace with this name already exists.',
       );
@@ -113,8 +107,7 @@ export class WorkspaceService {
   }
 
   async delete(ownerId: string, workspaceId: string) {
-    const workspace =
-      await this.workspaceRepository.findById(workspaceId);
+    const workspace = await this.workspaceRepository.findById(workspaceId);
 
     if (!workspace || workspace.ownerId !== ownerId) {
       throw new NotFoundException('Workspace not found.');
