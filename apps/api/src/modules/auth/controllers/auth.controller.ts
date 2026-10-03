@@ -1,5 +1,6 @@
 import {
   Body,
+  CanActivate,
   Controller,
   Post,
   Res,
@@ -9,11 +10,13 @@ import {
   Query,
   Header,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { Request } from 'express';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { AuthService } from '../services/auth.service';
@@ -39,35 +42,130 @@ const authCookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+const oauthCookieOptions = {
+  httpOnly: true,
+  secure: secureAuthCookie,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 10 * 60 * 1000,
+};
+
+const oauthCookieClearOptions = {
+  httpOnly: true,
+  secure: secureAuthCookie,
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
+type OAuthProvider = 'google' | 'github';
+
+function isSafeReturnTo(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.includes('\\') &&
+    !/[\r\n]/.test(value)
+  );
+}
+
+function oauthStateCookieName(provider: OAuthProvider) {
+  return `oauth_${provider}_state`;
+}
+
+function oauthReturnToCookieName(provider: OAuthProvider) {
+  return `oauth_${provider}_return_to`;
+}
+
+function createOAuthState() {
+  return randomBytes(32).toString('base64url');
+}
+
+function matchesOAuthState(expected: unknown, received: unknown) {
+  if (typeof expected !== 'string' || typeof received !== 'string') {
+    return false;
+  }
+
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
+}
+
+function setOAuthInitiationCookies(
+  request: Request,
+  response: Response,
+  provider: OAuthProvider,
+) {
+  const state = createOAuthState();
+  const returnTo = isSafeReturnTo(request.query.returnTo)
+    ? request.query.returnTo
+    : '/dashboard';
+
+  response.cookie(oauthStateCookieName(provider), state, oauthCookieOptions);
+  response.cookie(
+    oauthReturnToCookieName(provider),
+    returnTo,
+    oauthCookieOptions,
+  );
+
+  return state;
+}
+
+class OAuthStateGuard implements CanActivate {
+  constructor(private readonly provider: OAuthProvider) {}
+
+  canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
+    const state = request.query.state;
+    const stateCookieName = oauthStateCookieName(this.provider);
+    const stateCookie = request.cookies?.[stateCookieName];
+
+    if (!matchesOAuthState(stateCookie, state)) {
+      response.clearCookie(stateCookieName, oauthCookieClearOptions);
+      response.clearCookie(
+        oauthReturnToCookieName(this.provider),
+        oauthCookieClearOptions,
+      );
+      throw new UnauthorizedException('Invalid OAuth state');
+    }
+
+    response.clearCookie(stateCookieName, oauthCookieClearOptions);
+    return true;
+  }
+}
+
+class GoogleOAuthStateGuard extends OAuthStateGuard {
+  constructor() {
+    super('google');
+  }
+}
+
+class GithubOAuthStateGuard extends OAuthStateGuard {
+  constructor() {
+    super('github');
+  }
+}
+
 class GoogleAuthGuard extends AuthGuard('google') {
   getAuthenticateOptions(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest();
-    const returnTo = request.query.returnTo;
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
-    return {
-      state:
-        typeof returnTo === 'string' &&
-        returnTo.startsWith('/') &&
-        !returnTo.startsWith('//')
-          ? returnTo
-          : '/dashboard',
-    };
+    return { state: setOAuthInitiationCookies(request, response, 'google') };
   }
 }
 
 class GithubAuthGuard extends AuthGuard('github') {
   getAuthenticateOptions(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest();
-    const returnTo = request.query.returnTo;
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
-    return {
-      state:
-        typeof returnTo === 'string' &&
-        returnTo.startsWith('/') &&
-        !returnTo.startsWith('//')
-          ? returnTo
-          : '/dashboard',
-    };
+    return { state: setOAuthInitiationCookies(request, response, 'github') };
   }
 }
 
@@ -118,20 +216,21 @@ export class AuthController {
   googleLogin() {}
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthStateGuard, AuthGuard('google'))
   async googleCallback(
+    @Req() req: Request,
     @CurrentUser() googleUser: GoogleUser,
-    @Query('state') state: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    const returnToCookieName = oauthReturnToCookieName('google');
+    const returnTo = isSafeReturnTo(req.cookies?.[returnToCookieName])
+      ? req.cookies[returnToCookieName]
+      : '/dashboard';
+    res.clearCookie(returnToCookieName, oauthCookieClearOptions);
+
     const { token } = await this.authService.googleLogin(googleUser);
 
     res.cookie('access_token', token, authCookieOptions);
-
-    const returnTo =
-      state && state.startsWith('/') && !state.startsWith('//')
-        ? state
-        : '/dashboard';
 
     return res.redirect(`${process.env.FRONTEND_URL}${returnTo}`);
   }
@@ -141,20 +240,21 @@ export class AuthController {
   githubLogin() {}
 
   @Get('github/callback')
-  @UseGuards(AuthGuard('github'))
+  @UseGuards(GithubOAuthStateGuard, AuthGuard('github'))
   async githubCallback(
+    @Req() req: Request,
     @CurrentUser() githubUser: GoogleUser,
-    @Query('state') state: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    const returnToCookieName = oauthReturnToCookieName('github');
+    const returnTo = isSafeReturnTo(req.cookies?.[returnToCookieName])
+      ? req.cookies[returnToCookieName]
+      : '/dashboard';
+    res.clearCookie(returnToCookieName, oauthCookieClearOptions);
+
     const { token } = await this.authService.githubLogin(githubUser);
 
     res.cookie('access_token', token, authCookieOptions);
-
-    const returnTo =
-      state && state.startsWith('/') && !state.startsWith('//')
-        ? state
-        : '/dashboard';
 
     return res.redirect(`${process.env.FRONTEND_URL}${returnTo}`);
   }
