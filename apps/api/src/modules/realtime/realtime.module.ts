@@ -6,6 +6,7 @@ import { PrismaModule } from '../../database/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
 import { MeetingModule } from "../meeting/meeting.module";
+import { WorkspaceModule } from '../workspace/workspace.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { MeetingModule } from "../meeting/meeting.module";
     PrismaModule,
     ChatModule,
     MeetingModule,
+    WorkspaceModule,
   ],
   providers: [
     RealtimeGateway,
