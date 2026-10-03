@@ -12,6 +12,26 @@ import { GoogleCalendarService } from './google-calendar.service';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../modules/auth/guards/jwt-auth.guard';
 
+const calendarOAuthStateCookieOptions = {
+  httpOnly: true,
+  secure:
+    process.env.NODE_ENV === 'production' ||
+    process.env.FRONTEND_URL?.startsWith('https://') === true,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 10 * 60 * 1000,
+};
+
+function isSafeReturnTo(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.includes('\\') &&
+    !/[\r\n]/.test(value)
+  );
+}
+
 @UseGuards(JwtAuthGuard)
 @Controller('google-calendar')
 export class GoogleCalendarController {
@@ -19,18 +39,20 @@ export class GoogleCalendarController {
 
   @Get('connect')
   async connect(@Request() req: any, @Res() res: Response) {
+    const returnTo = isSafeReturnTo(req.query.returnTo)
+      ? req.query.returnTo
+      : '/dashboard';
     const { url, state } =
-      await this.googleCalendarService.getAuthorizationUrl(req.user.id);
+      await this.googleCalendarService.getAuthorizationUrl(
+        req.user.id,
+        returnTo,
+      );
 
-    res.cookie('google_calendar_oauth_state', state, {
-      httpOnly: true,
-      secure:
-        process.env.NODE_ENV === 'production' ||
-        process.env.FRONTEND_URL?.startsWith('https://') === true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 10 * 60 * 1000,
-    });
+    res.cookie(
+      'google_calendar_oauth_state',
+      state,
+      calendarOAuthStateCookieOptions,
+    );
 
     return res.redirect(url);
   }
@@ -41,10 +63,9 @@ export class GoogleCalendarController {
     @Query('state') state: string,
     @Request() req: any,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{
-    message: string;
-  }> {
+  ): Promise<void> {
     const stateCookie = req.cookies?.google_calendar_oauth_state;
+    let returnTo = '/dashboard';
 
     try {
       if (!this.matchesState(stateCookie, state)) {
@@ -53,25 +74,19 @@ export class GoogleCalendarController {
         );
       }
 
-      await this.googleCalendarService.consumeAuthorizationState(
+      returnTo = await this.googleCalendarService.consumeAuthorizationState(
         state,
         req.user.id,
       );
       await this.googleCalendarService.handleCallback(code, req.user.id);
     } finally {
-      res.clearCookie('google_calendar_oauth_state', {
-        httpOnly: true,
-        secure:
-          process.env.NODE_ENV === 'production' ||
-          process.env.FRONTEND_URL?.startsWith('https://') === true,
-        sameSite: 'lax',
-        path: '/',
-      });
+      res.clearCookie(
+        'google_calendar_oauth_state',
+        calendarOAuthStateCookieOptions,
+      );
     }
 
-    return {
-      message: 'Google Calendar connected successfully',
-    };
+    res.redirect(`${process.env.FRONTEND_URL}${returnTo}`);
   }
 
   @Get('status')

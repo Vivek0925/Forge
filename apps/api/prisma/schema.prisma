@@ -46,6 +46,7 @@ model GoogleCalendarOAuthState {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   consumedAt DateTime?
+  returnTo  String
   createdAt DateTime @default(now())
 
   @@index([userId])

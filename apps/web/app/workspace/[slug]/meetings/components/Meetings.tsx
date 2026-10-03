@@ -310,7 +310,8 @@ export default function Meetings({ slug }: MeetingsProps) {
               type="button"
               disabled={calendarConnected}
               onClick={() => {
-                window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect`;
+                const returnTo = `/workspace/${slug}/meetings`;
+                window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/connect?returnTo=${encodeURIComponent(returnTo)}`;
               }}
               className={`inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-xl border px-2 text-center text-[11px] font-medium leading-tight transition sm:h-10 sm:gap-2 sm:px-3 sm:text-sm ${
                 calendarConnected

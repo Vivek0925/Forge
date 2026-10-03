@@ -14,7 +14,7 @@ export class GoogleCalendarService {
   );
 
   constructor(private readonly prisma: PrismaService) {}
-  async getAuthorizationUrl(userId: string) {
+  async getAuthorizationUrl(userId: string, returnTo: string) {
     const state = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + calendarOAuthStateLifetimeMs);
 
@@ -23,6 +23,7 @@ export class GoogleCalendarService {
         stateHash: this.hashState(state),
         userId,
         expiresAt,
+        returnTo,
       },
     });
 
@@ -37,7 +38,10 @@ export class GoogleCalendarService {
     };
   }
 
-  async consumeAuthorizationState(state: string, userId: string): Promise<void> {
+  async consumeAuthorizationState(
+    state: string,
+    userId: string,
+  ): Promise<string> {
     const stateHash = this.hashState(state);
     const stateRecord = await this.prisma.googleCalendarOAuthState.findUnique({
       where: { stateHash },
@@ -67,6 +71,8 @@ export class GoogleCalendarService {
     if (consumed.count !== 1) {
       throw new UnauthorizedException('Invalid Google Calendar OAuth state');
     }
+
+    return stateRecord.returnTo;
   }
 
   async handleCallback(code: string, userId: string): Promise<void> {

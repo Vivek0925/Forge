@@ -5,6 +5,7 @@ CREATE TABLE "google_calendar_oauth_states" (
     "userId" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "consumedAt" TIMESTAMP(3),
+    "returnTo" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "google_calendar_oauth_states_pkey" PRIMARY KEY ("id")
