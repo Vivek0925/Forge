@@ -38,7 +38,8 @@ export class StorageController {
       limits: {
         fileSize: MAX_UPLOAD_SIZE,
         files: 1,
-        parts: 3,
+        fields: 3,
+        parts: 6,
       },
       fileFilter: (_request, file, callback) => {
         if (!isAllowedFileType(file)) {

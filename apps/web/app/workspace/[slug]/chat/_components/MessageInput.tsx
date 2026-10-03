@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent, ChangeEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  KeyboardEvent,
+  ChangeEvent,
+} from "react";
 
 import {
   Loader2,
@@ -47,8 +53,27 @@ export default function MessageInput({
   const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
 
   const [uploading, setUploading] = useState(false);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const [fileAccept, setFileAccept] = useState<string | undefined>();
+  const [captureCamera, setCaptureCamera] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function closeAttachmentMenu(event: MouseEvent) {
+      if (
+        attachmentMenuRef.current &&
+        !attachmentMenuRef.current.contains(event.target as Node)
+      ) {
+        setAttachmentMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeAttachmentMenu);
+    return () =>
+      document.removeEventListener("mousedown", closeAttachmentMenu);
+  }, []);
 
   async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -84,6 +109,16 @@ export default function MessageInput({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function openFilePicker(
+    accept?: string,
+    capture?: boolean,
+  ) {
+    setFileAccept(accept);
+    setCaptureCamera(Boolean(capture));
+    setAttachmentMenuOpen(false);
+    requestAnimationFrame(() => fileInputRef.current?.click());
+  }
+
   function sendMessage() {
     const content = message.trim();
 
@@ -113,6 +148,8 @@ export default function MessageInput({
           ref={fileInputRef}
           type="file"
           className="hidden"
+          accept={fileAccept}
+          capture={captureCamera ? "environment" : undefined}
           onChange={handleFileUpload}
         />
 
@@ -175,18 +212,61 @@ export default function MessageInput({
         )}
 
         <div className="flex items-end gap-1.5 rounded-2xl border border-[#DEDFE8] bg-white px-2 py-1.5 shadow-sm transition-all focus-within:border-[#BEEAD7] focus-within:shadow-md sm:gap-3 sm:rounded-3xl sm:px-4 sm:py-2">
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg p-1.5 text-[#7C8093] transition hover:bg-[#F5F6F8] sm:rounded-xl sm:p-2"
-          >
-            {uploading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Paperclip size={16} />
+          <div ref={attachmentMenuRef} className="relative">
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() =>
+                setAttachmentMenuOpen((open) => !open)
+              }
+              aria-label="Add attachment"
+              aria-expanded={attachmentMenuOpen}
+              className="rounded-lg p-1.5 text-[#7C8093] transition hover:bg-[#F5F6F8] sm:rounded-xl sm:p-2"
+            >
+              {uploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Paperclip size={16} />
+              )}
+            </button>
+
+            {attachmentMenuOpen && (
+              <div className="absolute bottom-12 left-0 z-20 w-52 rounded-2xl border border-[#2A2D35] bg-[#17191E] p-2 text-white shadow-xl">
+                <button
+                  type="button"
+                  onClick={() =>
+                    openFilePicker(
+                      ".pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx",
+                    )
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/10"
+                >
+                  <span className="text-violet-400">▣</span>
+                  Document
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openFilePicker("image/*,video/*")
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/10"
+                >
+                  <span className="text-blue-400">▣</span>
+                  Photos &amp; videos
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openFilePicker("image/*", true)
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-white/10"
+                >
+                  <span className="text-pink-400">●</span>
+                  Camera
+                </button>
+              </div>
             )}
-          </button>
+          </div>
 
           <textarea
             rows={1}
