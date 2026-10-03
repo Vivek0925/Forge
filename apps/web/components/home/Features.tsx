@@ -79,7 +79,7 @@ export default function Features() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.45, delay: (i % 4) * 0.06 }}
-            className="group rounded-2xl border border-[#DEDFE8] bg-[#FAFAF8] p-6 transition-colors hover:border-[#059669]/40 hover:bg-[#F3F3FF]"
+            className="group rounded-2xl border border-[#DEDFE8] bg-[#FAFAF8] p-5 transition-colors hover:border-[#059669]/40 hover:bg-[#F3F3FF] sm:p-6"
           >
             <feature.icon
               className="h-5 w-5 text-[#059669]"

@@ -125,25 +125,25 @@ function ConnectionGraph() {
 export default function Hero() {
   return (
     <section className="relative overflow-hidden pb-24 pt-40 md:pb-32 md:pt-48">
-      <Container className="grid items-center gap-16 md:grid-cols-2 md:gap-8">
+      <Container className="grid items-center gap-10 md:grid-cols-2 md:gap-8">
         <div className="flex flex-col items-start gap-7">
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#059669]">
             The digital engineering workspace
           </span>
 
-          <h1 className="text-[42px] font-light leading-[1.08] tracking-[-0.02em] text-[#14141C] md:text-[58px]">
+          <h1 className="text-[36px] font-light leading-[1.08] tracking-[-0.03em] text-[#14141C] sm:text-[42px] md:text-[58px]">
             Every project,
             <br />
             one connected place.
           </h1>
 
-          <p className="max-w-[440px] text-[16px] leading-relaxed text-[#5B5D6E]">
+          <p className="max-w-[440px] text-[15px] leading-relaxed text-[#5B5D6E] sm:text-[16px]">
             Vynor replaces the sprawl of Slack, Meet, Notion, Jira, Miro, Drive,
             and ChatGPT with a single workspace built around your projects, not
             your inbox.
           </p>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex w-full flex-col items-stretch gap-3 pt-2 sm:w-auto sm:flex-row sm:items-center">
             <Link href="/login">
               <Button>Join the beta</Button>
             </Link>

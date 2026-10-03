@@ -61,11 +61,11 @@ export default function InviteMemberModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/30 p-4 backdrop-blur-sm">
+      <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-8">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-[#20232D]">
+            <h2 className="text-xl font-semibold text-[#20232D] sm:text-2xl">
               Invite Member
             </h2>
 
@@ -134,7 +134,7 @@ export default function InviteMemberModal({
             </div>
           )}
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
             <button
               onClick={onClose}
               className="rounded-2xl border border-[#DEDFE8] px-5 py-3"
@@ -145,7 +145,7 @@ export default function InviteMemberModal({
             <button
               disabled={loading}
               onClick={handleInvite}
-              className="flex items-center gap-2 border border-[#1E8E5A] rounded-2xl bg-[#1E8E5A] px-5 py-3 font-medium text-black transition hover:bg-[#18764b] disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-[#1E8E5A] bg-[#1E8E5A] px-5 py-3 font-medium text-black transition hover:bg-[#18764b] disabled:opacity-50"
             >
               {loading && (
                 <Loader2

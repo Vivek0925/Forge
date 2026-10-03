@@ -33,7 +33,7 @@ export default function Dashboard() {
         <DashboardHeader />
       </Container>
 
-      <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden px-1 py-12 sm:py-20">
+      <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden px-0 py-10 sm:py-20">
         <Container>
           <Hero user={user} onWorkspaceCreated={addWorkspace} />
         </Container>

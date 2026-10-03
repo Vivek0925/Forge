@@ -69,7 +69,7 @@ export default function CreateWorkspaceModal({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-[28px] border border-[#DEDFE8] bg-white p-6 shadow-[0_30px_80px_rgba(20,20,28,0.18)] outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-[520px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[24px] border border-[#DEDFE8] bg-white p-4 shadow-[0_30px_80px_rgba(20,20,28,0.18)] outline-none sm:rounded-[28px] sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-[22px] font-medium tracking-[-0.02em] text-[#14141C]">
@@ -146,7 +146,7 @@ export default function CreateWorkspaceModal({
               </div>
             )}
 
-            <div className="mt-2 flex items-center justify-end gap-3">
+            <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
               <Dialog.Close asChild>
                 <button
                   type="button"

@@ -112,7 +112,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-[68px] shrink-0 items-center justify-between gap-2 border-b border-[#DEDFE8]/80 bg-white/85 px-2 backdrop-blur-xl md:h-[76px] md:gap-4 md:px-6">
+        <header className="flex h-[68px] shrink-0 items-center justify-between gap-2 border-b border-[#DEDFE8]/80 bg-white/85 px-3 backdrop-blur-xl md:h-[76px] md:gap-4 md:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -123,7 +123,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="md:hidden">
+            <div className="min-w-0 md:hidden">
               <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#059669]">
                 Workspace
               </div>
@@ -142,36 +142,36 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5">
             {/* button to redirect to dashboard */}
             <Link
               href="/dashboard"
-              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[12px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-3 md:text-[13px]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2 py-2 text-[11px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] sm:px-2.5 sm:text-[12px] md:px-3 md:text-[13px]"
             >
               Dashboard
             </Link>
 
             <button
               onClick={() => setInviteOpen(true)}
-              className="rounded-full border border-[#DEDFE8] bg-white px-2.5 py-2 text-[11px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] md:px-4 md:text-[11px]"
+              className="rounded-full border border-[#DEDFE8] bg-white px-2 py-2 text-[11px] font-medium text-[#14141C] transition-colors hover:bg-[#FAFAF8] sm:px-2.5 md:px-4"
             >
               Invite
             </button>
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2 md:px-6">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-4 md:px-6">
           {loading ? (
-            <div className="flex min-h-[50vh] items-center justify-center rounded-[32px] border border-[#DEDFE8] bg-white text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
+            <div className="flex min-h-[50vh] items-center justify-center rounded-[24px] border border-[#DEDFE8] bg-white px-4 text-center text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
               Loading workspace...
             </div>
           ) : !workspace ? (
-            <div className="flex min-h-[50vh] items-center justify-center rounded-[32px] border border-[#DEDFE8] bg-white p-8 text-center shadow-[0_18px_50px_rgba(20,20,28,0.06)]">
-              <div>
+            <div className="flex min-h-[50vh] items-center justify-center rounded-[24px] border border-[#DEDFE8] bg-white p-5 text-center shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px] sm:p-8">
+              <div className="min-w-0">
                 <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#B91C1C]">
                   Workspace not found
                 </div>
-                <h1 className="mt-2 text-[30px] font-light tracking-[-0.03em] text-[#14141C]">
+                <h1 className="mt-2 text-[26px] font-light tracking-[-0.03em] text-[#14141C] sm:text-[30px]">
                   We could not open this workspace.
                 </h1>
                 <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-[#5B5D6E]">

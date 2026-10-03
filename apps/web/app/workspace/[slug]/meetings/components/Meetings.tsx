@@ -284,10 +284,10 @@ export default function Meetings({ slug }: MeetingsProps) {
   );
 
   return (
-    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto scrollbar-none overflow-x-hidden rounded-[32px] border border-[#DEDFE8] bg-white">
+    <div className="relative isolate flex h-full min-h-0 flex-col overflow-y-auto scrollbar-none overflow-x-hidden rounded-[24px] border border-[#DEDFE8] bg-white sm:rounded-[32px]">
       {/* Header */}
 
-      <div className="sticky top-0 z-30 shrink-0 rounded-xl border-b border-[#ECEEF3] bg-white px-4 py-4 shadow-[0_6px_16px_rgba(20,20,28,0.04)] sm:px-6">
+      <div className="sticky top-0 z-30 shrink-0 rounded-xl border-b border-[#ECEEF3] bg-white px-3 py-3 shadow-[0_6px_16px_rgba(20,20,28,0.04)] sm:px-6 sm:py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] sm:h-11 sm:w-11 sm:rounded-2xl">
@@ -337,7 +337,7 @@ export default function Meetings({ slug }: MeetingsProps) {
 
       {/* Content */}
 
-      <div className="relative z-0 flex-1 px-3 py-5 sm:px-8 sm:py-8">
+      <div className="relative z-0 flex-1 px-2 py-4 sm:px-8 sm:py-8">
         <div className="mx-auto max-w-6xl">
           {error && !showCreate && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -434,7 +434,7 @@ export default function Meetings({ slug }: MeetingsProps) {
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+          <div className="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-[#20232D]">

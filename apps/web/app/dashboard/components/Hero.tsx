@@ -103,15 +103,15 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
 
   return (
     <div className="flex w-full flex-col items-center justify-center text-center">
-      <h1 className="max-w-[800px] text-[38px] font-light leading-[1.1] tracking-[-0.03em] text-[#14141C] sm:text-[48px] md:text-[64px] lg:text-[72px]">
+      <h1 className="max-w-[800px] text-[32px] font-light leading-[1.1] tracking-[-0.04em] text-[#14141C] sm:text-[48px] md:text-[64px] lg:text-[72px]">
         Workspace, meetings, and collaboration in one place
       </h1>
-      <p className="mx-auto mt-5 max-w-[580px] text-[15px] leading-[1.6] text-[#5B5D6E] sm:mt-6 sm:text-[18px]">
+      <p className="mx-auto mt-4 max-w-[580px] text-[14px] leading-[1.6] text-[#5B5D6E] sm:mt-6 sm:text-[18px]">
         Welcome{user?.name ? `, ${user.name}` : ""}. Create a workspace for your
         project, jump into a quick meeting, or join one using a code.
       </p>
 
-      <div className="mt-8 flex w-full max-w-[600px] flex-col items-stretch gap-3 sm:mt-12 sm:flex-row sm:items-center">
+      <div className="mt-7 flex w-full max-w-[600px] flex-col items-stretch gap-3 sm:mt-12 sm:flex-row sm:items-center">
         <button
           onClick={() => setOpen(true)}
           className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#86D9A8] bg-[#EAFBF1] px-6 py-3 text-[15px] font-medium text-[#065F46] transition-colors hover:bg-[#DFF7E8] sm:px-8 sm:text-[16px]"
@@ -175,8 +175,8 @@ export default function Hero({ user, onWorkspaceCreated }: HeroProps) {
         <p className="mt-2 px-4 text-left text-sm text-red-500">{joinError}</p>
       )}
 
-      <div className="mt-12 flex items-center justify-center sm:mt-16">
-        <div className="relative h-[220px] w-[220px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-7 sm:h-[280px] sm:w-[280px] sm:p-8">
+      <div className="mt-10 flex items-center justify-center sm:mt-16">
+        <div className="relative h-[180px] w-[180px] rounded-full bg-gradient-to-br from-[#059669]/20 to-[#065F46]/10 p-6 sm:h-[280px] sm:w-[280px] sm:p-8">
           <svg
             viewBox="0 0 200 200"
             className="h-full w-full text-[#059669]/30"

@@ -19,8 +19,8 @@ export default function Footer() {
   return (
     <footer className="border-t text-white bg-black border-[#DEDFE8] bg-[#FAFAF8] py-16">
       <Container>
-        <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 md:grid-cols-5">
+          <div className="sm:col-span-2">
             <div className="flex items-center gap-2">
               <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#14141C]">
                 <span className="h-[9px] w-[9px] rounded-[2px] bg-[#059669]" />
@@ -53,9 +53,9 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 text-white   flex flex-col items-start justify-between gap-4 border-t border-[#DEDFE8] pt-8 text-[12px] text-[#8A8CA0] md:flex-row md:items-center">
+        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-[#DEDFE8] pt-8 text-[12px] text-[#8A8CA0] sm:mt-16 md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} Vynor. All rights reserved.</span>
-          <div className="flex gap-6">
+          <div className="flex gap-5 sm:gap-6">
             <a href="#" className="hover:text-[#14141C]">Privacy</a>
             <a href="#" className="hover:text-[#14141C]">Terms</a>
           </div>

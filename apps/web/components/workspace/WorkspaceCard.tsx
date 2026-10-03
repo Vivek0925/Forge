@@ -129,18 +129,18 @@ export default function WorkspaceCard({
           handleOpen();
         }
       }}
-      className="group relative rounded-[28px] border border-[#DEDFE8] bg-white p-5 shadow-[var(--shadow-sm)] transition-transform duration-200 hover:-translate-y-0.5"
+      className="group relative rounded-[24px] border border-[#DEDFE8] bg-white p-4 shadow-[var(--shadow-sm)] transition-transform duration-200 hover:-translate-y-0.5 sm:rounded-[28px] sm:p-5"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className={`h-2.5 w-2.5 rounded-full ${workspace.accent}`} />
-          <h3 className="mt-4 text-[17px] font-medium tracking-[-0.02em] text-[#14141C]">
+          <h3 className="mt-4 break-words text-[17px] font-medium tracking-[-0.02em] text-[#14141C]">
             {workspace.name}
           </h3>
           <p className="mt-1 text-[13px] text-[#5B5D6E]">{workspace.members}</p>
         </div>
         <div className="relative flex items-start gap-2">
-          <span className="rounded-full border border-[#DEDFE8] px-3 py-1 text-[12px] text-[#5B5D6E]">
+          <span className="max-w-[110px] truncate rounded-full border border-[#DEDFE8] px-2.5 py-1 text-[11px] text-[#5B5D6E] sm:max-w-none sm:px-3 sm:text-[12px]">
             {workspace.status}
           </span>
 
