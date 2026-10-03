@@ -81,6 +81,8 @@ export default function MessageItem({
   }
 
   function handleMessageTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    event.stopPropagation();
+
     const touch = event.touches[0];
 
     if (!touch) {
@@ -102,6 +104,8 @@ export default function MessageItem({
   }
 
   function handleMessageTouchMove(event: React.TouchEvent<HTMLDivElement>) {
+    event.stopPropagation();
+
     const start = touchStartRef.current;
     const touch = event.touches[0];
 
@@ -123,7 +127,9 @@ export default function MessageItem({
     setSwipeOffset(deltaX > 0 ? Math.min(deltaX, 72) : 0);
   }
 
-  function handleMessageTouchEnd() {
+  function handleMessageTouchEnd(event: React.TouchEvent<HTMLDivElement>) {
+    event.stopPropagation();
+
     clearLongPressTimer();
 
     if (swipeOffset >= 56) {
@@ -204,7 +210,9 @@ export default function MessageItem({
             onTouchStart={handleMessageTouchStart}
             onTouchMove={handleMessageTouchMove}
             onTouchEnd={handleMessageTouchEnd}
-            onTouchCancel={() => {
+            onTouchCancel={(event) => {
+              event.stopPropagation();
+
               clearLongPressTimer();
               touchStartRef.current = null;
               setSwipeOffset(0);
