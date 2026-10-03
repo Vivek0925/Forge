@@ -89,7 +89,7 @@ export default function WorkspaceSidebar({
           </span>
           <div>
             <div className="text-[15px] font-semibold tracking-[-0.02em] text-[#14141C]">
-              Forge
+              Vynor
             </div>
             <div className="text-[12px] text-[#5B5D6E]">Workspace shell</div>
           </div>

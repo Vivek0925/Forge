@@ -26,7 +26,7 @@ export default function DashboardHeader() {
           <span className="h-[9px] w-[9px] rounded-[2px] bg-[#059669]" />
         </span>
         <span className="text-[15px] font-medium tracking-[-0.01em] text-[#14141C]">
-          Forge
+          Vynor
         </span>
       </Link>
 

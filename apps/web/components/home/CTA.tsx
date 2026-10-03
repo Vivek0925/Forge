@@ -25,7 +25,7 @@ export default function CTA() {
             Give your team back their focus
           </h2>
           <p className="relative mx-auto mt-4 max-w-[420px] text-[15px] leading-relaxed text-[#B4B5C6]">
-            Bring your next project into Forge and see what your team builds
+            Bring your next project into Vynor and see what your team builds
             when nothing gets lost between tools.
           </p>
           <div className="relative mt-8 flex items-center justify-center gap-3">

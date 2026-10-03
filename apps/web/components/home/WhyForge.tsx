@@ -27,14 +27,14 @@ export default function WhyForge() {
   return (
     <Section
       id="why-forge"
-      eyebrow="Why Forge"
+      eyebrow="Why Vynor"
       title="Stop stitching your workflow together"
-      description="Forge isn't another Slack clone, Discord clone, or Notion clone. It's not another tab. It's the one your team actually lives in."
+      description="Vynor isn't another Slack clone, Discord clone, or Notion clone. It's not another tab. It's the one your team actually lives in."
     >
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl border border-[#DEDFE8] bg-[#F3F3F6] p-8 md:p-10">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8A8CA0]">
-            Without Forge
+            Without Vynor
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5">
             {SCATTERED.map((tool, i) => (
@@ -59,7 +59,7 @@ export default function WhyForge() {
         <div className="relative overflow-hidden rounded-3xl border border-[#14141C] bg-[#14141C] p-8 md:p-10">
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[#059669]/20 blur-[70px]" />
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#6EE7B7]">
-            With Forge
+            With Vynor
           </p>
           <div className="relative mt-6 flex flex-wrap gap-2.5">
             {UNIFIED.map((tool, i) => (

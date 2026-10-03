@@ -8,7 +8,7 @@ import Button from "../ui/Button";
 const links = [
   { label: "Product", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "Why Forge", href: "#why-forge" },
+  { label: "Why Vynor", href: "#why-forge" },
   { label: "Developers", href: "#" },
 ];
 
@@ -36,7 +36,7 @@ export default function Navbar() {
             <span className="h-[9px] w-[9px] rounded-[2px] bg-[#059669]" />
           </span>
           <span className="text-[15px] font-medium tracking-[-0.01em] text-[#14141C]">
-            Forge
+            Vynor
           </span>
         </Link>
 

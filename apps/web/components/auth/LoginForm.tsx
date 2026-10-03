@@ -111,7 +111,7 @@ export default function LoginForm() {
           <span className="h-[9px] w-[9px] rounded-[2px] bg-primary" />
         </span>
         <span className="text-[15px] font-medium tracking-tight text-text">
-          Forge
+          Vynor
         </span>
       </div>
 
@@ -119,7 +119,7 @@ export default function LoginForm() {
         Sign in
       </span>
       <h1 className="mt-3 text-[30px] font-light leading-tight tracking-[-0.01em] text-text">
-        Welcome back to Forge
+        Welcome back to Vynor
       </h1>
       <p className="mt-2 text-[14px] leading-relaxed text-text-secondary">
         Sign in to keep working in one connected place.

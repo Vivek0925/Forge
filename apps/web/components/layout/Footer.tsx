@@ -25,7 +25,7 @@ export default function Footer() {
               <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#14141C]">
                 <span className="h-[9px] w-[9px] rounded-[2px] bg-[#059669]" />
               </span>
-              <span className="text-[15px] text-white font-medium text-[#14141C]">Forge</span>
+              <span className="text-[15px] text-white font-medium text-[#14141C]">Vynor</span>
             </div>
             <p className="mt-4 text-white max-w-[260px] text-[13px] leading-relaxed text-[#8A8CA0]">
               The digital engineering workspace. One project, everything connected.
@@ -54,7 +54,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-16 text-white   flex flex-col items-start justify-between gap-4 border-t border-[#DEDFE8] pt-8 text-[12px] text-[#8A8CA0] md:flex-row md:items-center">
-          <span>© {new Date().getFullYear()} Forge. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Vynor. All rights reserved.</span>
           <div className="flex gap-6">
             <a href="#" className="hover:text-[#14141C]">Privacy</a>
             <a href="#" className="hover:text-[#14141C]">Terms</a>

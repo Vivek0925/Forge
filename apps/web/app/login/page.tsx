@@ -3,7 +3,7 @@ import AuthVisualPanel from "@/components/auth/AuthVisualPanel";
 import LoginForm from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
-  title: "Sign in — Forge",
+  title: "Sign in — Vynor",
 };
 
 export default function LoginPage() {

@@ -138,7 +138,7 @@ export default function Hero() {
           </h1>
 
           <p className="max-w-[440px] text-[16px] leading-relaxed text-[#5B5D6E]">
-            Forge replaces the sprawl of Slack, Meet, Notion, Jira, Miro, Drive,
+            Vynor replaces the sprawl of Slack, Meet, Notion, Jira, Miro, Drive,
             and ChatGPT with a single workspace built around your projects, not
             your inbox.
           </p>

@@ -3,7 +3,7 @@ import AuthVisualPanel from "@/components/auth/AuthVisualPanel";
 import SignupForm from "@/components/auth/SignupForm";
 
 export const metadata: Metadata = {
-  title: "Join the beta — Forge",
+  title: "Join the beta — Vynor",
 };
 
 export default function SignupPage() {
