@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { google } from 'googleapis';
+import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../database/prisma.service';
+
+const calendarOAuthStateLifetimeMs = 10 * 60 * 1000;
 
 @Injectable()
 export class GoogleCalendarService {
@@ -11,12 +14,59 @@ export class GoogleCalendarService {
   );
 
   constructor(private readonly prisma: PrismaService) {}
-  getAuthorizationUrl() {
-    return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline',
-      prompt: 'consent',
-      scope: ['https://www.googleapis.com/auth/calendar.events'],
+  async getAuthorizationUrl(userId: string) {
+    const state = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + calendarOAuthStateLifetimeMs);
+
+    await this.prisma.googleCalendarOAuthState.create({
+      data: {
+        stateHash: this.hashState(state),
+        userId,
+        expiresAt,
+      },
     });
+
+    return {
+      url: this.oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent',
+        scope: ['https://www.googleapis.com/auth/calendar.events'],
+        state,
+      }),
+      state,
+    };
+  }
+
+  async consumeAuthorizationState(state: string, userId: string): Promise<void> {
+    const stateHash = this.hashState(state);
+    const stateRecord = await this.prisma.googleCalendarOAuthState.findUnique({
+      where: { stateHash },
+    });
+
+    if (
+      !stateRecord ||
+      stateRecord.userId !== userId ||
+      stateRecord.expiresAt <= new Date() ||
+      stateRecord.consumedAt
+    ) {
+      throw new UnauthorizedException('Invalid Google Calendar OAuth state');
+    }
+
+    const consumed = await this.prisma.googleCalendarOAuthState.updateMany({
+      where: {
+        stateHash,
+        userId,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: {
+        consumedAt: new Date(),
+      },
+    });
+
+    if (consumed.count !== 1) {
+      throw new UnauthorizedException('Invalid Google Calendar OAuth state');
+    }
   }
 
   async handleCallback(code: string, userId: string): Promise<void> {
@@ -39,6 +89,11 @@ export class GoogleCalendarService {
       },
     });
   }
+
+  private hashState(state: string) {
+    return createHash('sha256').update(state).digest('hex');
+  }
+
   async getConnectionStatus(userId: string) {
     const connection = await this.prisma.googleCalendarConnection.findUnique({
       where: {

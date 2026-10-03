@@ -33,9 +33,24 @@ model User {
   meetingsCreated     Meeting[]            @relation("MeetingCreator")
   meetingParticipants MeetingParticipant[]
   googleCalendarConnection GoogleCalendarConnection?
+  googleCalendarOAuthStates GoogleCalendarOAuthState[]
 
   @@unique([provider, providerId])
   @@map("users")
+}
+
+model GoogleCalendarOAuthState {
+  id        String   @id @default(cuid())
+  stateHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("google_calendar_oauth_states")
 }
 
 model GoogleCalendarConnection {
