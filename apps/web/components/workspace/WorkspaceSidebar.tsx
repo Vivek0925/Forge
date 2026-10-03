@@ -205,13 +205,10 @@ export default function WorkspaceSidebar({
         </button>
       </div>
 
-      <div className="rounded-[22px] border border-[#DEDFE8] bg-[#FAFAF8] p-4">
-        <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#5B5D6E]">
-          Current workspace
-        </div>
-        <div className="mt-2 text-[18px] font-medium tracking-[-0.02em] text-[#14141C]">
+      <div className="px-2 pb-1">
+        <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-[#14141C]">
           {title}
-        </div>
+        </h1>
       </div>
 
       <nav className="mt-4 min-h-0 flex-1 space-y-1 scrollbar-none overflow-y-auto">
