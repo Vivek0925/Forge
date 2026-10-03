@@ -16,6 +16,7 @@ model User {
   provider      AuthProvider @default(LOCAL)
   providerId    String?
   emailVerified Boolean      @default(false)
+  tokenVersion  Int          @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -33,6 +34,7 @@ model User {
   meetingParticipants MeetingParticipant[]
   googleCalendarConnection GoogleCalendarConnection?
 
+  @@unique([provider, providerId])
   @@map("users")
 }
 

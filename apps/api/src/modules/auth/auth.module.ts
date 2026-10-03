@@ -8,6 +8,7 @@
   import { JwtStrategy } from "./strategies/jwt.strategy";
   import { GoogleStrategy } from "./strategies/google.strategy";
   import { GithubStrategy } from "./strategies/github.strategy";
+  import { AuthSessionRegistry } from "./services/auth-session-registry.service";
 
   @Module({
     imports: [
@@ -25,7 +26,8 @@
       JwtStrategy,
       GoogleStrategy,
       GithubStrategy,
+      AuthSessionRegistry,
     ],
-    exports: [JwtModule],
+    exports: [JwtModule, AuthSessionRegistry],
   })
   export class AuthModule {}

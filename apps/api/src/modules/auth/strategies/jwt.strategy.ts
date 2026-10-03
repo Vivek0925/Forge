@@ -8,6 +8,7 @@ import { CurrentUserData } from '../interfaces/current-user.interface';
 interface JwtPayload {
   sub: string;
   email: string;
+  tokenVersion: number;
 }
 
 @Injectable()
@@ -32,6 +33,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (payload.tokenVersion !== user.tokenVersion) {
+      throw new UnauthorizedException('Token has been revoked');
     }
 
     return {

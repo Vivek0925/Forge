@@ -27,6 +27,7 @@ import { ReactMessageDto } from '../../chat/dto/react-message.dto';
 import { MeetingRoomService } from '../../meeting/services/meeting-room.service';
 import { MeetingRepository } from '../../meeting/repositories/meeting.repository';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
+import { AuthSessionRegistry } from '../../auth/services/auth-session-registry.service';
 
 @WebSocketGateway({
   cors: {
@@ -50,6 +51,7 @@ export class RealtimeGateway
     private readonly meetingRoomService: MeetingRoomService,
     private readonly meetingRepository: MeetingRepository,
     private readonly workspaceService: WorkspaceService,
+    private readonly authSessionRegistry: AuthSessionRegistry,
   ) {}
 
   // =========================================================
@@ -61,6 +63,11 @@ export class RealtimeGateway
       const currentUser = await this.socketAuthService.authenticate(socket);
 
       socket.data.currentUser = currentUser;
+      this.authSessionRegistry.register(
+        currentUser.id,
+        socket.id,
+        () => socket.disconnect(true),
+      );
 
       this.logger.log(`${currentUser.name} connected (${socket.id})`);
     } catch {
@@ -75,6 +82,14 @@ export class RealtimeGateway
   // =========================================================
 
   handleDisconnect(socket: AuthenticatedSocket) {
+    const userId = socket.data.currentUser?.id;
+    if (userId) {
+      this.authSessionRegistry.unregister(
+        userId,
+        socket.id,
+      );
+    }
+
     /*
      * IMPORTANT:
      *

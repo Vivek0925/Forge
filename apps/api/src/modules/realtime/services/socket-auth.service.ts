@@ -5,11 +5,11 @@ import * as cookie from 'cookie';
 
 import { PrismaService } from '../../../database/prisma.service';
 import { CurrentUserData } from '../../auth/interfaces/current-user.interface';
-import { parse } from 'path/win32';
 
 interface JwtPayload {
   sub: string;
   email: string;
+  tokenVersion: number;
 }
 
 @Injectable()
@@ -50,6 +50,10 @@ export class SocketAuthService {
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (payload.tokenVersion !== user.tokenVersion) {
+      throw new UnauthorizedException('Token has been revoked');
     }
 
     return {
