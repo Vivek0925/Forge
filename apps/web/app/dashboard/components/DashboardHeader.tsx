@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, Check, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useInvitations } from "@/hooks/useInvitations";
@@ -20,6 +20,34 @@ export default function DashboardHeader() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    function handleOutsideTouch(event: PointerEvent) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsOpen(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handleOutsideTouch);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsideTouch);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [notificationsOpen]);
 
   async function handleLogout() {
     try {
@@ -58,7 +86,7 @@ export default function DashboardHeader() {
       </Link>
 
       <div className="flex items-center gap-2">
-        <div className="relative">
+        <div ref={notificationsRef} className="relative">
           <button
             type="button"
             onClick={() => setNotificationsOpen((open) => !open)}
@@ -84,7 +112,7 @@ export default function DashboardHeader() {
             <div
               role="dialog"
               aria-label="Notifications"
-              className="absolute right-0 top-12 z-20 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-xl sm:w-[380px]"
+              className="fixed inset-x-3 top-20 z-20 max-h-[calc(100svh-6rem)] overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[380px]"
             >
               <div className="flex items-center justify-between border-b border-[#ECEEF3] px-5 py-4">
                 <div>
