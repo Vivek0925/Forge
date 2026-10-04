@@ -3,18 +3,16 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import {
-  InvitationStatus,
-  WorkspaceRole,
-} from "@prisma/client";
-import { randomUUID } from "crypto";
+} from '@nestjs/common';
+import { InvitationStatus, WorkspaceRole } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
-import { WorkspaceService } from "../../workspace/services/workspace.service";
-import { WorkspaceRepository } from "../../workspace/repositories/workspace.repository";
+import { WorkspaceService } from '../../workspace/services/workspace.service';
+import { WorkspaceRepository } from '../../workspace/repositories/workspace.repository';
 
-import { WorkspaceInvitationRepository } from "../repositories/workspace-invitation.repository";
-import { CreateWorkspaceInvitationDto } from "../dto/create-workspace-invitation.dto";
+import { WorkspaceInvitationRepository } from '../repositories/workspace-invitation.repository';
+import { CreateWorkspaceInvitationDto } from '../dto/create-workspace-invitation.dto';
+import { MailService } from '../../../mail/mail.service';
 
 @Injectable()
 export class WorkspaceInvitationService {
@@ -22,6 +20,7 @@ export class WorkspaceInvitationService {
     private readonly workspaceService: WorkspaceService,
     private readonly workspaceRepository: WorkspaceRepository,
     private readonly invitationRepository: WorkspaceInvitationRepository,
+    private readonly mailService: MailService,
   ) {}
 
   async getMyInvitations(email: string) {
@@ -33,22 +32,18 @@ export class WorkspaceInvitationService {
     workspaceSlug: string,
     dto: CreateWorkspaceInvitationDto,
   ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-    const membership =
-      await this.workspaceRepository.findMember(
-        workspace.id,
-        userId,
-      );
+    const membership = await this.workspaceRepository.findMember(
+      workspace.id,
+      userId,
+    );
 
     if (!membership) {
-      throw new ForbiddenException(
-        "You are not a member of this workspace.",
-      );
+      throw new ForbiddenException('You are not a member of this workspace.');
     }
 
     if (
@@ -67,20 +62,17 @@ export class WorkspaceInvitationService {
       );
 
     if (existingInvitation) {
-      throw new BadRequestException(
-        "An invitation has already been sent.",
-      );
+      throw new BadRequestException('An invitation has already been sent.');
     }
 
-    const existingMember =
-      await this.workspaceRepository.findMemberByEmail(
-        workspace.id,
-        dto.email,
-      );
+    const existingMember = await this.workspaceRepository.findMemberByEmail(
+      workspace.id,
+      dto.email,
+    );
 
     if (existingMember) {
       throw new BadRequestException(
-        "User is already a member of this workspace.",
+        'User is already a member of this workspace.',
       );
     }
 
@@ -89,7 +81,7 @@ export class WorkspaceInvitationService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    return this.invitationRepository.create({
+    const invitation = await this.invitationRepository.create({
       email: dto.email,
       workspaceId: workspace.id,
       invitedById: userId,
@@ -97,83 +89,72 @@ export class WorkspaceInvitationService {
       token,
       expiresAt,
     });
-  }
 
-  async acceptInvitation(
-    invitationId: string,
-    userId: string,
-  ) {
-    const invitation =
-      await this.invitationRepository.findById(
-        invitationId,
+    try {
+      await this.mailService.sendWorkspaceInvitation({
+        recipient: dto.email,
+        workspaceName: workspace.name,
+        role: dto.role ?? WorkspaceRole.MEMBER,
+      });
+    } catch (error) {
+      await this.invitationRepository.updateStatus(
+        invitation.id,
+        InvitationStatus.REVOKED,
       );
-
-    if (!invitation) {
-      throw new NotFoundException(
-        "Invitation not found.",
-      );
+      throw error;
     }
 
-    if (
-      invitation.status !== InvitationStatus.PENDING
-    ) {
-      throw new BadRequestException(
-        "Invitation has already been processed.",
-      );
+    return invitation;
+  }
+
+  async acceptInvitation(invitationId: string, userId: string) {
+    const invitation = await this.invitationRepository.findById(invitationId);
+
+    if (!invitation) {
+      throw new NotFoundException('Invitation not found.');
+    }
+
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException('Invitation has already been processed.');
     }
 
     if (invitation.expiresAt < new Date()) {
-      throw new BadRequestException(
-        "Invitation has expired.",
-      );
+      throw new BadRequestException('Invitation has expired.');
     }
 
-    const existingMember =
-      await this.workspaceRepository.findMember(
-        invitation.workspaceId,
-        userId,
-      );
+    const existingMember = await this.workspaceRepository.findMember(
+      invitation.workspaceId,
+      userId,
+    );
 
     if (existingMember) {
       throw new BadRequestException(
-        "You are already a member of this workspace.",
+        'You are already a member of this workspace.',
       );
     }
 
     await this.invitationRepository.completeInvitation({
-  invitationId: invitation.id,
-  workspaceId: invitation.workspaceId,
-  userId,
-  role: invitation.role,
-});
+      invitationId: invitation.id,
+      workspaceId: invitation.workspaceId,
+      userId,
+      role: invitation.role,
+    });
 
     return {
-      message: "Invitation accepted successfully.",
+      message: 'Invitation accepted successfully.',
       workspace: invitation.workspace,
     };
   }
 
-  async rejectInvitation(
-    invitationId: string,
-    userEmail: string,
-  ) {
-    const invitation =
-      await this.invitationRepository.findById(
-        invitationId,
-      );
+  async rejectInvitation(invitationId: string, userEmail: string) {
+    const invitation = await this.invitationRepository.findById(invitationId);
 
     if (!invitation || invitation.email !== userEmail) {
-      throw new NotFoundException(
-        "Invitation not found.",
-      );
+      throw new NotFoundException('Invitation not found.');
     }
 
-    if (
-      invitation.status !== InvitationStatus.PENDING
-    ) {
-      throw new BadRequestException(
-        "Invitation has already been processed.",
-      );
+    if (invitation.status !== InvitationStatus.PENDING) {
+      throw new BadRequestException('Invitation has already been processed.');
     }
 
     await this.invitationRepository.updateStatus(
@@ -182,7 +163,7 @@ export class WorkspaceInvitationService {
     );
 
     return {
-      message: "Invitation rejected successfully.",
+      message: 'Invitation rejected successfully.',
     };
   }
 }
