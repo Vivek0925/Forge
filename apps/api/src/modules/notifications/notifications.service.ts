@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 
 import { PrismaService } from '../../database/prisma.service';
+import { NotificationRealtimeService } from './notification-realtime.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtime: NotificationRealtimeService,
+  ) {}
 
   findForUser(userId: string) {
     return this.prisma.notification.findMany({
@@ -38,14 +42,24 @@ export class NotificationsService {
       timeZone: 'UTC',
     });
 
-    await this.prisma.notification.createMany({
-      data: members.map(({ userId }) => ({
+    const notifications = members.map(({ userId }) => ({
         userId,
         type: NotificationType.MEETING_SCHEDULED,
         title: 'New meeting scheduled',
         message: `${title} starts on ${formattedDate} UTC.`,
         meetingId,
-      })),
+      }));
+
+    await this.prisma.notification.createMany({ data: notifications });
+
+    const createdNotifications = await this.prisma.notification.findMany({
+      where: { meetingId, userId: { in: members.map(({ userId }) => userId) } },
+      orderBy: { createdAt: 'desc' },
+      take: members.length,
     });
+
+    for (const notification of createdNotifications) {
+      this.realtime.emitToUser(notification.userId, notification);
+    }
   }
 }

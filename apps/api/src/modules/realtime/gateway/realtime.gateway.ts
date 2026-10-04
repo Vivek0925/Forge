@@ -28,6 +28,7 @@ import { MeetingRoomService } from '../../meeting/services/meeting-room.service'
 import { MeetingRepository } from '../../meeting/repositories/meeting.repository';
 import { WorkspaceService } from '../../workspace/services/workspace.service';
 import { AuthSessionRegistry } from '../../auth/services/auth-session-registry.service';
+import { NotificationRealtimeService } from '../../notifications/notification-realtime.service';
 
 @WebSocketGateway({
   cors: {
@@ -52,6 +53,7 @@ export class RealtimeGateway
     private readonly meetingRepository: MeetingRepository,
     private readonly workspaceService: WorkspaceService,
     private readonly authSessionRegistry: AuthSessionRegistry,
+    private readonly notificationRealtime: NotificationRealtimeService,
   ) {}
 
   // =========================================================
@@ -60,6 +62,7 @@ export class RealtimeGateway
 
   async handleConnection(socket: AuthenticatedSocket) {
     try {
+      this.notificationRealtime.setServer(this.server);
       const currentUser = await this.socketAuthService.authenticate(socket);
 
       socket.data.currentUser = currentUser;

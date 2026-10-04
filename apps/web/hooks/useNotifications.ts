@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { MeetingNotification } from "@/types/notification";
+import { socket } from "@/lib/socket";
 
 const notificationPollIntervalMs = 15_000;
 
@@ -43,6 +44,22 @@ export function useNotifications() {
   useEffect(() => {
     if (authLoading) return;
 
+    function handleNewNotification(notification: MeetingNotification) {
+      setNotifications((current) => {
+        if (current.some((item) => item.id === notification.id)) {
+          return current;
+        }
+
+        previousIds.current.add(notification.id);
+        return [notification, ...current];
+      });
+    }
+
+    socket.on("notification:new", handleNewNotification);
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     const initialRefresh = window.setTimeout(() => {
       void refresh();
     }, 0);
@@ -53,6 +70,7 @@ export function useNotifications() {
     return () => {
       window.clearTimeout(initialRefresh);
       window.clearInterval(interval);
+      socket.off("notification:new", handleNewNotification);
     };
   }, [authLoading, refresh]);
 

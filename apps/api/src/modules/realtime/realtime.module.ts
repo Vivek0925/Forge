@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
 import { MeetingModule } from "../meeting/meeting.module";
 import { WorkspaceModule } from '../workspace/workspace.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WorkspaceModule } from '../workspace/workspace.module';
     ChatModule,
     MeetingModule,
     WorkspaceModule,
+    NotificationsModule,
   ],
   providers: [
     RealtimeGateway,
