@@ -194,7 +194,7 @@ export default function WorkspaceSidebar({
     <aside
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col border-r border-[#E8E8E8] bg-[#FCFCFB] px-3 py-4 transition-transform duration-200 md:static md:z-auto md:flex ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[310px] max-w-[calc(100vw-16px)] shrink-0 flex-col border-r border-[#E8E8E8] bg-[#FCFCFB] px-4 py-4 transition-transform duration-200 md:static md:z-auto md:flex ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0`}
     >
@@ -266,10 +266,10 @@ export default function WorkspaceSidebar({
           type="button"
           aria-expanded={membersExpanded}
           onClick={() => setMembersExpanded((expanded) => !expanded)}
-          className="w-full rounded-[10px] border border-[#EAEAE8] bg-white p-2.5 text-left transition-colors hover:border-[#C9CDC6]"
+          className="min-h-[87px] w-full rounded-[12px] border border-[#EAEAE8] bg-white p-3.5 text-left transition-colors hover:border-[#C9CDC6]"
         >
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-medium text-[#303236]">Team</div>
+            <div className="text-[13px] font-medium text-[#303236]">Team</div>
             <ChevronDown
               className={`h-3.5 w-3.5 text-[#5B5D6E] transition-transform duration-200 ${
                 membersExpanded ? "rotate-180" : ""
@@ -283,7 +283,7 @@ export default function WorkspaceSidebar({
                 <MemberAvatar key={member.userId} member={member} />
               ))}
             </div>
-            <span className="text-[9px] text-[#85898C]">
+            <span className="text-[11px] text-[#85898C]">
               {membersLoading
                 ? "Loading..."
                 : membersError
@@ -323,14 +323,14 @@ export default function WorkspaceSidebar({
         </button>
 
         <div className="flex items-center gap-2 border-t border-[#EAEAE8] px-2 pt-3">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[10px] font-medium text-[#27634F]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[11px] font-medium text-[#27634F]">
             {userInitials}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[11px] font-medium text-[#303236]">
+            <div className="truncate text-[14px] font-medium text-[#303236]">
               {user?.name || "Your profile"}
             </div>
-            <div className="truncate text-[9px] text-[#85898C]">
+            <div className="truncate text-[11px] text-[#85898C]">
               {user?.email || "Account"}
             </div>
           </div>
