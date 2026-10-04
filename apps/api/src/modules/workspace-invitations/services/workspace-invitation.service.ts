@@ -90,19 +90,11 @@ export class WorkspaceInvitationService {
       expiresAt,
     });
 
-    try {
-      await this.mailService.sendWorkspaceInvitation({
-        recipient: dto.email,
-        workspaceName: workspace.name,
-        role: dto.role ?? WorkspaceRole.MEMBER,
-      });
-    } catch (error) {
-      await this.invitationRepository.updateStatus(
-        invitation.id,
-        InvitationStatus.REVOKED,
-      );
-      throw error;
-    }
+    await this.mailService.sendWorkspaceInvitation({
+      recipient: dto.email,
+      workspaceName: workspace.name,
+      role: dto.role ?? WorkspaceRole.MEMBER,
+    });
 
     return invitation;
   }

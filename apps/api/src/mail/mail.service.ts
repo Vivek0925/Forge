@@ -1,4 +1,4 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
 
 interface InvitationEmail {
@@ -23,6 +23,7 @@ function escapeHtml(value: string) {
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private readonly resend: Resend | null;
 
   constructor() {
@@ -34,11 +35,12 @@ export class MailService {
     recipient,
     workspaceName,
     role,
-  }: InvitationEmail) {
+  }: InvitationEmail): Promise<boolean> {
     if (!this.resend) {
-      throw new ServiceUnavailableException(
-        'Invitation email is not configured.',
+      this.logger.warn(
+        `Invitation created for ${recipient}, but email delivery is not configured.`,
       );
+      return false;
     }
 
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3000';
@@ -48,30 +50,44 @@ export class MailService {
     const safeWorkspaceName = escapeHtml(workspaceName);
     const safeRole = escapeHtml(role.toLowerCase());
 
-    const { error } = await this.resend.emails.send({
-      from,
-      to: recipient,
-      subject: `You're invited to join ${workspaceName} on Vynor`,
-      text: [
-        `You've been invited to join ${workspaceName} on Vynor.`,
-        `Your role: ${role.toLowerCase()}.`,
-        '',
-        `Sign in to accept the invitation: ${invitationUrl}`,
-      ].join('\n'),
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 560px; color: #14141c;">
-          <h1 style="font-size: 24px; margin-bottom: 12px;">You're invited to Vynor</h1>
-          <p>You've been invited to join <strong>${safeWorkspaceName}</strong>.</p>
-          <p>Your role: <strong>${safeRole}</strong></p>
-          <a href="${invitationUrl}" style="display: inline-block; margin-top: 16px; padding: 12px 18px; border-radius: 10px; background: #14141c; color: #ffffff; text-decoration: none;">
-            View invitation
-          </a>
-        </div>
-      `,
-    });
+    try {
+      const { error } = await this.resend.emails.send({
+        from,
+        to: recipient,
+        subject: `You're invited to join ${workspaceName} on Vynor`,
+        text: [
+          `You've been invited to join ${workspaceName} on Vynor.`,
+          `Your role: ${role.toLowerCase()}.`,
+          '',
+          `Sign in to accept the invitation: ${invitationUrl}`,
+        ].join('\n'),
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 560px; color: #14141c;">
+            <h1 style="font-size: 24px; margin-bottom: 12px;">You're invited to Vynor</h1>
+            <p>You've been invited to join <strong>${safeWorkspaceName}</strong>.</p>
+            <p>Your role: <strong>${safeRole}</strong></p>
+            <a href="${invitationUrl}" style="display: inline-block; margin-top: 16px; padding: 12px 18px; border-radius: 10px; background: #14141c; color: #ffffff; text-decoration: none;">
+              View invitation
+            </a>
+          </div>
+        `,
+      });
 
-    if (error) {
-      throw new Error(`Failed to send invitation email: ${error.message}`);
+      if (!error) {
+        this.logger.log(`Invitation email sent to ${recipient}.`);
+        return true;
+      }
+
+      this.logger.error(
+        `Invitation created for ${recipient}, but email delivery failed: ${error.message}`,
+      );
+      return false;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Invitation created for ${recipient}, but email delivery failed: ${message}`,
+      );
+      return false;
     }
   }
 }
