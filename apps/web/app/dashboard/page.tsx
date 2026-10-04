@@ -31,7 +31,7 @@ export default function Dashboard() {
           <div className="pointer-events-none absolute right-[-6rem] top-[10rem] h-[18rem] w-[18rem] rounded-full bg-[#065F46]/10 blur-[90px]" />
 
           <Container>
-            <DashboardHeader />
+            <DashboardHeader onInvitationAccepted={addWorkspace} />
           </Container>
 
           <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden px-0 py-10 sm:py-20">

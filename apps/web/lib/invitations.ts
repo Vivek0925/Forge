@@ -1,5 +1,6 @@
 import { api } from "./api";
 import type { Invitation } from "@/types/invitation";
+import type { Workspace } from "./workspace";
 
 export async function inviteMember(
   workspaceSlug: string,
@@ -19,7 +20,9 @@ export async function getInvitations() {
 export async function acceptInvitation(
   id: string,
 ) {
-  return api(`/invitations/${id}/accept`, { method: "POST" });
+  return api<{ workspace: Workspace }>(`/invitations/${id}/accept`, {
+    method: "POST",
+  });
 }
 
 export async function rejectInvitation(

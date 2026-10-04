@@ -9,8 +9,15 @@ import {
   acceptInvitation,
   rejectInvitation,
 } from "@/lib/invitations";
+import type { Workspace } from "@/lib/workspace";
 
-export default function DashboardHeader() {
+interface DashboardHeaderProps {
+  onInvitationAccepted?: (workspace: Workspace) => void;
+}
+
+export default function DashboardHeader({
+  onInvitationAccepted,
+}: DashboardHeaderProps) {
   const router = useRouter();
   const { logout } = useAuth();
   const {
@@ -109,12 +116,17 @@ export default function DashboardHeader() {
 
   async function handleInvitationAction(
     id: string,
-    action: typeof acceptInvitation,
+    action: typeof acceptInvitation | typeof rejectInvitation,
   ) {
     try {
       setProcessingInvitation(id);
-      await action(id);
+      const result = await action(id);
       await refreshInvitations();
+      if (action === acceptInvitation) {
+        onInvitationAccepted?.(
+          (result as { workspace: Workspace }).workspace,
+        );
+      }
     } catch (error) {
       console.error("Failed to process invitation", error);
     } finally {
