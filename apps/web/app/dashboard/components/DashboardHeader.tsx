@@ -1,15 +1,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Check, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useInvitations } from "@/hooks/useInvitations";
+import {
+  acceptInvitation,
+  rejectInvitation,
+} from "@/lib/invitations";
 
 export default function DashboardHeader() {
   const router = useRouter();
   const { logout } = useAuth();
-  const { invitations, loading: invitationsLoading } = useInvitations();
+  const {
+    invitations,
+    loading: invitationsLoading,
+    refresh: refreshInvitations,
+  } = useInvitations();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
 
   async function handleLogout() {
     try {
@@ -18,6 +28,21 @@ export default function DashboardHeader() {
       router.replace("/login");
     } finally {
       setLoggingOut(false);
+    }
+  }
+
+  async function handleInvitationAction(
+    id: string,
+    action: typeof acceptInvitation,
+  ) {
+    try {
+      setProcessingInvitation(id);
+      await action(id);
+      await refreshInvitations();
+    } catch (error) {
+      console.error("Failed to process invitation", error);
+    } finally {
+      setProcessingInvitation(null);
     }
   }
 
@@ -33,23 +58,128 @@ export default function DashboardHeader() {
       </Link>
 
       <div className="flex items-center gap-2">
-        <Link
-          href="/dashboard/invitations"
-          aria-label={
-            invitationsLoading
-              ? "Notifications"
-              : `Notifications${invitations.length > 0 ? ` (${invitations.length} unread)` : ""}`
-          }
-          title="Notifications"
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#DEDFE8] bg-white text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
-        >
-          <Bell className="h-4 w-4" />
-          {!invitationsLoading && invitations.length > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#059669] px-1 text-[10px] font-semibold leading-none text-white">
-              {invitations.length > 9 ? "9+" : invitations.length}
-            </span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setNotificationsOpen((open) => !open)}
+            aria-expanded={notificationsOpen}
+            aria-haspopup="dialog"
+            aria-label={
+              invitationsLoading
+                ? "Notifications"
+                : `Notifications${invitations.length > 0 ? ` (${invitations.length} unread)` : ""}`
+            }
+            title="Notifications"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#DEDFE8] bg-white text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
+          >
+            <Bell className="h-4 w-4" />
+            {!invitationsLoading && invitations.length > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#059669] px-1 text-[10px] font-semibold leading-none text-white">
+                {invitations.length > 9 ? "9+" : invitations.length}
+              </span>
+            )}
+          </button>
+
+          {notificationsOpen && (
+            <div
+              role="dialog"
+              aria-label="Notifications"
+              className="absolute right-0 top-12 z-20 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-xl sm:w-[380px]"
+            >
+              <div className="flex items-center justify-between border-b border-[#ECEEF3] px-5 py-4">
+                <div>
+                  <h2 className="text-base font-semibold text-[#14141C]">
+                    Notifications
+                  </h2>
+                  <p className="mt-0.5 text-xs text-[#707487]">
+                    {invitations.length > 0
+                      ? `${invitations.length} pending invitation${invitations.length === 1 ? "" : "s"}`
+                      : "You're all caught up"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNotificationsOpen(false)}
+                  aria-label="Close notifications"
+                  className="rounded-full p-1.5 text-[#707487] hover:bg-[#F5F6F8] hover:text-[#14141C]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[min(60vh,420px)] overflow-y-auto">
+                {invitationsLoading ? (
+                  <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm text-[#707487]">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading notifications...
+                  </div>
+                ) : invitations.length === 0 ? (
+                  <div className="px-5 py-10 text-center text-sm text-[#707487]">
+                    No new notifications.
+                  </div>
+                ) : (
+                  invitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="border-b border-[#ECEEF3] px-5 py-4 last:border-b-0"
+                    >
+                      <div className="flex gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] text-sm font-semibold text-[#1E8E5A]">
+                          {invitation.workspace.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#14141C]">
+                            {invitation.workspace.name}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-[#707487]">
+                            {invitation.invitedBy.name} invited you to join as a{" "}
+                            <span className="font-medium text-[#4B5563]">
+                              {invitation.role.toLowerCase()}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex gap-2 pl-[52px]">
+                        <button
+                          type="button"
+                          disabled={processingInvitation === invitation.id}
+                          onClick={() =>
+                            void handleInvitationAction(
+                              invitation.id,
+                              rejectInvitation,
+                            )
+                          }
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#DEDFE8] px-3 py-1.5 text-xs font-medium text-[#4B5563] hover:bg-[#F5F6F8] disabled:opacity-60"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          Reject
+                        </button>
+                        <button
+                          type="button"
+                          disabled={processingInvitation === invitation.id}
+                          onClick={() =>
+                            void handleInvitationAction(
+                              invitation.id,
+                              acceptInvitation,
+                            )
+                          }
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#14141C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2F3038] disabled:opacity-60"
+                        >
+                          {processingInvitation === invitation.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                          Accept
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           )}
-        </Link>
+        </div>
 
         <button
           type="button"

@@ -152,4 +152,37 @@ export class WorkspaceInvitationService {
       workspace: invitation.workspace,
     };
   }
+
+  async rejectInvitation(
+    invitationId: string,
+    userEmail: string,
+  ) {
+    const invitation =
+      await this.invitationRepository.findById(
+        invitationId,
+      );
+
+    if (!invitation || invitation.email !== userEmail) {
+      throw new NotFoundException(
+        "Invitation not found.",
+      );
+    }
+
+    if (
+      invitation.status !== InvitationStatus.PENDING
+    ) {
+      throw new BadRequestException(
+        "Invitation has already been processed.",
+      );
+    }
+
+    await this.invitationRepository.updateStatus(
+      invitation.id,
+      InvitationStatus.REVOKED,
+    );
+
+    return {
+      message: "Invitation rejected successfully.",
+    };
+  }
 }

@@ -21,3 +21,9 @@ export async function acceptInvitation(
 ) {
   return api(`/invitations/${id}/accept`, { method: "POST" });
 }
+
+export async function rejectInvitation(
+  id: string,
+) {
+  return api(`/invitations/${id}/reject`, { method: "POST" });
+}

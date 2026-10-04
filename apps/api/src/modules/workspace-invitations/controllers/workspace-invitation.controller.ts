@@ -53,4 +53,15 @@ export class WorkspaceInvitationController {
       user.id,
     );
   }
+
+  @Post("invitations/:id/reject")
+  rejectInvitation(
+    @CurrentUser() user: CurrentUserData,
+    @Param("id") id: string,
+  ) {
+    return this.workspaceInvitationService.rejectInvitation(
+      id,
+      user.email,
+    );
+  }
 }
