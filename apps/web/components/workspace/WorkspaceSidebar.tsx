@@ -4,16 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bell,
+  BriefcaseBusiness,
   ChevronDown,
-  FolderKanban,
-  Grid2x2,
+  FileText,
+  Folder,
   LayoutDashboard,
   LayoutList,
-  Settings,
-  Sparkles,
-  Wand2,
+  MessageCircle,
+  MoreHorizontal,
+  Settings2,
+  Video,
+  Workflow,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { socket } from "@/lib/socket";
 import {
   getWorkspaceMembers,
@@ -22,14 +25,19 @@ import {
 
 const navigation = [
   { label: "Overview", href: "", icon: LayoutDashboard },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
+  { label: "Projects", href: "/projects", icon: Folder },
   { label: "Tasks", href: "/tasks", icon: LayoutList },
-  { label: "Docs", href: "/docs", icon: Grid2x2 },
-  { label: "Whiteboard", href: "/whiteboard", icon: Sparkles },
-  { label: "Chat", href: "/chat", icon: Wand2 },
-  { label: "Meetings", href: "/meetings", icon: Bell },
-  { label: "Files", href: "/files", icon: FolderKanban },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Docs", href: "/docs", icon: FileText },
+  { label: "Whiteboard", href: "/whiteboard", icon: Workflow },
+];
+
+const communicationNavigation = [
+  { label: "Chat", href: "/chat", icon: MessageCircle },
+  { label: "Meetings", href: "/meetings", icon: Video },
+];
+
+const resourceNavigation = [
+  { label: "Files", href: "/files", icon: FileText },
 ];
 
 type WorkspaceSidebarProps = {
@@ -46,6 +54,7 @@ export default function WorkspaceSidebar({
   onMobileClose,
 }: WorkspaceSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
   const activePath = pathname.replace(`/workspace/${slug}`, "");
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(
@@ -145,6 +154,14 @@ export default function WorkspaceSidebar({
   const activeMemberCount = members.filter((member) =>
     onlineUserIds.has(member.userId),
   ).length;
+  const userInitials = user?.name
+    ? user.name
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "U";
 
   function handleTouchStart(event: React.TouchEvent<HTMLElement>) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -178,41 +195,169 @@ export default function WorkspaceSidebar({
     <aside
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={`fixed inset-y-0 left-0 z-50 flex w-[280px] shrink-0 flex-col border-r border-[#DEDFE8]/80 bg-white/95 px-4 py-5 backdrop-blur-xl transition-transform duration-200 md:static md:z-auto md:flex ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col border-r border-[#E8E8E8] bg-[#FCFCFB] px-3 py-4 transition-transform duration-200 md:static md:z-auto md:flex ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0`}
     >
-      <div className="flex items-start justify-between px-2 pb-6">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#EAFBF1] text-[#065F46] shadow-[0_10px_20px_rgba(5,150,105,0.12)]">
-            <Wand2 className="h-5 w-5" />
+      <div className="flex items-center justify-between px-2 pb-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <span className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#0FA968] text-white">
+            <span className="h-3.5 w-3.5 rounded-[3px] border-2 border-white" />
           </span>
-          <div>
-            <div className="text-[15px] font-semibold tracking-[-0.02em] text-[#14141C]">
-              Vynor
-            </div>
-            <div className="text-[12px] text-[#5B5D6E]">Workspace shell</div>
-          </div>
+          <span className="text-[14px] font-semibold tracking-[-0.02em] text-[#202124]">
+            Vynor
+          </span>
         </Link>
 
         <button
           type="button"
           onClick={onMobileClose}
-          className="rounded-xl border border-[#DEDFE8] px-3 py-2 text-sm text-[#5B5D6E] md:hidden"
+          className="rounded-lg border border-[#E8E8E8] px-2 py-1 text-xs text-[#666] md:hidden"
           aria-label="Close workspace navigation"
         >
           Close
         </button>
       </div>
 
-      <div className="px-2 pb-1">
-        <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-[#14141C]">
-          {title}
-        </h1>
+      <button
+        type="button"
+        className="mx-1 mb-5 flex items-center gap-2 rounded-[10px] border border-[#EAEAE8] bg-white px-2.5 py-2 text-left shadow-[0_2px_8px_rgba(20,20,20,0.03)]"
+        aria-label={`Switch workspace, current workspace ${title}`}
+      >
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#EAFBF1] text-[#15945E]">
+          <BriefcaseBusiness className="h-3.5 w-3.5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[11px] font-medium text-[#303236]">
+            {title}
+          </span>
+          <span className="block text-[9px] text-[#8B8E91]">
+            {members.length || 3} members
+          </span>
+        </span>
+        <ChevronDown className="h-3.5 w-3.5 text-[#5C6265]" />
+      </button>
+
+      <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+        Workspace
       </div>
 
-      <nav className="mt-4 min-h-0 flex-1 space-y-1 scrollbar-none overflow-y-auto">
-        {navigation.map((item) => {
+      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-none">
+        <div className="space-y-0.5">
+          {navigation.map((item) => {
+            return renderNavigationItem(item);
+          })}
+        </div>
+
+        <div>
+          <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+            Communication
+          </div>
+          <div className="space-y-0.5">
+            {communicationNavigation.map((item) => renderNavigationItem(item))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+            Resources
+          </div>
+          <div className="space-y-0.5">
+            {resourceNavigation.map((item) => renderNavigationItem(item))}
+          </div>
+        </div>
+      </nav>
+
+      <div className="mt-3 space-y-1.5">
+        <button
+          type="button"
+          aria-expanded={membersExpanded}
+          onClick={() => setMembersExpanded((expanded) => !expanded)}
+          className="w-full rounded-[10px] border border-[#EAEAE8] bg-white p-2.5 text-left transition-colors hover:border-[#C9CDC6]"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-medium text-[#303236]">Team</div>
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-[#5B5D6E] transition-transform duration-200 ${
+                membersExpanded ? "rotate-180" : ""
+              }`}
+              aria-hidden="true"
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <div className="flex -space-x-1.5">
+              {sortedMembers.slice(0, 3).map((member) => (
+                <MemberAvatar key={member.userId} member={member} />
+              ))}
+            </div>
+            <span className="text-[9px] text-[#85898C]">
+              {membersLoading
+                ? "Loading..."
+                : membersError
+                  ? "Unavailable"
+                  : `${activeMemberCount} active · ${members.length} total`}
+            </span>
+            <span className="text-[14px] text-[#596064]">›</span>
+          </div>
+
+          <div
+            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
+              membersExpanded
+                ? "mt-3 grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <div className="border-t border-[#EAEAE8] pt-2.5">
+                {membersError ? (
+                  <div className="text-[11px] text-[#B91C1C]">
+                    Try again after refreshing the workspace.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sortedMembers.map((member) => (
+                      <MemberRow
+                        key={member.userId}
+                        member={member}
+                        online={onlineUserIds.has(member.userId)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </button>
+
+        {renderNavigationItem({
+          label: "Settings",
+          href: "/settings",
+          icon: Settings2,
+        })}
+
+        <div className="flex items-center gap-2 border-t border-[#EAEAE8] px-2 pt-3">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[10px] font-medium text-[#27634F]">
+            {userInitials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[11px] font-medium text-[#303236]">
+              {user?.name || "Your profile"}
+            </div>
+            <div className="truncate text-[9px] text-[#85898C]">
+              {user?.email || "Account"}
+            </div>
+          </div>
+          <MoreHorizontal className="h-4 w-4 text-[#596064]" />
+        </div>
+      </div>
+    </aside>
+  );
+
+  function renderNavigationItem(item: {
+    label: string;
+    href: string;
+    icon: typeof LayoutDashboard;
+  }) {
           const Icon = item.icon;
           const href = item.href
             ? `/workspace/${slug}${item.href}`
@@ -226,101 +371,57 @@ export default function WorkspaceSidebar({
               key={item.label}
               href={href}
               onClick={onMobileClose}
-              className={`flex items-center gap-3 rounded-[18px] px-4 py-3 text-[14px] transition-colors ${
+              className={`flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[11px] transition-colors ${
                 active
-                  ? "bg-[#EAFBF1] text-[#065F46]"
-                  : "text-[#14141C] hover:bg-[#FAFAF8]"
+                  ? "bg-[#E5F6EC] font-medium text-[#245C45]"
+                  : "text-[#303236] hover:bg-[#F2F5F1]"
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-3.5 w-3.5" />
               <span>{item.label}</span>
             </Link>
           );
-        })}
-      </nav>
+  }
+}
 
-      <button
-        type="button"
-        aria-expanded={membersExpanded}
-        onClick={() => setMembersExpanded((expanded) => !expanded)}
-        className="mt-4 w-full rounded-[22px] border border-[#DEDFE8] bg-[#FAFAF8] p-4 text-left transition-colors hover:border-[#C9CDC6]"
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-[12px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
-            Members
-          </div>
-          <ChevronDown
-            className={`h-4 w-4 text-[#5B5D6E] transition-transform duration-200 ${
-              membersExpanded ? "rotate-180" : ""
-            }`}
-            aria-hidden="true"
-          />
-        </div>
+function MemberAvatar({ member }: { member: WorkspaceMember }) {
+  const initials = member.user.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-        <div className="mt-2 flex items-center gap-2 text-[13px] text-[#5B5D6E]">
-          <span className="h-2 w-2 rounded-full bg-[#059669]" aria-hidden="true" />
-          {membersLoading
-            ? "Loading members..."
-            : membersError
-              ? "Unable to load members"
-              : `${activeMemberCount} active · ${members.length} total`}
-        </div>
+  return (
+    <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#EAFBF1] text-[8px] font-medium text-[#065F46]">
+      {member.user.avatar ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={member.user.avatar} alt="" className="h-full w-full object-cover" />
+      ) : (
+        initials
+      )}
+    </div>
+  );
+}
 
-        <div
-          className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-            membersExpanded ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+function MemberRow({
+  member,
+  online,
+}: {
+  member: WorkspaceMember;
+  online: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-[11px] text-[#303236]">
+      <div className="relative">
+        <MemberAvatar member={member} />
+        <span
+          className={`absolute bottom-0 right-0 h-1.5 w-1.5 rounded-full border border-white ${
+            online ? "bg-[#059669]" : "bg-[#A7A9B5]"
           }`}
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className="border-t border-[#DEDFE8] pt-3">
-              {membersError ? (
-                <div className="text-[12px] text-[#B91C1C]">
-                  Try again after refreshing the workspace.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {sortedMembers.map((member) => {
-                    const isOnline = onlineUserIds.has(member.userId);
-                    const initials = member.user.name
-                      .split(/\s+/)
-                      .map((part) => part[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
-
-                    return (
-                      <div
-                        key={member.userId}
-                        className="flex items-center gap-2.5 text-[13px] text-[#14141C]"
-                      >
-                        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#EAFBF1] text-[10px] font-medium text-[#065F46]">
-                          {member.user.avatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={member.user.avatar}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            initials
-                          )}
-                          <span
-                            className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border-2 border-[#FAFAF8] ${
-                              isOnline ? "bg-[#059669]" : "bg-[#A7A9B5]"
-                            }`}
-                            aria-label={isOnline ? "Online" : "Offline"}
-                          />
-                        </div>
-                        <span className="truncate">{member.user.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </button>
-    </aside>
+        />
+      </div>
+      <span className="truncate">{member.user.name}</span>
+    </div>
   );
 }
