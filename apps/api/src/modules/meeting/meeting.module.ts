@@ -7,9 +7,10 @@ import { MeetingRepository } from "./repositories/meeting.repository";
 import { MeetingService } from "./services/meeting.service";
 import { MeetingRoomService } from "./services/meeting-room.service";
 import { GoogleCalendarModule } from "../../google-calendar/google-calendar.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
-  imports: [WorkspaceModule, GoogleCalendarModule],
+  imports: [WorkspaceModule, GoogleCalendarModule, NotificationsModule],
 
   controllers: [
     MeetingController,

@@ -34,6 +34,7 @@ model User {
   meetingParticipants MeetingParticipant[]
   googleCalendarConnection GoogleCalendarConnection?
   googleCalendarOAuthStates GoogleCalendarOAuthState[]
+  notifications Notification[]
 
   @@unique([provider, providerId])
   @@map("users")
@@ -206,6 +207,7 @@ model Meeting {
 
   participants    MeetingParticipant[]
   meetingMessages MeetingMessage[]
+  notifications   Notification[]
 
   meetingCode String @unique
   isQuick     Boolean @default(false)
@@ -219,6 +221,23 @@ model Meeting {
   @@index([createdById])
   @@index([workspaceId, scheduledAt])
   @@map("meetings")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  meetingId String?
+  meeting   Meeting? @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([meetingId])
+  @@map("notifications")
 }
 
 model MeetingParticipant {
@@ -264,6 +283,10 @@ enum MeetingStatus {
   ACTIVE
   ENDED
   CANCELLED
+}
+
+enum NotificationType {
+  MEETING_SCHEDULED
 }
 
 enum AuthProvider {

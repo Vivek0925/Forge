@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, Check, Loader2, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useInvitations } from "@/hooks/useInvitations";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   acceptInvitation,
   rejectInvitation,
@@ -17,10 +18,57 @@ export default function DashboardHeader() {
     loading: invitationsLoading,
     refresh: refreshInvitations,
   } = useInvitations();
+  const {
+    notifications,
+    loading: notificationsLoading,
+  } = useNotifications();
   const [loggingOut, setLoggingOut] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const previousNotificationCount = useRef(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  function playNotificationSound() {
+    try {
+      const AudioContextClass =
+        window.AudioContext ??
+        (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const context =
+        audioContextRef.current ?? new AudioContextClass();
+      audioContextRef.current = context;
+      if (context.state === "suspended") {
+        void context.resume();
+      }
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.frequency.value = 880;
+      oscillator.type = "sine";
+      gain.gain.setValueAtTime(0.001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.2);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.2);
+    } catch (error) {
+      console.error("Unable to play notification sound", error);
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !notificationsLoading &&
+      notifications.length > previousNotificationCount.current &&
+      previousNotificationCount.current > 0
+    ) {
+      playNotificationSound();
+    }
+    previousNotificationCount.current = notifications.length;
+  }, [notifications.length, notificationsLoading]);
 
   useEffect(() => {
     if (!notificationsOpen) return;
@@ -93,17 +141,21 @@ export default function DashboardHeader() {
             aria-expanded={notificationsOpen}
             aria-haspopup="dialog"
             aria-label={
-              invitationsLoading
+              invitationsLoading || notificationsLoading
                 ? "Notifications"
-                : `Notifications${invitations.length > 0 ? ` (${invitations.length} unread)` : ""}`
+                : `Notifications${invitations.length + notifications.length > 0 ? ` (${invitations.length + notifications.length} unread)` : ""}`
             }
             title="Notifications"
             className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#DEDFE8] bg-white text-[#14141C] transition-colors hover:bg-[#FAFAF8]"
           >
             <Bell className="h-4 w-4" />
-            {!invitationsLoading && invitations.length > 0 && (
+            {!invitationsLoading &&
+              !notificationsLoading &&
+              invitations.length + notifications.length > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#059669] px-1 text-[10px] font-semibold leading-none text-white">
-                {invitations.length > 9 ? "9+" : invitations.length}
+                {invitations.length + notifications.length > 9
+                  ? "9+"
+                  : invitations.length + notifications.length}
               </span>
             )}
           </button>
@@ -120,8 +172,8 @@ export default function DashboardHeader() {
                     Notifications
                   </h2>
                   <p className="mt-0.5 text-xs text-[#707487]">
-                    {invitations.length > 0
-                      ? `${invitations.length} pending invitation${invitations.length === 1 ? "" : "s"}`
+                    {invitations.length + notifications.length > 0
+                      ? `${invitations.length + notifications.length} new notification${invitations.length + notifications.length === 1 ? "" : "s"}`
                       : "You're all caught up"}
                   </p>
                 </div>
@@ -136,17 +188,38 @@ export default function DashboardHeader() {
               </div>
 
               <div className="max-h-[min(60vh,420px)] overflow-y-auto">
-                {invitationsLoading ? (
+                {invitationsLoading || notificationsLoading ? (
                   <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm text-[#707487]">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading notifications...
                   </div>
-                ) : invitations.length === 0 ? (
+                ) : invitations.length === 0 && notifications.length === 0 ? (
                   <div className="px-5 py-10 text-center text-sm text-[#707487]">
                     No new notifications.
                   </div>
                 ) : (
-                  invitations.map((invitation) => (
+                  <>
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="border-b border-[#ECEEF3] px-5 py-4 last:border-b-0"
+                    >
+                      <div className="flex gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FF] text-sm font-semibold text-[#4F46E5]">
+                          <Bell className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#14141C]">
+                            {notification.title}
+                          </p>
+                          <p className="mt-1 text-xs leading-5 text-[#707487]">
+                            {notification.message}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {invitations.map((invitation) => (
                     <div
                       key={invitation.id}
                       className="border-b border-[#ECEEF3] px-5 py-4 last:border-b-0"
@@ -202,7 +275,8 @@ export default function DashboardHeader() {
                         </button>
                       </div>
                     </div>
-                  ))
+                  ))}
+                  </>
                 )}
               </div>
             </div>

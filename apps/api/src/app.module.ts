@@ -11,6 +11,7 @@ import { MeetingModule } from "./modules/meeting/meeting.module";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { GoogleCalendarModule } from "./google-calendar/google-calendar.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { GoogleCalendarModule } from "./google-calendar/google-calendar.module";
     StorageModule,
     MeetingModule,
     GoogleCalendarModule,
+    NotificationsModule,
   ],
   providers: [
   {

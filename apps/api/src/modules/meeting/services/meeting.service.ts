@@ -11,6 +11,7 @@ import { UpdateMeetingDto } from '../dto/update-meeting.dto';
 import { MeetingRepository } from '../repositories/meeting.repository';
 import { randomBytes } from 'crypto';
 import { GoogleCalendarService } from '../../../google-calendar/google-calendar.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class MeetingService {
@@ -18,6 +19,7 @@ export class MeetingService {
     private readonly meetingRepository: MeetingRepository,
     private readonly googleCalendarService: GoogleCalendarService,
     private readonly workspaceService: WorkspaceService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, workspaceSlug: string, dto: CreateMeetingDto) {
@@ -50,6 +52,14 @@ export class MeetingService {
     });
 
     if (scheduledAt) {
+      await this.notificationsService.createMeetingScheduled(
+        meeting.id,
+        workspace.id,
+        userId,
+        meeting.title,
+        scheduledAt,
+      );
+
       try {
         const googleEventId =
           await this.googleCalendarService.createMeetingEvent(userId, {
