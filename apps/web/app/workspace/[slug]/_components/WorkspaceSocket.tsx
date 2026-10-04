@@ -9,39 +9,31 @@ export default function WorkspaceSocket({
   workspaceSlug: string;
 }) {
   useEffect(() => {
-    console.log("WorkspaceSocket mounted");
-
-    socket.connect();
-
-    const onConnect = () => {
-      console.log("✅ Socket connected:", socket.id);
-
+    const joinWorkspace = () => {
       socket.emit("workspace:join", {
         workspaceSlug,
       });
-      
-    };
-
-
-    const onPresenceUpdate = (data: unknown) => {
-      console.log("Presence update:", data);
     };
 
     const onError = (err: Error) => {
       console.error("❌ Socket error:", err.message);
     };
 
-    socket.on("connect", onConnect);
-    socket.on("presence:update", onPresenceUpdate);
+    socket.on("connect", joinWorkspace);
     socket.on("connect_error", onError);
+
+    if (socket.connected) {
+      joinWorkspace();
+    } else {
+      socket.connect();
+    }
 
     return () => {
       socket.emit("workspace:leave", {
         workspaceSlug,
       });
 
-      socket.off("connect", onConnect);
-      socket.off("presence:update", onPresenceUpdate);
+      socket.off("connect", joinWorkspace);
       socket.off("connect_error", onError);
 
       socket.disconnect();
