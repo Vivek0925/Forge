@@ -176,14 +176,14 @@ export default function DashboardHeader({
             <div
               role="dialog"
               aria-label="Notifications"
-              className="fixed inset-x-3 top-20 z-20 max-h-[calc(100svh-6rem)] overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[380px]"
+              className="fixed right-3 top-20 z-20 w-[min(22rem,calc(100vw-1.5rem))] max-h-[calc(100svh-6rem)] overflow-hidden rounded-2xl border border-[#DEDFE8] bg-white shadow-[0_16px_45px_rgba(20,20,28,0.16)] sm:absolute sm:right-0 sm:top-12 sm:w-[360px]"
             >
-              <div className="flex items-center justify-between border-b border-[#ECEEF3] px-5 py-4">
+              <div className="flex items-center justify-between border-b border-[#ECEEF3] px-4 py-3.5">
                 <div>
-                  <h2 className="text-base font-semibold text-[#14141C]">
+                  <h2 className="text-sm font-semibold text-[#14141C]">
                     Notifications
                   </h2>
-                  <p className="mt-0.5 text-xs text-[#707487]">
+                  <p className="mt-1 text-[11px] text-[#707487]">
                     {invitations.length + notifications.length > 0
                       ? `${invitations.length + notifications.length} new notification${invitations.length + notifications.length === 1 ? "" : "s"}`
                       : "You're all caught up"}
@@ -201,12 +201,12 @@ export default function DashboardHeader({
 
               <div className="max-h-[min(60vh,420px)] overflow-y-auto">
                 {invitationsLoading || notificationsLoading ? (
-                  <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm text-[#707487]">
+                  <div className="flex items-center justify-center gap-2 px-4 py-8 text-xs text-[#707487]">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading notifications...
                   </div>
                 ) : invitations.length === 0 && notifications.length === 0 ? (
-                  <div className="px-5 py-10 text-center text-sm text-[#707487]">
+                  <div className="px-4 py-8 text-center text-xs text-[#707487]">
                     No new notifications.
                   </div>
                 ) : (
@@ -214,17 +214,17 @@ export default function DashboardHeader({
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className="border-b border-[#ECEEF3] px-5 py-4 last:border-b-0"
+                      className="border-b border-[#ECEEF3] px-4 py-3.5 transition-colors last:border-b-0 hover:bg-[#FAFAF8]"
                     >
                       <div className="flex gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FF] text-sm font-semibold text-[#4F46E5]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EEF2FF] text-sm font-semibold text-[#4F46E5]">
                           <Bell className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[#14141C]">
+                          <p className="text-xs font-semibold text-[#14141C]">
                             {notification.title}
                           </p>
-                          <p className="mt-1 text-xs leading-5 text-[#707487]">
+                          <p className="mt-1 text-[11px] leading-4 text-[#707487]">
                             {notification.message}
                           </p>
                         </div>
@@ -234,17 +234,17 @@ export default function DashboardHeader({
                   {invitations.map((invitation) => (
                     <div
                       key={invitation.id}
-                      className="border-b border-[#ECEEF3] px-5 py-4 last:border-b-0"
+                      className="border-b border-[#ECEEF3] px-4 py-3.5 transition-colors last:border-b-0 hover:bg-[#FAFAF8]"
                     >
                       <div className="flex gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAFBF1] text-sm font-semibold text-[#1E8E5A]">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EAFBF1] text-sm font-semibold text-[#1E8E5A]">
                           {invitation.workspace.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[#14141C]">
+                          <p className="text-xs font-semibold text-[#14141C]">
                             {invitation.workspace.name}
                           </p>
-                          <p className="mt-1 text-xs leading-5 text-[#707487]">
+                          <p className="mt-1 text-[11px] leading-4 text-[#707487]">
                             {invitation.invitedBy.name} invited you to join as a{" "}
                             <span className="font-medium text-[#4B5563]">
                               {invitation.role.toLowerCase()}
@@ -252,7 +252,7 @@ export default function DashboardHeader({
                           </p>
                         </div>
                       </div>
-                      <div className="mt-3 flex gap-2 pl-[52px]">
+                      <div className="mt-3 flex gap-2 pl-12">
                         <button
                           type="button"
                           disabled={processingInvitation === invitation.id}
@@ -262,7 +262,7 @@ export default function DashboardHeader({
                               rejectInvitation,
                             )
                           }
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#DEDFE8] px-3 py-1.5 text-xs font-medium text-[#4B5563] hover:bg-[#F5F6F8] disabled:opacity-60"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[#DEDFE8] px-3 py-1.5 text-[11px] font-medium text-[#4B5563] hover:bg-[#F5F6F8] disabled:opacity-60"
                         >
                           <X className="h-3.5 w-3.5" />
                           Reject
@@ -276,7 +276,7 @@ export default function DashboardHeader({
                               acceptInvitation,
                             )
                           }
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#14141C] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#2F3038] disabled:opacity-60"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#14141C] px-3 py-1.5 text-[11px] font-medium text-white hover:bg-[#2F3038] disabled:opacity-60"
                         >
                           {processingInvitation === invitation.id ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
