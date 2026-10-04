@@ -60,6 +60,7 @@ export default function WorkspaceSidebar({
     () => new Set(),
   );
   const [membersExpanded, setMembersExpanded] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersError, setMembersError] = useState(false);
 
@@ -194,7 +195,7 @@ export default function WorkspaceSidebar({
     <aside
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className={`fixed inset-y-0 left-0 z-50 flex w-[310px] max-w-[calc(100vw-16px)] shrink-0 flex-col border-r border-[#E8E8E8] bg-[#FCFCFB] px-4 py-4 transition-transform duration-200 md:static md:z-auto md:flex ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[248px] shrink-0 flex-col border-r border-[#E8E8E8] bg-[#FCFCFB] px-3 py-4 transition-transform duration-200 md:static md:z-auto md:flex ${
         mobileOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0`}
     >
@@ -322,20 +323,27 @@ export default function WorkspaceSidebar({
           </div>
         </button>
 
-        <div className="flex items-center gap-2 border-t border-[#EAEAE8] px-2 pt-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[11px] font-medium text-[#27634F]">
-            {userInitials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[14px] font-medium text-[#303236]">
+        <button
+          type="button"
+          aria-expanded={profileExpanded}
+          onClick={() => setProfileExpanded((expanded) => !expanded)}
+          className="w-full border-t border-[#EAEAE8] px-2 pt-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[11px] font-medium text-[#27634F]">
+              {userInitials}
+            </div>
+            <div className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#303236]">
               {user?.name || "Your profile"}
             </div>
-            <div className="truncate text-[11px] text-[#85898C]">
+            <MoreHorizontal className="h-4 w-4 shrink-0 text-[#596064]" />
+          </div>
+          {profileExpanded && (
+            <div className="mt-2 truncate pl-10 text-[11px] font-normal text-[#85898C]">
               {user?.email || "Account"}
             </div>
-          </div>
-          <MoreHorizontal className="h-4 w-4 text-[#596064]" />
-        </div>
+          )}
+        </button>
       </div>
     </aside>
   );
