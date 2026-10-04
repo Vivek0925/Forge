@@ -12,7 +12,6 @@ import {
   LayoutList,
   MessageCircle,
   MoreHorizontal,
-  Settings2,
   Video,
   Workflow,
 } from "lucide-react";
@@ -221,48 +220,42 @@ export default function WorkspaceSidebar({
 
       <button
         type="button"
-        className="mx-1 mb-5 flex items-center gap-2 rounded-[10px] border border-[#EAEAE8] bg-white px-2.5 py-2 text-left shadow-[0_2px_8px_rgba(20,20,20,0.03)]"
+        className="mx-1 mb-5 flex items-center gap-3 rounded-[14px] border border-[#EAEAE8] bg-white px-3 py-3 text-left shadow-[0_2px_8px_rgba(20,20,20,0.03)]"
         aria-label={`Switch workspace, current workspace ${title}`}
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#EAFBF1] text-[#15945E]">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EAFBF1] text-[#15945E]">
           <BriefcaseBusiness className="h-3.5 w-3.5" />
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[11px] font-medium text-[#303236]">
-            {title}
-          </span>
-          <span className="block text-[9px] text-[#8B8E91]">
-            {members.length || 3} members
-          </span>
+        <span className="truncate text-[14px] font-medium text-[#303236]">
+          {title}
         </span>
-        <ChevronDown className="h-3.5 w-3.5 text-[#5C6265]" />
       </button>
 
-      <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+      <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
         Workspace
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto scrollbar-none">
-        <div className="space-y-0.5">
+      <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto scrollbar-none">
+        <div className="space-y-1">
           {navigation.map((item) => {
             return renderNavigationItem(item);
           })}
         </div>
 
         <div>
-          <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+          <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
             Communication
           </div>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {communicationNavigation.map((item) => renderNavigationItem(item))}
           </div>
         </div>
 
         <div>
-          <div className="mb-1 px-3 text-[9px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
+          <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.1em] text-[#9A9DA0]">
             Resources
           </div>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {resourceNavigation.map((item) => renderNavigationItem(item))}
           </div>
         </div>
@@ -329,12 +322,6 @@ export default function WorkspaceSidebar({
           </div>
         </button>
 
-        {renderNavigationItem({
-          label: "Settings",
-          href: "/settings",
-          icon: Settings2,
-        })}
-
         <div className="flex items-center gap-2 border-t border-[#EAEAE8] px-2 pt-3">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D7E8E2] text-[10px] font-medium text-[#27634F]">
             {userInitials}
@@ -371,13 +358,13 @@ export default function WorkspaceSidebar({
               key={item.label}
               href={href}
               onClick={onMobileClose}
-              className={`flex items-center gap-2.5 rounded-[9px] px-3 py-2 text-[11px] transition-colors ${
+              className={`flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[14px] transition-colors ${
                 active
                   ? "bg-[#E5F6EC] font-medium text-[#245C45]"
                   : "text-[#303236] hover:bg-[#F2F5F1]"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-4 w-4" />
               <span>{item.label}</span>
             </Link>
           );
