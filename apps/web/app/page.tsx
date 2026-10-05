@@ -1,5 +1,5 @@
 import { Navbar, Footer } from "@/components/layout";
-import { Hero, WhyForge, Features, HowItWorks, Pricing, CTA } from "@/components/home";
+import { Hero, WhyForge, Features, HowItWorks, Pricing, FAQ } from "@/components/home";
 import { RedirectIfAuthenticated } from "@/components/auth/AuthRedirect";
 
 export default function Home() {
@@ -11,7 +11,7 @@ export default function Home() {
       <HowItWorks />
       <WhyForge />
       <Pricing />
-      <CTA />
+      <FAQ />
       <Footer />
     </RedirectIfAuthenticated>
   );

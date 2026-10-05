@@ -47,7 +47,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            <Link href="/login" className="inline-flex items-center gap-3 rounded-md bg-butter px-[22px] py-[15px] text-[15px] font-semibold text-ink transition-transform hover:-translate-y-0.5">
+            <Link href="/login" className="inline-flex items-center gap-3 rounded-md bg-butter px-[22px] py-[15px] text-[15px] font-semibold text-ink transition-transform hover:-translate-y-0.5 hover:bg-butter/90">
               Start building
               <ArrowUpRight className="h-[1.2em] w-[1.2em]" strokeWidth={1.8} />
             </Link>

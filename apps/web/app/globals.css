@@ -105,8 +105,35 @@ body {
   overflow-x: hidden;
 }
 
+.navbar-ink {
+  color: var(--ink);
+}
+
+.navbar-warm {
+  color: var(--text-warm);
+}
+
+.navbar-cta-dark {
+  background-color: var(--text-warm);
+  color: var(--ink);
+}
+
+.navbar-cta-dark:hover {
+  background-color: var(--butter);
+  color: var(--ink);
+}
+
+.navbar-cta-light {
+  background-color: var(--ink);
+  color: var(--text-warm);
+}
+
+.navbar-cta-light:hover {
+  background-color: var(--forest);
+  color: var(--text-warm);
+}
+
 a {
-  color: inherit;
   text-decoration: none;
 }
 

@@ -84,7 +84,7 @@ export default function Pricing() {
                 className={`mt-1 flex items-center justify-between rounded-md border px-[22px] py-[15px] text-[15px] font-semibold transition-transform hover:-translate-y-0.5 ${
                   plan.highlighted
                     ? "border-ink bg-ink text-text-warm"
-                    : "border-ink/30 text-ink hover:bg-ink/5"
+                    : "border-ink bg-ink text-text-warm hover:bg-forest"
                 }`}
               >
                 {plan.action}
