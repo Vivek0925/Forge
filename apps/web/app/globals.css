@@ -1,18 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  /* ---------- Colors ---------- */
-  --background: #f8f8f6;
+  --coral: #e5704f;
+  --cream: #f4efe3;
+  --blue: #3659e6;
+  --blue-light: #e0e7ff;
+  --sage: #d6e4cd;
+  --forest: #12261d;
+  --butter: #f4d35e;
+  --ink: #17201a;
+  --text-warm: #fff4e4;
+  --muted: #5c675f;
+  --coral-soft: #fde1d8;
+  --coral-dark: #b8472c;
+  --peach: #f0b27a;
+  --periwinkle: #8fa8f5;
+  --mint: #a8d5a2;
+  --cream-panel: #fffaf2;
+  --cream-border: #efe8d9;
+
+  --background: var(--cream);
   --surface: #ffffff;
-  --surface-secondary: #f2f2ef;
+  --surface-secondary: #faf6ec;
 
-  --text: #111111;
-  --text-secondary: #666666;
+  --text: var(--ink);
+  --text-secondary: var(--muted);
 
-  --border: #e8e8e8;
+  --border: rgba(23, 32, 26, 0.15);
 
-  --primary: #22c55e;
-  --primary-hover: #16a34a;
+  --primary: var(--coral);
+  --primary-hover: #c9573a;
 
   /* ---------- Radius ---------- */
   --radius-sm: 14px;
@@ -26,6 +43,24 @@
 }
 
 @theme inline {
+  --color-coral: var(--coral);
+  --color-cream: var(--cream);
+  --color-blue: var(--blue);
+  --color-blue-light: var(--blue-light);
+  --color-sage: var(--sage);
+  --color-forest: var(--forest);
+  --color-butter: var(--butter);
+  --color-ink: var(--ink);
+  --color-text-warm: var(--text-warm);
+  --color-muted: var(--muted);
+  --color-coral-soft: var(--coral-soft);
+  --color-coral-dark: var(--coral-dark);
+  --color-peach: var(--peach);
+  --color-periwinkle: var(--periwinkle);
+  --color-mint: var(--mint);
+  --color-cream-panel: var(--cream-panel);
+  --color-cream-border: var(--cream-border);
+
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-secondary: var(--surface-secondary);
@@ -38,7 +73,7 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter-tight);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -46,12 +81,13 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: env(safe-area-inset-top, 0px);
 }
 
 body {
   background: var(--background);
   color: var(--text);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-inter-tight), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
@@ -66,14 +102,31 @@ button {
   font: inherit;
 }
 
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 img {
   display: block;
   max-width: 100%;
 }
 
 ::selection {
-  background: var(--primary);
-  color: white;
+  background: var(--butter);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .section {

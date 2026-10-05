@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vynor: tools in, product out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--or:#e5704f;--cr:#f4efe3;--bl:#3659e6;--blt:#e0e7ff;--sg:#d6e4cd;--gr:#12261d;--yl:#f4d35e;--ink:#17201a;--tx:#fff4e4;--mu:#5c675f;--page:#f4efe3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#12261d}}
+:root[data-theme="dark"]{--page:#12261d}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.5 'Inter Tight',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.i{width:1.2em;height:1.2em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em;flex:none}
+.nav{--fg:var(--tx);--bb:var(--tx);--bf:var(--ink);position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:32px;padding:calc(16px + env(safe-area-inset-top,0px)) clamp(20px,5vw,64px) 16px;color:var(--fg);transition:color .3s}
+.nav[data-t=c]{--fg:var(--ink);--bb:var(--ink);--bf:var(--cr)}
+.nav[data-t=b]{--fg:#fff;--bb:#fff;--bf:var(--ink)}
+.lg{display:flex;align-items:center;gap:8px;font-size:24px;font-weight:700;letter-spacing:-.04em}
+.lg b{width:26px;height:26px;border-radius:8px;background:currentColor;display:grid;place-items:center}
+.lg b span{color:var(--or);font-size:15px}
+.lk{display:flex;gap:28px;margin:0 auto;font-size:15px;font-weight:500}
+.ncta{background:var(--bb);color:var(--bf);padding:10px 18px;border-radius:6px;font-size:14px;font-weight:600;display:flex;gap:10px;align-items:center;transition:background .3s,color .3s}
+.btn{display:inline-flex;align-items:center;gap:14px;padding:15px 22px;font:600 15px 'Inter Tight',sans-serif;border-radius:6px;border:0;cursor:pointer}
+.y{background:var(--yl);color:var(--ink)}.k{background:var(--ink);color:var(--tx)}.w{background:var(--tx);color:var(--ink)}.o{background:var(--or);color:#fff}
+.s{min-height:100svh;padding:120px clamp(20px,5vw,64px) 72px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.in{max-width:1280px;margin:0 auto;width:100%}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,72px);align-items:center}
+h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.05em;line-height:.94}
+h1{font-size:clamp(52px,7.6vw,116px)}
+h2{font-size:clamp(40px,5.4vw,80px)}
+h3{font-size:clamp(28px,3vw,44px);letter-spacing:-.04em;line-height:1}
+.lt{font-weight:300}
+.lead{font-size:clamp(16px,1.4vw,20px);line-height:1.45;max-width:30em;margin:24px 0 32px}
+.a{width:26px;height:26px;border-radius:50%;display:inline-block;border:2px solid currentColor;margin-left:-8px}
+.a:first-child{margin-left:0}
+.hero{background:var(--or);color:var(--tx)}
+.hero .lead{color:#fff0e6}
+@keyframes up{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+.hero h1 span{display:block;animation:up .9s cubic-bezier(.2,.8,.2,1) both}
+.hero h1 span+span{animation-delay:.12s}
+.hero .lead{animation:up .9s .3s both}
+.hero .row{animation:up .9s .45s both}
+.row{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.proof{display:flex;align-items:center;gap:12px;font-size:14px;color:#fff0e6;margin-top:32px;animation:up .9s .6s both}
+.stage{position:relative;perspective:1200px;animation:up 1.1s .25s both}
+.tilt{transition:transform .25s ease-out;transform-style:preserve-3d}
+.dash{background:#fff;color:var(--ink);border-radius:20px;display:grid;grid-template-columns:150px 1fr;overflow:hidden;font-size:13px;transform:rotate(-3deg)}
+.dash aside{background:#faf6ec;padding:20px 14px;display:flex;flex-direction:column;gap:6px;color:var(--mu)}
+.dash aside b{color:var(--ink);font-size:15px;margin-bottom:8px}
+.dash aside span{padding:6px 10px;border-radius:8px}
+.dash aside .on{background:#fde1d8;color:#b8472c;font-weight:600}
+.dm{padding:22px}
+.dm h4{margin:0 0 14px;font-size:20px;letter-spacing:-.03em}
+.st{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.st div{border:1px solid #efe8d9;border-radius:12px;padding:10px 12px;color:var(--mu)}
+.st b{display:block;font-size:26px;color:var(--ink);letter-spacing:-.04em;line-height:1.1}
+.dm p{margin:0;padding:7px 0;display:flex;align-items:center;gap:10px;color:var(--mu)}
+.dm p i{width:20px;height:20px;border-radius:50%;flex:none}
+.mt{margin-top:12px;border:1px solid #efe8d9;background:#fffaf2;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-weight:600}
+.mt u{text-decoration:none;background:var(--or);color:#fff;border-radius:8px;padding:6px 14px}
+.chip{position:absolute;background:var(--tx);color:var(--ink);font-size:13px;font-weight:500;padding:9px 14px;border-radius:8px;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.chip.c1{left:-24px;top:-22px}.chip.c2{right:-12px;bottom:-20px}
+.hbar{position:absolute;left:clamp(20px,5vw,64px);right:clamp(20px,5vw,64px);bottom:24px;display:flex;justify-content:space-between;font-size:14px;color:#fff0e6;border-top:1px solid rgba(255,244,228,.45);padding-top:14px}
+.show{background:var(--cr)}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;margin-bottom:28px;flex-wrap:wrap}
+.head p{max-width:26em;margin:0;color:var(--mu);font-size:17px}
+.tabs{display:flex;gap:10px;margin-bottom:20px}
+.tabs button{font:500 15px 'Inter Tight',sans-serif;border:1px solid rgba(23,32,26,.3);background:transparent;color:var(--ink);border-radius:999px;padding:10px 20px;cursor:pointer;transition:background .2s,color .2s}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--tx);border-color:var(--ink)}
+.card{display:grid;grid-template-columns:.8fr 1.2fr;border:1px solid rgba(23,32,26,.15);border-radius:28px;overflow:hidden;min-height:440px}
+.sgp{background:var(--sg);padding:clamp(24px,3vw,44px);display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+.sgp p{margin:12px 0 0;color:#3f5046;font-size:17px;max-width:24em}
+.pn{background:#faf6ec;padding:clamp(16px,2.4vw,36px);display:flex;align-items:center}
+.pane{display:none;width:100%}
+.pane.on{display:block;animation:up .5s both}
+.win{background:#fff;border:1px solid #e4dccb;border-radius:16px;overflow:hidden;font-size:13px}
+.wt{padding:11px 16px;border-bottom:1px solid #efe8d9;font-weight:600;display:flex;gap:10px;align-items:center}
+.pl{background:#fde1d8;color:#b8472c;border-radius:999px;padding:1px 10px;font-size:12px}
+.bd{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px;background:#faf6ec}
+.col{display:flex;flex-direction:column;gap:10px;position:relative}
+.col>b{font-size:12px;color:var(--mu)}
+.tk{background:#fff;border:1px solid #e4dccb;border-radius:12px;padding:12px;font-weight:600;min-height:72px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+.tk span{font-size:11px;border-radius:6px;padding:2px 8px;align-self:flex-start}
+.t1{background:var(--blt);color:#1f3db8}.t2{background:#fde1d8;color:#b8472c}.t3{background:#f9ecb4;color:#6b5200}
+.pane.on .mv{border-color:var(--or);animation:mvc 6s 1s infinite}
+@keyframes mvc{0%,20%{transform:none;opacity:1}30%{transform:translate(0,-6px) rotate(2deg) scale(1.04)}50%,85%{transform:translate(calc(100% + 12px),calc(100% + 10px))}95%,100%{transform:translate(calc(100% + 12px),calc(100% + 10px));opacity:0}}
+.tg{position:absolute;left:30%;top:128px;background:var(--ink);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px;opacity:0}
+.pane.on .tg{animation:tg 6s 1s infinite}
+@keyframes tg{0%,15%{opacity:0}25%{opacity:1;transform:none}50%,85%{opacity:1;transform:translate(calc(100% + 40px),calc(100% + 60px))}95%,100%{opacity:0}}
+.tl{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.tl div{aspect-ratio:4/3;border-radius:12px;display:grid;place-items:center;position:relative;font-weight:700;font-size:22px}
+.tl div span{position:absolute;left:8px;bottom:8px;font-size:12px;background:rgba(255,255,255,.9);border-radius:6px;padding:1px 8px;font-weight:600}
+.bu{margin:0 14px 8px;background:#f4efe3;border-radius:14px;padding:8px 14px;width:fit-content}
+.bu.me{margin-left:auto;background:var(--or);color:#fff}
+.ct{display:flex;justify-content:center;gap:10px;padding:8px 0 16px}
+.ct i{width:34px;height:34px;border-radius:50%;background:#f4efe3}.ct i:last-child{background:#e5432a;width:46px;border-radius:17px}
+.doc{padding:20px 22px}
+.doc h4{margin:0 0 14px;font-size:24px;letter-spacing:-.04em}
+.ln{height:9px;border-radius:5px;background:#ece4d6;margin-bottom:10px}
+.sel{background:#fde1d8;border-radius:6px;padding:5px 6px;margin:6px -6px 12px;display:flex;align-items:center;position:relative}
+.sel .ln{margin:0;background:#f5b8a6;animation:ty 4s steps(16) infinite}
+.sel em{width:2px;height:16px;background:var(--or);animation:bl 1s steps(2) infinite}
+.sel u{position:absolute;right:6px;top:-12px;text-decoration:none;background:var(--or);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:1px 8px}
+@keyframes ty{0%{width:8%}65%,100%{width:90%}}
+@keyframes bl{50%{opacity:0}}
+.blue{background:var(--bl);color:#fff}
+.blue .lead{color:#dfe6ff}
+.rep{font-size:15px;color:#dfe6ff}
+.rep s{margin-left:12px;text-decoration-color:var(--yl);text-decoration-thickness:2px}
+.orb{position:relative;width:440px;height:440px;margin:0 auto}
+.orb .r{position:absolute;inset:64px;border:1px solid rgba(255,255,255,.45);border-radius:50%}
+.orb .r2{inset:0;opacity:.5}
+.spin{position:absolute;inset:0;animation:sp 40s linear infinite}
+.orb:hover .spin,.orb:hover .spin div{animation-play-state:paused}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tile{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px;transform:rotate(var(--r)) translateY(-168px) rotate(calc(var(--r)*-1))}
+.tile div{width:76px;height:76px;border-radius:20px;background:#fff;color:var(--bl);display:grid;place-items:center;justify-items:center;align-content:center;font-size:12px;font-weight:600;gap:2px;animation:sp 40s linear infinite reverse}
+.tile .i{font-size:26px}
+.core{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px;border-radius:50%;background:var(--yl);color:var(--ink);display:grid;place-items:center;font-size:40px;font-weight:700}
+.core:before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--yl);animation:rp 3s ease-out infinite}
+@keyframes rp{from{transform:scale(1);opacity:.8}to{transform:scale(2.3);opacity:0}}
+.list{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(16px,3vw,48px);margin-top:56px}
+.list div{border-top:1px solid rgba(255,255,255,.4);padding-top:18px;display:grid;grid-template-columns:32px 1fr 24px;gap:6px 10px}
+.list i{font-style:normal;font-size:14px;opacity:.7;padding-top:4px}
+.list b{font-size:21px;letter-spacing:-.03em;line-height:1.2}
+.list p{grid-column:2;margin:0;color:#dfe6ff;font-size:15px}
+.forest{background:var(--gr);color:var(--tx)}
+.forest h2 .lt{color:#b9d3a8}
+.forest .lead{color:#b9c7bd}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chips span{border:1px solid rgba(255,244,228,.4);border-radius:999px;padding:8px 18px;font-size:15px}
+.pts div{display:grid;grid-template-columns:44px 1fr;gap:4px 14px;padding:26px 0;border-top:1px solid rgba(255,244,228,.25)}
+.pts div:last-child{border-bottom:1px solid rgba(255,244,228,.25)}
+.pts .i{font-size:24px;color:var(--yl);grid-row:span 2}
+.pts b{font-size:22px;letter-spacing:-.03em}
+.pts p{margin:0;color:#b9c7bd}
+.price{background:var(--cr)}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid rgba(23,32,26,.15);border-radius:28px;overflow:hidden;margin-top:36px}
+.pc{padding:clamp(24px,3vw,40px);display:flex;flex-direction:column;gap:16px}
+.pc+.pc{border-left:1px solid rgba(23,32,26,.15)}
+.pc.hl{background:var(--sg)}
+.pc h3{font-size:28px}
+.pc p{margin:0;color:var(--mu)}
+.pc .amt{font-size:64px;font-weight:700;letter-spacing:-.05em;line-height:1;margin-top:8px}
+.pc .amt small{font-size:15px;font-weight:400;letter-spacing:0;color:var(--mu);margin-left:6px}
+.pc ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:10px}
+.pc li{display:flex;gap:10px;align-items:center}
+.pc li .i{color:var(--or)}
+.pc .btn{justify-content:space-between;border:1px solid rgba(23,32,26,.3);background:transparent}
+.pc.hl .btn{background:var(--ink);color:var(--tx);border-color:var(--ink)}
+.qa{border-top:1px solid rgba(23,32,26,.25)}
+.qa:last-child{border-bottom:1px solid rgba(23,32,26,.25)}
+.qa button{all:unset;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 0;font:600 20px 'Inter Tight',sans-serif;letter-spacing:-.03em;cursor:pointer}
+.qa button:focus-visible{outline:2px solid var(--ink)}
+.qa button i{font-style:normal;font-weight:300;font-size:28px;transition:transform .3s}
+.qa p{margin:0;max-height:0;overflow:hidden;color:var(--mu);transition:max-height .4s,padding .4s}
+.qa.open p{max-height:140px;padding-bottom:22px}
+.qa.open button i{transform:rotate(45deg)}
+.foot{background:var(--or);color:var(--tx);height:100svh;min-height:0;padding:84px clamp(20px,5vw,64px) 20px}.foot .in{height:100%;display:flex;flex-direction:column;justify-content:space-between;gap:16px}
+.foot h2{font-size:clamp(36px,min(6.2vw,9vh),96px);white-space:nowrap}
+.fr{display:flex;justify-content:space-between;align-items:flex-end;gap:32px;flex-wrap:wrap}
+.fr p{max-width:20em;color:#fde1d8;margin:0 0 20px}
+.fl{display:flex;gap:28px;border-top:1px solid rgba(255,244,228,.45);padding-top:12px;margin-top:0;font-size:15px;color:#fde1d8;flex-wrap:wrap}
+.fl span:first-child{margin-right:auto}
+.mark{font-size:max(70px,min(37.5vw,530px,calc((100svh - 250px)/.86)));font-weight:700;letter-spacing:-.07em;line-height:1;margin:-.26em 0 0;padding-bottom:.1em;white-space:nowrap;text-align:center}
+.pr{position:fixed;top:0;left:0;height:3px;width:0;background:var(--yl);z-index:30}
+.js .rv{opacity:0;translate:0 56px;transition:opacity .9s cubic-bezier(.2,.8,.2,1),translate .9s cubic-bezier(.2,.8,.2,1),clip-path .9s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s)}
+.js .vis .rv{opacity:1;translate:none}
+.js h2.rv{clip-path:inset(0 0 100% 0)}
+.js .vis h2.rv{clip-path:inset(-10% -5% -20% -5%)}
+.js .tile{opacity:0;scale:.3;transition:opacity .6s,scale .7s cubic-bezier(.2,.9,.3,1.3)}
+.js .vis .tile{opacity:1;scale:1}
+.tile:nth-child(1){transition-delay:.3s}.tile:nth-child(2){transition-delay:.4s}.tile:nth-child(3){transition-delay:.5s}.tile:nth-child(4){transition-delay:.6s}.tile:nth-child(5){transition-delay:.7s}
+.js .core{scale:0;transition:scale .8s cubic-bezier(.2,.9,.3,1.3) .1s}
+.js .vis .core{scale:1}
+@media(max-width:860px){.lk{display:none}.nav{justify-content:space-between}.g,.card,.pg,.list{grid-template-columns:1fr}.dash{grid-template-columns:1fr}.dash aside{display:none}.pc+.pc{border-left:0;border-top:1px solid rgba(23,32,26,.15)}.orb{transform:scale(.72);margin:-60px auto}.s{padding-top:100px}.foot{height:auto;min-height:100svh}.foot h2{white-space:normal}.hbar{position:static;margin-top:32px}.chip.c1{left:0}.chip.c2{right:0}}
+@media(max-height:760px){.foot .fr p{display:none}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="pr" id="pr"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+<symbol id="task" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></symbol>
+<symbol id="doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+<symbol id="board" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM8 21l4-5 4 5"/></symbol>
+<symbol id="video" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M8 7h9v9"/></symbol>
+<symbol id="check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 3-6 6-6s6 2 6 6M16 5a3 3 0 010 6M18 14c2 1 3 3 3 6"/></symbol>
+<symbol id="map" viewBox="0 0 24 24"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/></symbol>
+</defs></svg>
+
+<header class="nav" id="nav" data-t="o">
+  <a class="lg" href="#top"><b><span>V</span></b>vynor</a>
+  <nav class="lk" aria-label="Main"><a href="#show">Platform</a><a href="#how">How it works</a><a href="#price">Pricing</a></nav>
+  <a class="ncta" href="#end">Meet your workspace <svg class="i"><use href="#arrow"/></svg></a>
+</header>
+
+<main>
+<section class="s hero" id="top" data-t="o"><div class="in g">
+  <div>
+    <h1><span>Tools in.</span><span>Product out.</span></h1>
+    <p class="lead">Chat, tasks, docs, whiteboards and meetings in one calm place where your team builds.</p>
+    <div class="row"><a class="btn y" href="#end">Start building <svg class="i"><use href="#arrow"/></svg></a><a href="#show">See Vynor in action</a></div>
+    <div class="proof"><span style="color:var(--or);display:flex"><i class="a" style="background:#f0b27a"></i><i class="a" style="background:#8fa8f5"></i><i class="a" style="background:#a8d5a2"></i></span>Made for software teams, designers and students</div>
+  </div>
+  <div class="stage" id="stage"><div class="tilt" id="tilt">
+    <div class="dash">
+      <aside><b>desizn</b><span class="on">Overview</span><span>Projects</span><span>Tasks</span><span>Docs</span><span>Whiteboard</span><span>Chat</span><span>Meetings</span></aside>
+      <div class="dm"><h4>Good afternoon, Vivek</h4>
+        <div class="st"><div>Projects<b>3</b></div><div>Open tasks<b>8</b></div><div>Members<b>6</b></div></div>
+        <p><i style="background:#f0b27a"></i>You updated API Documentation.md</p>
+        <p><i style="background:#8fa8f5"></i>Priya created a new task</p>
+        <p><i style="background:#a8d5a2"></i>Arjun joined the workspace</p>
+        <div class="mt"><span>Sprint Planning, 10:00 AM</span><u>Join</u></div>
+      </div>
+    </div>
+    <span class="chip c1"><svg class="i"><use href="#chat"/></svg>Standup notes filed</span>
+    <span class="chip c2"><svg class="i"><use href="#task"/></svg>Sprint task moved to Done</span>
+  </div></div></div>
+  <div class="hbar"><span>Meet Vynor</span><span>Scroll to go deeper</span></div>
+</section>
+
+<section class="s show" id="show" data-t="c"><div class="in">
+  <div class="head"><h2>From idea<br><span class="lt">to shipped.</span></h2><p>Plan the work, talk it through and write it down without leaving the project.</p></div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-p="0">Plan</button><button role="tab" aria-selected="false" data-p="1">Meet</button><button role="tab" aria-selected="false" data-p="2">Write</button>
+  </div>
+  <div class="card">
+    <div class="sgp"><div><h3 id="ptt">Turn ideas into a plan.</h3><p id="pdd">Break a project into tasks and watch the work move across the board.</p></div><a class="btn k" href="#end" style="justify-content:space-between">Start a project <svg class="i"><use href="#arrow"/></svg></a></div>
+    <div class="pn">
+      <div class="pane on"><div class="win"><div class="wt">Sprint 12 <span class="pl">8 open</span></div>
+        <div class="bd">
+          <div class="col"><b>To do</b><div class="tk">Write API docs<span class="t1">Docs</span></div><div class="tk">Design the nav<span class="t2">UI</span></div></div>
+          <div class="col"><b>In progress</b><div class="tk">Auth flow<span class="t3">Dev</span></div><div class="tk mv">Prisma schema<span class="t3">Dev</span></div><div class="tg">Arjun</div></div>
+          <div class="col"><b>Done</b><div class="tk">Landing page<span class="t2">UI</span></div><div class="tk">Invite flow<span class="t3">Dev</span></div></div>
+        </div></div></div>
+      <div class="pane"><div class="win"><div class="wt">Sprint planning <span class="pl">Live</span></div>
+        <div class="tl"><div style="background:#ffd5bf">V<span>Vivek</span></div><div style="background:#dbe3ff">P<span>Priya</span></div><div style="background:#d6e4cd">A<span>Arjun</span></div></div>
+        <div class="bu">Roadmap looks good to me</div><div class="bu me">Shipping the beta Friday</div><div class="bu">Nice, I'll update the docs</div>
+        <div class="ct"><i></i><i></i><i></i><i></i></div></div></div>
+      <div class="pane"><div class="win"><div class="wt">Docs <span class="pl">3 editing</span></div>
+        <div class="doc"><h4>API Documentation</h4><div class="ln" style="width:92%"></div><div class="ln" style="width:78%"></div><div class="ln" style="width:86%"></div>
+          <b>Authentication</b><div class="sel"><div class="ln"></div><em></em><u>Priya</u></div><div class="ln" style="width:70%"></div><div class="ln" style="width:55%"></div></div></div></div>
+    </div>
+  </div>
+</div></section>
+
+<section class="s blue" id="how" data-t="b"><div class="in">
+  <div class="g">
+    <div><h2><span class="lt">Five tools.</span><br>One core.</h2>
+      <p class="lead">Everything your team uses connects around the project, so nothing gets lost between apps.</p>
+      <div class="rep">Replaces <s>Slack</s><s>Notion</s><s>Jira</s><s>Miro</s></div></div>
+    <div class="orb"><div class="r r2"></div><div class="r"></div>
+      <div class="spin">
+        <div class="tile" style="--r:0deg"><div><svg class="i"><use href="#chat"/></svg>Chat</div></div>
+        <div class="tile" style="--r:72deg"><div><svg class="i"><use href="#task"/></svg>Tasks</div></div>
+        <div class="tile" style="--r:144deg"><div><svg class="i"><use href="#doc"/></svg>Docs</div></div>
+        <div class="tile" style="--r:216deg"><div><svg class="i"><use href="#board"/></svg>Board</div></div>
+        <div class="tile" style="--r:288deg"><div><svg class="i"><use href="#video"/></svg>Meet</div></div>
+      </div><div class="core">V</div></div>
+  </div>
+  <div class="list">
+    <div><i>1</i><b>Gather your tools</b><svg class="i"><use href="#arrow"/></svg><p>Chat, tasks, docs and boards start in the same project.</p></div>
+    <div><i>2</i><b>Connect the dots</b><svg class="i"><use href="#arrow"/></svg><p>Link a task to the doc and the call where it was decided.</p></div>
+    <div><i>3</i><b>Ship together</b><svg class="i"><use href="#arrow"/></svg><p>Everyone sees the same progress, live, in one place.</p></div>
+  </div>
+</div></section>
+
+<section class="s forest" data-t="o"><div class="in g">
+  <div><h2>Your workspace.<br><span class="lt">Your rules.</span></h2>
+    <p class="lead">Invite the right people, give them the right role and keep every project in the workspace it belongs to.</p>
+    <div class="chips"><span>Owner</span><span>Admin</span><span>Member</span><span>Guest</span></div></div>
+  <div class="pts">
+    <div><svg class="i"><use href="#users"/></svg><b>Roles that fit your team</b><p>Decide who can manage, edit or just look.</p></div>
+    <div><svg class="i"><use href="#lock"/></svg><b>Invite-only by default</b><p>People join with an invitation, nobody wanders in.</p></div>
+    <div><svg class="i"><use href="#map"/></svg><b>One place to look</b><p>Projects, people and files stay together, never scattered.</p></div>
+  </div>
+</div></section>
+
+<section class="s price" id="price" data-t="c"><div class="in">
+  <div class="head"><h2>Start free.<br><span class="lt">Grow together.</span></h2><p>Pick the plan that fits your team today and change it whenever you need.</p></div>
+  <div class="pg">
+    <div class="pc"><h3>Starter</h3><p>For one person trying Vynor.</p><div class="amt">$0<small>forever</small></div><a class="btn" href="#end">Start for free <svg class="i"><use href="#arrow"/></svg></a>
+      <ul><li><svg class="i"><use href="#check"/></svg>One workspace</li><li><svg class="i"><use href="#check"/></svg>Three projects</li><li><svg class="i"><use href="#check"/></svg>Chat, tasks and docs</li></ul></div>
+    <div class="pc hl"><h3>Team</h3><p>For small teams that ship together.</p><div class="amt">$12<small>per member, monthly</small></div><a class="btn" href="#end">Start your team <svg class="i"><use href="#arrow"/></svg></a>
+      <ul><li><svg class="i"><use href="#check"/></svg>Everything in Starter</li><li><svg class="i"><use href="#check"/></svg>Unlimited projects</li><li><svg class="i"><use href="#check"/></svg>Meetings and whiteboards</li><li><svg class="i"><use href="#check"/></svg>Roles and invitations</li></ul></div>
+    <div class="pc"><h3>Company</h3><p>For organizations with many teams.</p><div class="amt">$29<small>per member, monthly</small></div><a class="btn" href="#end">Talk to us <svg class="i"><use href="#arrow"/></svg></a>
+      <ul><li><svg class="i"><use href="#check"/></svg>Everything in Team</li><li><svg class="i"><use href="#check"/></svg>Multiple workspaces</li><li><svg class="i"><use href="#check"/></svg>Priority support</li></ul></div>
+  </div>
+</div></section>
+
+<section class="s price" data-t="c" style="min-height:auto;padding-top:24px"><div class="in g" style="align-items:start">
+  <div><h2>Questions,<br><span class="lt">answered.</span></h2></div>
+  <div id="faq">
+    <div class="qa open"><button aria-expanded="true">What does Vynor replace?<i>+</i></button><p>The chat, docs, tasks and whiteboards you usually spread across separate apps now live together in one project.</p></div>
+    <div class="qa"><button aria-expanded="false">Who is it built for?<i>+</i></button><p>Software teams, designers and students who build things together and want everything in one place.</p></div>
+    <div class="qa"><button aria-expanded="false">How do I invite my team?<i>+</i></button><p>Create a workspace, then send invitations from the top bar. People join from a link and land in the project.</p></div>
+    <div class="qa"><button aria-expanded="false">Do I have to move everything at once?<i>+</i></button><p>No. Start with one project and bring the rest over when you are ready.</p></div>
+  </div>
+</div></section>
+
+<footer class="s foot" id="end" data-t="o"><div class="in">
+  <div class="fr"><h2>Ready when <span class="lt">you are.</span></h2>
+    <div><p>Open a workspace, invite your team and ship your first project today.</p><a class="btn w" href="#top">Start your workspace <svg class="i"><use href="#arrow"/></svg></a></div></div>
+  <div class="fl"><span>© 2026 Vynor</span><a href="#show">Platform</a><a href="#how">How it works</a><a href="#price">Pricing</a><a href="#top">Privacy</a><a href="#top">Terms</a></div>
+  <div class="mark" aria-hidden="true">vynor</div>
+</div></footer>
+</main>
+
+<script>
+(function(){
+document.documentElement.classList.add('js');
+var nav=document.getElementById('nav');
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){nav.dataset.t=e.target.dataset.t||'o'}})},{rootMargin:'-40px 0px -92% 0px'});
+document.querySelectorAll('[data-t].s,.s[data-t]').forEach(function(s){io.observe(s)});
+var T=[['Turn ideas into a plan.','Break a project into tasks and watch the work move across the board.'],['Talk it through, live.','Start a call from the project and keep the chat right beside the work.'],['Write it down together.','Draft docs side by side and see who is editing in real time.']];
+var tb=document.querySelectorAll('.tabs button'),pn=document.querySelectorAll('.pane');
+tb.forEach(function(b,i){b.addEventListener('click',function(){
+  tb.forEach(function(x,j){x.setAttribute('aria-selected',j===i)});
+  pn.forEach(function(p,j){p.classList.toggle('on',j===i)});
+  document.getElementById('ptt').textContent=T[i][0];document.getElementById('pdd').textContent=T[i][1];
+})});
+document.querySelectorAll('#faq .qa').forEach(function(q){q.querySelector('button').addEventListener('click',function(){
+  var o=q.classList.contains('open');
+  document.querySelectorAll('#faq .qa').forEach(function(x){x.classList.remove('open');x.querySelector('button').setAttribute('aria-expanded','false')});
+  if(!o){q.classList.add('open');q.querySelector('button').setAttribute('aria-expanded','true')}
+})});
+var st=document.getElementById('stage'),tl=document.getElementById('tilt');
+st.addEventListener('pointermove',function(e){var r=st.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;tl.style.transform='rotateY('+(x*14)+'deg) rotateX('+(-y*10)+'deg)'});
+st.addEventListener('pointerleave',function(){tl.style.transform='none'});
+var secs=[].slice.call(document.querySelectorAll('.s'));
+['.show .head > *','.show .tabs','.show .card','.blue .g > div:first-child > *','.blue .orb','.blue .list > div','.forest .g > div:first-child > *','.forest .pts > div','.price .head > *','.pg .pc','.qa','.price .g h2','.foot .fr > *','.foot .fl','.mark'].forEach(function(q){document.querySelectorAll(q).forEach(function(e){e.classList.add('rv')})});
+secs.forEach(function(sc){sc.querySelectorAll('.rv').forEach(function(e,i){e.style.setProperty('--d',(i*.1)+'s')})});
+var vo=new IntersectionObserver(function(es){es.forEach(function(e){e.target.classList.toggle('vis',e.isIntersecting)})},{threshold:.2});
+secs.forEach(function(sc){vo.observe(sc)});
+var rm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+var par=[['.card',.05],['.orb',.09],['.pts',.05],['.pg',.04]].map(function(a){var e=document.querySelector(a[0]);return {el:e,sec:e&&e.closest('.s'),f:a[1]}});
+var tk=0;
+function tick(){var h=innerHeight;
+  if(!rm&&innerWidth>860)par.forEach(function(p){if(!p.el)return;var r=p.sec.getBoundingClientRect();p.el.style.transform='translateY('+(-(r.top+r.height/2-h/2)*p.f).toFixed(1)+'px)'});
+  var m=document.documentElement.scrollHeight-h;document.getElementById('pr').style.width=(m>0?scrollY/m*100:0)+'%';}
+addEventListener('scroll',function(){if(!tk){tk=1;requestAnimationFrame(function(){tk=0;tick()})}},{passive:true});
+tick();
+})();
+</script>
+</body>
+</html>

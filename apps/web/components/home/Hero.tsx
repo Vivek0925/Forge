@@ -1,160 +1,83 @@
 "use client";
 
-import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import Container from "../ui/Container";
-import Button from "../ui/Button";
-import Link from "next/dist/client/link";
-
-const NODES = [
-  { label: "Chat", angle: -90 },
-  { label: "Meetings", angle: -45 },
-  { label: "Docs", angle: 0 },
-  { label: "Whiteboard", angle: 45 },
-  { label: "Tasks", angle: 90 },
-  { label: "Files", angle: 135 },
-  { label: "AI Memory", angle: 180 },
-  { label: "Timeline", angle: -135 },
-];
-
-const CENTER = { x: 260, y: 260 };
-const RADIUS = 190;
-
-function point(angleDeg: number) {
-  const rad = (angleDeg * Math.PI) / 180;
-  return {
-    x: CENTER.x + RADIUS * Math.cos(rad),
-    y: CENTER.y + RADIUS * Math.sin(rad),
-  };
-}
-
-function ConnectionGraph() {
-  return (
-    <div className="relative mx-auto aspect-square w-full max-w-[520px]">
-      {/* ambient blobs */}
-      <div className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#059669]/15 blur-[80px]" />
-      <div className="absolute left-1/3 top-1/4 h-[220px] w-[220px] rounded-full bg-[#065F46]/10 blur-[70px]" />
-
-      <svg viewBox="0 0 520 520" className="relative h-full w-full">
-        {NODES.map((node, i) => {
-          const p = point(node.angle);
-          return (
-            <motion.line
-              key={`line-${node.label}`}
-              x1={CENTER.x}
-              y1={CENTER.y}
-              x2={p.x}
-              y2={p.y}
-              stroke="#C7C9DA"
-              strokeWidth={1}
-              initial={{ pathLength: 0, opacity: 0 }}
-              animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 1, delay: 0.15 + i * 0.06, ease: "easeOut" }}
-            />
-          );
-        })}
-
-        {NODES.map((node, i) => {
-          const p = point(node.angle);
-          return (
-            <motion.circle
-              key={`pulse-${node.label}`}
-              r={3}
-              fill="#059669"
-              initial={{ opacity: 0 }}
-              animate={{
-                cx: [CENTER.x, p.x],
-                cy: [CENTER.y, p.y],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 2.2,
-                delay: 1 + i * 0.35,
-                repeat: Infinity,
-                repeatDelay: NODES.length * 0.35,
-                ease: "easeInOut",
-              }}
-            />
-          );
-        })}
-
-        {NODES.map((node, i) => {
-          const p = point(node.angle);
-          return (
-            <motion.g
-              key={node.label}
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.5 + i * 0.06 }}
-            >
-              <circle cx={p.x} cy={p.y} r={26} fill="#FAFAF8" stroke="#DEDFE8" strokeWidth={1} />
-              <text
-                x={p.x}
-                y={p.y + 42}
-                textAnchor="middle"
-                className="fill-[#5B5D6E]"
-                style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 10, letterSpacing: "0.04em" }}
-              >
-                {node.label.toUpperCase()}
-              </text>
-            </motion.g>
-          );
-        })}
-
-        {/* center hub */}
-        <motion.g
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <circle cx={CENTER.x} cy={CENTER.y} r={46} fill="#14141C" />
-          <text
-            x={CENTER.x}
-            y={CENTER.y + 4}
-            textAnchor="middle"
-            className="fill-[#FAFAF8]"
-            style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 11, letterSpacing: "0.08em" }}
-          >
-            FORGE
-          </text>
-        </motion.g>
-      </svg>
-    </div>
-  );
-}
+import HeroDashboard from "./HeroDashboard";
 
 export default function Hero() {
-  return (
-    <section className="relative overflow-hidden pb-24 pt-40 md:pb-32 md:pt-48">
-      <Container className="grid items-center gap-10 md:grid-cols-2 md:gap-8">
-        <div className="flex flex-col items-start gap-7">
-          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#059669]">
-            The digital engineering workspace
-          </span>
+  const reducedMotion = useReducedMotion();
 
-          <h1 className="text-[36px] font-light leading-[1.08] tracking-[-0.03em] text-[#14141C] sm:text-[42px] md:text-[58px]">
-            Every project,
-            <br />
-            one connected place.
+  return (
+    <section id="top" className="relative flex min-h-svh flex-col justify-center overflow-hidden bg-coral px-5 pb-[104px] pt-[120px] text-text-warm sm:px-8 md:px-16">
+      <Container className="grid w-full max-w-[1280px] items-center gap-12 md:grid-cols-2 md:gap-[clamp(24px,5vw,72px)]">
+        <div>
+          <h1 className="m-0 text-[clamp(52px,7.6vw,116px)] font-bold leading-[0.94] tracking-[-0.05em]">
+            <motion.span
+              className="block"
+              initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              Tools in.
+            </motion.span>
+            <motion.span
+              className="block"
+              initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.12, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              Product out.
+            </motion.span>
           </h1>
 
-          <p className="max-w-[440px] text-[15px] leading-relaxed text-[#5B5D6E] sm:text-[16px]">
-            Vynor replaces the sprawl of Slack, Meet, Notion, Jira, Miro, Drive,
-            and ChatGPT with a single workspace built around your projects, not
-            your inbox.
-          </p>
+          <motion.p
+            className="my-6 mb-8 max-w-[30em] text-[clamp(16px,1.4vw,20px)] leading-[1.45] text-text-warm/90"
+            initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.3, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            Chat, tasks, docs, whiteboards and meetings in one calm place where your team builds.
+          </motion.p>
 
-          <div className="flex w-full flex-col items-stretch gap-3 pt-2 sm:w-auto sm:flex-row sm:items-center">
-            <Link href="/login">
-              <Button>Join the beta</Button>
+          <motion.div
+            className="flex flex-wrap items-center gap-5"
+            initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.45, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            <Link href="/login" className="inline-flex items-center gap-3 rounded-md bg-butter px-[22px] py-[15px] text-[15px] font-semibold text-ink transition-transform hover:-translate-y-0.5">
+              Start building
+              <ArrowUpRight className="h-[1.2em] w-[1.2em]" strokeWidth={1.8} />
             </Link>
-            <Link href="/demo">
-              <Button variant="ghost">See how it works</Button>
-            </Link>
-          </div>
+            <a href="#features" className="transition-opacity hover:opacity-75">
+              See Vynor in action
+            </a>
+          </motion.div>
+
+          <motion.div
+            className="mt-8 flex items-center gap-3 text-sm text-text-warm/90"
+            initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.6, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            <span className="flex text-coral">
+              <i className="h-[26px] w-[26px] rounded-full border-2 border-current bg-peach" />
+              <i className="-ml-2 h-[26px] w-[26px] rounded-full border-2 border-current bg-periwinkle" />
+              <i className="-ml-2 h-[26px] w-[26px] rounded-full border-2 border-current bg-mint" />
+            </span>
+            Made for software teams, designers and students
+          </motion.div>
         </div>
 
-        <ConnectionGraph />
+        <HeroDashboard />
       </Container>
+
+      <div className="absolute bottom-6 left-5 right-5 flex justify-between border-t border-text-warm/45 pt-3.5 text-sm text-text-warm/90 sm:left-8 sm:right-8 md:left-16 md:right-16">
+        <span>Meet Vynor</span>
+        <span>Scroll to go deeper</span>
+      </div>
     </section>
   );
 }

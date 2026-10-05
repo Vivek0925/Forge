@@ -1,70 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import Container from "../ui/Container";
-import Button from "../ui/Button";
 
 const links = [
-  { label: "Product", href: "#features" },
+  { label: "Platform", href: "#features" },
   { label: "How it works", href: "#how-it-works" },
-  { label: "Why Vynor", href: "#why-forge" },
-  { label: "Developers", href: "#" },
+  { label: "Pricing", href: "#pricing" },
 ];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "border-b border-[#DEDFE8] bg-[#FAFAF8]/80 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent"
-      }`}
-    >
-      <Container className="flex h-[68px] items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-[#14141C]">
-            <span className="h-[9px] w-[9px] rounded-[2px] bg-[#059669]" />
-          </span>
-          <span className="text-[15px] font-medium tracking-[-0.01em] text-[#14141C]">
-            Vynor
-          </span>
-        </Link>
+    <header className="fixed inset-x-0 top-0 z-50 flex items-center gap-8 px-5 py-4 text-text-warm sm:px-8 md:px-16">
+      <Link href="#top" className="flex items-center gap-2 text-2xl font-bold tracking-[-0.04em]">
+        <span className="grid h-[26px] w-[26px] place-items-center rounded-lg bg-current">
+          <span className="text-[15px] text-coral">V</span>
+        </span>
+        vynor
+      </Link>
 
-        <nav className="hidden items-center gap-8 md:flex">
+      <nav className="mx-auto hidden items-center gap-7 text-[15px] font-medium md:flex" aria-label="Main">
           {links.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="text-[13px] text-[#5B5D6E] transition-colors hover:text-[#14141C]"
+              className="transition-opacity hover:opacity-75"
             >
               {link.label}
             </a>
           ))}
-        </nav>
+      </nav>
 
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden text-[13px] text-[#5B5D6E] transition-colors hover:text-[#14141C] md:block"
-          >
-            Log in
-          </Link>
-          {/* `size` isn't defined on ButtonProps in this codebase; cast to any to pass through for now */}
-          <Link href="/login">
-            <Button {...({ size: "sm" } as any)}>Join beta</Button>
-          </Link>
-        </div>
-      </Container>
+      <Link href="/login" className="flex items-center gap-2 rounded-md bg-text-warm px-[18px] py-2.5 text-sm font-semibold text-ink transition-opacity hover:opacity-85">
+        Meet your workspace
+        <span aria-hidden="true">↗</span>
+      </Link>
     </header>
   );
 }
