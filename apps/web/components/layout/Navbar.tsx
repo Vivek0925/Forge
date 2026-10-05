@@ -38,7 +38,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 flex items-center gap-8 px-5 py-4 transition-colors duration-300 sm:px-8 md:px-16 ${
+      className={`fixed inset-x-0 top-0 z-50 flex items-center gap-2 px-5 py-4 transition-colors duration-300 sm:gap-8 sm:px-8 md:px-16 ${
         isLightSection ? "navbar-ink" : "navbar-warm"
       }`}
     >
@@ -59,7 +59,7 @@ export default function Navbar() {
 
       <Link
         href="/login"
-        className={`flex shrink-0 items-center gap-2 rounded-md px-[22px] py-3 text-[15px] font-semibold shadow-md transition-[transform,background-color,color] hover:-translate-y-0.5 ${
+        className={`ml-auto flex shrink-0 items-center gap-1 rounded-md px-3 py-3 text-[12px] font-semibold shadow-md transition-[transform,background-color,color] sm:gap-2 sm:px-[22px] sm:text-[15px] ${
           isLightSection ? "navbar-cta-light" : "navbar-cta-dark"
         }`}
       >

@@ -17,7 +17,7 @@ export default function Footer() {
   return (
     <footer id="end" className="min-h-svh overflow-hidden bg-coral px-5 pb-5 pt-[84px] text-text-warm sm:px-8 md:px-16">
       <div className="mx-auto flex min-h-[calc(100svh-109px)] w-full max-w-[1280px] flex-col justify-between gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-8">
+        <div className="flex flex-col items-start gap-7 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-8">
           <motion.h2
             className="text-[clamp(36px,min(6.2vw,9vh),96px)] font-bold leading-[0.94] tracking-[-0.05em]"
             initial={reducedMotion ? false : { opacity: 0, y: 40 }}
@@ -47,13 +47,13 @@ export default function Footer() {
 
         <motion.nav
           aria-label="Footer"
-          className="flex flex-wrap gap-x-7 gap-y-3 border-t border-text-warm/45 pt-3 text-[15px] text-coral-soft"
+          className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-text-warm/45 pt-3 text-[14px] text-coral-soft sm:flex sm:flex-wrap sm:gap-x-7 sm:text-[15px]"
           initial={reducedMotion ? false : { opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          <span className="mr-auto">© 2026 Vynor</span>
+          <span className="col-span-2 sm:mr-auto">© 2026 Vynor</span>
           {FOOTER_LINKS.map((link) => (
             <a key={link.label} href={link.href} className="transition-colors hover:text-text-warm">
               {link.label}
@@ -63,11 +63,9 @@ export default function Footer() {
 
         <motion.div
           aria-hidden="true"
-          className="select-none text-center text-[max(50px,min(33.5vw,480px))] font-bold leading-none tracking-[-0.07em]"
-          initial={reducedMotion ? false : { opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, delay: 0.1 }}
+          className="footer-wordmark select-none text-center font-bold leading-none tracking-[-0.07em] text-text-warm"
+          initial={false}
+          style={{ fontSize: "clamp(50px, 26vw, 480px)" }}
         >
           vynor
         </motion.div>

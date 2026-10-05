@@ -36,7 +36,7 @@ function ToolOrbit() {
 
   return (
     <div
-      className="relative mx-auto h-[min(440px,88vw)] w-[min(440px,88vw)]"
+      className="relative mx-auto aspect-square w-full max-w-[440px] [container-type:inline-size]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-label="Vynor connects chat, tasks, docs, board, and meetings"
@@ -55,7 +55,7 @@ function ToolOrbit() {
             key={label}
             className="absolute left-1/2 top-1/2 h-[76px] w-[76px] -ml-[38px] -mt-[38px]"
             style={{
-              transform: `rotate(${angle}deg) translateY(-168px) rotate(${-angle}deg)`,
+              transform: `rotate(${angle}deg) translateY(clamp(-168px, -38cqw, -110px)) rotate(${-angle}deg)`,
             }}
           >
             <motion.div

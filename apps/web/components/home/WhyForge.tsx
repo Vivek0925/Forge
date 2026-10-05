@@ -31,7 +31,7 @@ export default function WhyForge() {
       <div className="mx-auto grid w-full max-w-[1280px] items-center gap-12 md:grid-cols-2 md:gap-[clamp(24px,5vw,72px)]">
         <div>
           <motion.h2
-            className="text-[clamp(40px,5.4vw,80px)] font-bold leading-[0.94] tracking-[-0.05em]"
+            className="text-[clamp(36px,5.4vw,80px)] font-bold leading-[0.94] tracking-[-0.05em]"
             initial={reducedMotion ? false : { opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
@@ -71,7 +71,7 @@ export default function WhyForge() {
           {POINTS.map(({ icon: Icon, title, description }, index) => (
             <motion.div
               key={title}
-              className={`grid grid-cols-[44px_1fr] gap-x-3.5 gap-y-1 border-t border-text-warm/25 py-[26px] ${index === POINTS.length - 1 ? "border-b" : ""}`}
+              className={`grid grid-cols-[44px_minmax(0,1fr)] gap-x-3.5 gap-y-1 border-t border-text-warm/25 py-[26px] ${index === POINTS.length - 1 ? "border-b" : ""}`}
               initial={reducedMotion ? false : { opacity: 0, x: 32 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, amount: 0.2 }}

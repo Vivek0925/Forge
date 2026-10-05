@@ -133,6 +133,16 @@ body {
   color: var(--text-warm);
 }
 
+.footer-wordmark {
+  font-size: clamp(50px, 33.5vw, 480px);
+}
+
+@media (max-width: 640px) {
+  .footer-wordmark {
+    font-size: clamp(56px, 30vw, 180px);
+  }
+}
+
 a {
   text-decoration: none;
 }
