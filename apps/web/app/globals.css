@@ -18,6 +18,9 @@
   --mint: #a8d5a2;
   --cream-panel: #fffaf2;
   --cream-border: #efe8d9;
+  --peach-light: #ffd5bf;
+  --periwinkle-light: #dbe3ff;
+  --sage-text: #3f5046;
 
   --background: var(--cream);
   --surface: #ffffff;
@@ -40,6 +43,7 @@
   --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.03);
   --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.08);
+  --shadow-coral-value: 0 8px 20px rgba(229, 112, 79, 0.15);
 }
 
 @theme inline {
@@ -60,6 +64,9 @@
   --color-mint: var(--mint);
   --color-cream-panel: var(--cream-panel);
   --color-cream-border: var(--cream-border);
+  --color-peach-light: var(--peach-light);
+  --color-periwinkle-light: var(--periwinkle-light);
+  --color-sage-text: var(--sage-text);
 
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -72,6 +79,8 @@
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+
+  --shadow-coral: var(--shadow-coral-value);
 
   --font-sans: var(--font-inter-tight);
   --font-mono: var(--font-geist-mono);

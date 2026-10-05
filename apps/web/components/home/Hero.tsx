@@ -51,7 +51,7 @@ export default function Hero() {
               Start building
               <ArrowUpRight className="h-[1.2em] w-[1.2em]" strokeWidth={1.8} />
             </Link>
-            <a href="#features" className="transition-opacity hover:opacity-75">
+            <a href="#show" className="transition-opacity hover:opacity-75">
               See Vynor in action
             </a>
           </motion.div>
