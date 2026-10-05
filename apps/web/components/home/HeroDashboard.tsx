@@ -41,8 +41,14 @@ export default function HeroDashboard() {
   return (
     <div
       ref={stageRef}
-      className="relative [perspective:1200px]"
+      className="relative touch-none [perspective:1200px]"
+      onPointerDown={(event) => event.currentTarget.setPointerCapture(event.pointerId)}
       onPointerMove={handlePointerMove}
+      onPointerUp={(event) => {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        resetTilt();
+      }}
+      onPointerCancel={resetTilt}
       onPointerLeave={resetTilt}
     >
       <motion.div
@@ -96,7 +102,7 @@ export default function HeroDashboard() {
           </div>
         </div>
 
-        <span className="absolute -left-3 -top-5 flex items-center gap-2 whitespace-nowrap rounded-lg bg-text-warm px-3.5 py-2.5 text-[13px] font-medium text-ink shadow-lg md:-left-6">
+        <span className="absolute -left-3 -top-5 flex -rotate-2 items-center gap-2 whitespace-nowrap rounded-lg bg-text-warm px-3.5 py-2.5 text-[13px] font-medium text-ink shadow-lg md:-left-6">
           <MessageSquare className="h-4 w-4" strokeWidth={1.8} />
           Standup notes filed
         </span>
