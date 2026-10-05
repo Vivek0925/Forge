@@ -21,6 +21,8 @@
   --peach-light: #ffd5bf;
   --periwinkle-light: #dbe3ff;
   --sage-text: #3f5046;
+  --forest-light: #b9d3a8;
+  --forest-muted: #b9c7bd;
 
   --background: var(--cream);
   --surface: #ffffff;
@@ -67,6 +69,8 @@
   --color-peach-light: var(--peach-light);
   --color-periwinkle-light: var(--periwinkle-light);
   --color-sage-text: var(--sage-text);
+  --color-forest-light: var(--forest-light);
+  --color-forest-muted: var(--forest-muted);
 
   --color-background: var(--background);
   --color-surface: var(--surface);

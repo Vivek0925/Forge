@@ -1,86 +1,89 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Section from "../ui/Section";
+import { LockKeyhole, Map, Users } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
-const SCATTERED = [
-  "Slack",
-  "Google Meet",
-  "Notion",
-  "Jira",
-  "Miro",
-  "Google Drive",
-  "ChatGPT",
-];
+const ROLES = ["Owner", "Admin", "Member", "Guest"];
 
-const UNIFIED = [
-  "Chat",
-  "Meetings",
-  "Documentation",
-  "Whiteboard",
-  "Tasks",
-  "Files",
-  "AI Memory",
+const POINTS = [
+  {
+    icon: Users,
+    title: "Roles that fit your team",
+    description: "Decide who can manage, edit or just look.",
+  },
+  {
+    icon: LockKeyhole,
+    title: "Invite-only by default",
+    description: "People join with an invitation, nobody wanders in.",
+  },
+  {
+    icon: Map,
+    title: "One place to look",
+    description: "Projects, people and files stay together, never scattered.",
+  },
 ];
 
 export default function WhyForge() {
+  const reducedMotion = useReducedMotion();
+
   return (
-    <Section
-      id="why-forge"
-      eyebrow="Why Vynor"
-      title="Stop stitching your workflow together"
-      description="Vynor isn't another Slack clone, Discord clone, or Notion clone. It's not another tab. It's the one your team actually lives in."
-    >
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border border-[#DEDFE8] bg-[#F3F3F6] p-6 sm:p-8 md:p-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8A8CA0]">
-            Without Vynor
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            {SCATTERED.map((tool, i) => (
-              <motion.span
-                key={tool}
-                initial={{ opacity: 0, y: 6 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="rounded-full border border-[#DEDFE8] bg-[#FAFAF8] px-4 py-2 text-[13px] text-[#8A8CA0] line-through decoration-[#C7C9DA]"
-              >
-                {tool}
-              </motion.span>
+    <section id="workspace" className="flex min-h-svh flex-col justify-center overflow-hidden bg-forest px-5 py-[100px] text-text-warm sm:px-8 md:px-16">
+      <div className="mx-auto grid w-full max-w-[1280px] items-center gap-12 md:grid-cols-2 md:gap-[clamp(24px,5vw,72px)]">
+        <div>
+          <motion.h2
+            className="text-[clamp(40px,5.4vw,80px)] font-bold leading-[0.94] tracking-[-0.05em]"
+            initial={reducedMotion ? false : { opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.8 }}
+          >
+            Your workspace.
+            <br />
+            <span className="font-light text-forest-light">Your rules.</span>
+          </motion.h2>
+
+          <motion.p
+            className="my-6 mb-8 max-w-[30em] text-[clamp(16px,1.4vw,20px)] leading-[1.45] text-forest-muted"
+            initial={reducedMotion ? false : { opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.12 }}
+          >
+            Invite the right people, give them the right role and keep every project in the workspace it belongs to.
+          </motion.p>
+
+          <motion.div
+            className="flex flex-wrap gap-2.5"
+            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.22 }}
+          >
+            {ROLES.map((role) => (
+              <span key={role} className="rounded-full border border-text-warm/40 px-[18px] py-2 text-[15px]">
+                {role}
+              </span>
             ))}
-          </div>
-          <p className="mt-8 text-[14px] leading-relaxed text-[#8A8CA0]">
-            Seven tabs, seven logins, and context that never quite makes it from
-            one tool to the next.
-          </p>
+          </motion.div>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl border border-[#14141C] bg-[#14141C] p-6 sm:p-8 md:p-10">
-          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[#059669]/20 blur-[70px]" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#6EE7B7]">
-            With Vynor
-          </p>
-          <div className="relative mt-6 flex flex-wrap gap-2.5">
-            {UNIFIED.map((tool, i) => (
-              <motion.span
-                key={tool}
-                initial={{ opacity: 0, y: 6 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="rounded-full bg-[#FAFAF8] px-4 py-2 text-[13px] font-medium text-[#14141C]"
-              >
-                {tool}
-              </motion.span>
-            ))}
-          </div>
-          <p className="relative mt-8 text-[14px] leading-relaxed text-[#B4B5C6]">
-            One project. One workspace. Everything connected, and nothing lost
-            between tools.
-          </p>
+        <div>
+          {POINTS.map(({ icon: Icon, title, description }, index) => (
+            <motion.div
+              key={title}
+              className={`grid grid-cols-[44px_1fr] gap-x-3.5 gap-y-1 border-t border-text-warm/25 py-[26px] ${index === POINTS.length - 1 ? "border-b" : ""}`}
+              initial={reducedMotion ? false : { opacity: 0, x: 32 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.7, delay: index * 0.1 }}
+            >
+              <Icon className="row-span-2 h-6 w-6 text-butter" strokeWidth={1.8} />
+              <b className="text-[22px] tracking-[-0.03em]">{title}</b>
+              <p className="m-0 text-forest-muted">{description}</p>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </Section>
+    </section>
   );
 }
