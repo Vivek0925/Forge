@@ -8,8 +8,8 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Features />
-      <WhyForge />
       <HowItWorks />
+      <WhyForge />
       <CTA />
       <Footer />
     </RedirectIfAuthenticated>
