@@ -283,21 +283,20 @@ export class TasksService {
       id: task.id,
     };
   }
+private async validateAssignee(
+  workspaceId: string,
+  userId: string,
+) {
+  const isMember =
+    await this.workspaceService.isMember(
+      workspaceId,
+      userId,
+    );
 
-  private async validateAssignee(
-    workspaceId: string,
-    userId: string,
-  ) {
-    const member =
-      await this.workspaceService.findAccessibleWorkspaceById(
-        userId,
-        workspaceId,
-      );
-
-    if (!member) {
-      throw new BadRequestException(
-        'Assignee is not a member of this workspace.',
-      );
-    }
+  if (!isMember) {
+    throw new BadRequestException(
+      'Assignee is not a member of this workspace.',
+    );
   }
+}
 }

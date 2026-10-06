@@ -122,6 +122,19 @@ export class WorkspaceService {
     return this.workspaceRepository.delete(workspaceId);
   }
 
+  async isMember(
+  workspaceId: string,
+  userId: string,
+): Promise<boolean> {
+  const membership =
+    await this.workspaceRepository.findMember(
+      workspaceId,
+      userId,
+    );
+
+  return Boolean(membership);
+}
+
   private generateSlug(name: string): string {
     return name
       .trim()
