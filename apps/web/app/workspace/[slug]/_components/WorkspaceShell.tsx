@@ -160,7 +160,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-4 md:px-6">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-2 py-2 sm:px-4 md:px-6">
           {loading ? (
             <div className="flex min-h-[50vh] items-center justify-center rounded-[24px] border border-[#DEDFE8] bg-white px-4 text-center text-[14px] text-[#5B5D6E] shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
               Loading workspace...

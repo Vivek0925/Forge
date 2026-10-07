@@ -12,20 +12,24 @@ export default function WorkspaceSectionPage({
   children,
 }: WorkspaceSectionPageProps) {
   return (
-    <section className="space-y-6 rounded-[24px] border border-[#DEDFE8] bg-white p-4 shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px] sm:p-6 md:p-8">
-      <div>
-        <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#059669]">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
+      <div className="shrink-0 px-5 py-5 sm:px-6 sm:py-6 md:px-7 md:py-6">
+        <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#059669]">
           {eyebrow}
         </div>
-        <h1 className="mt-2 text-[28px] font-light tracking-[-0.03em] text-[#14141C] sm:text-[32px] md:text-[38px]">
+
+        <h1 className="mt-1 text-[28px] font-light tracking-[-0.035em] text-[#14141C] sm:text-[30px] md:text-[32px]">
           {title}
         </h1>
-        <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-[#5B5D6E] md:text-[15px]">
+
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[#5B5D6E]">
           {description}
         </p>
       </div>
 
-      {children}
+      <div className="min-h-0 flex-1 px-5 pb-5 sm:px-6 sm:pb-6 md:px-7 md:pb-6">
+        {children}
+      </div>
     </section>
   );
 }

@@ -26,7 +26,7 @@ export default function TaskColumn({
   onAddTask,
 }: TaskColumnProps) {
   return (
-    <section className="flex min-h-[420px] w-[310px] shrink-0 flex-col rounded-[18px] bg-[#F5F6F4] p-3">
+    <section className="flex h-full min-h-0 w-[310px] shrink-0 flex-col rounded-[18px] bg-[#F5F6F4] p-3">
       <header className="flex items-center justify-between px-1 pb-3">
         <div className="flex items-center gap-2">
           <h2 className="text-[13px] font-semibold text-[#27272A]">

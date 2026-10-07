@@ -9,10 +9,7 @@ import {
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 
-import type {
-  Task,
-  TaskStatus,
-} from "./task-types";
+import type { Task, TaskStatus } from "./task-types";
 import TaskColumn from "./TaskColumn";
 
 const columns = [
@@ -34,9 +31,7 @@ type TasksBoardProps = {
   workspaceSlug: string;
 };
 
-export default function TasksBoard({
-  workspaceSlug,
-}: TasksBoardProps) {
+export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -92,13 +87,11 @@ export default function TasksBoard({
   };
 
   return (
-    <div className="space-y-5">
+  <div className="flex h-full min-h-0 flex-col gap-3">
       {/* Board header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-[16px] font-medium text-[#18181B]">
-            Board
-          </h2>
+          <h2 className="text-[16px] font-medium text-[#18181B]">Board</h2>
 
           <p className="mt-1 text-[12px] text-[#71717A]">
             Organize workspace tasks and move them through the workflow.
@@ -116,31 +109,26 @@ export default function TasksBoard({
       </div>
 
       {/* Board */}
-      <DndContext
-        sensors={sensors}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="overflow-x-auto pb-4">
-          <div className="flex min-h-[500px] gap-4">
-            {columns.map((column) => {
-              const columnTasks = tasks
-                .filter(
-                  (task) => task.status === column.id,
-                )
-                .sort(
-                  (a, b) => a.position - b.position,
-                );
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <div className="h-full overflow-x-auto overflow-y-hidden">
+            <div className="flex h-full min-w-max gap-4">
+              {columns.map((column) => {
+                const columnTasks = tasks
+                  .filter((task) => task.status === column.id)
+                  .sort((a, b) => a.position - b.position);
 
-              return (
-                <TaskColumn
-                  key={column.id}
-                  column={column}
-                  tasks={columnTasks}
-                  onTaskClick={handleTaskClick}
-                  onAddTask={handleAddTask}
-                />
-              );
-            })}
+                return (
+                  <TaskColumn
+                    key={column.id}
+                    column={column}
+                    tasks={columnTasks}
+                    onTaskClick={handleTaskClick}
+                    onAddTask={handleAddTask}
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </DndContext>
