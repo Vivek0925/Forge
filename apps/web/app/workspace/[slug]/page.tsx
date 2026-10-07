@@ -1,7 +1,6 @@
 import WorkspaceSectionPage from "./_components/WorkspaceSectionPage";
 import WorkspaceSocket from "./_components/WorkspaceSocket";
-
-
+import MyTasksCard from "./_components/MyTasksCard";
 
 const meetings = [
   { date: "JUL 10", title: "Sprint Planning", time: "Today, 10:00 AM" },
@@ -35,28 +34,37 @@ function QuickStat({
   );
 }
 
-export default function WorkspacePage() {
+export default async function WorkspacePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
   return (
     <WorkspaceSectionPage
       eyebrow="Overview"
       title="Workspace overview"
       description="A clean home for project work, task tracking, docs, meetings, chat, and files."
     >
-
-    
-
+      {/* Dashboard cards */}
       <div className="grid gap-4 xl:grid-cols-2">
+        {/* My Tasks */}
+        <MyTasksCard workspaceSlug={slug} />
+
+        {/* Recent Activity */}
         <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
           <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
             Recent activity
           </div>
-        
         </div>
 
+        {/* Upcoming Meetings */}
         <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
           <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">
             Upcoming meetings
           </div>
+
           <div className="mt-4 space-y-4">
             {meetings.map((meeting) => (
               <div
@@ -66,14 +74,17 @@ export default function WorkspacePage() {
                 <div className="flex items-center gap-4">
                   <div className="rounded-[16px] bg-[#EAFBF1] px-3 py-2 text-center text-[12px] font-medium leading-none text-[#065F46]">
                     <div>{meeting.date.split(" ")[0]}</div>
+
                     <div className="mt-1 text-[16px]">
                       {meeting.date.split(" ")[1]}
                     </div>
                   </div>
+
                   <div>
                     <div className="text-[14px] font-medium text-[#14141C]">
                       {meeting.title}
                     </div>
+
                     <div className="mt-1 text-[13px] text-[#5B5D6E]">
                       {meeting.time}
                     </div>
@@ -85,6 +96,7 @@ export default function WorkspacePage() {
         </div>
       </div>
 
+      {/* Recent Documents */}
       <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -92,10 +104,12 @@ export default function WorkspacePage() {
               Recent documents
             </div>
           </div>
+
           <button className="rounded-full border border-[#DEDFE8] px-4 py-2 text-[13px] font-medium text-[#14141C] transition-colors hover:bg-white">
             View all documents
           </button>
         </div>
+
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {documents.map((doc) => (
             <div
@@ -105,7 +119,10 @@ export default function WorkspacePage() {
               <div className="text-[14px] font-medium text-[#14141C]">
                 {doc.label}
               </div>
-              <div className="mt-1 text-[13px] text-[#5B5D6E]">{doc.meta}</div>
+
+              <div className="mt-1 text-[13px] text-[#5B5D6E]">
+                {doc.meta}
+              </div>
             </div>
           ))}
         </div>

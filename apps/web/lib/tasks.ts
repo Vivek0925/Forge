@@ -52,6 +52,15 @@ export async function getWorkspaceTasks(
   );
 }
 
+export async function getMyTasks(
+  workspaceSlug: string,
+) {
+  return api<Task[]>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/my`,
+  );
+}
+
+
 export async function getWorkspaceMembers(
   workspaceSlug: string,
 ) {
@@ -70,14 +79,6 @@ export async function createTask(
       method: "POST",
       body: JSON.stringify(input),
     },
-  );
-}
-
-export async function getMyTasks(
-  workspaceSlug: string,
-) {
-  return api<Task[]>(
-    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/my`,
   );
 }
 
