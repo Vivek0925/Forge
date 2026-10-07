@@ -10,12 +10,18 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  getWorkspaceTasks,
+  moveTask,
+} from "@/lib/tasks";
 
 import type {
   Task,
   TaskStatus,
 } from "./task-types";
+
 import TaskCard from "./TaskCard";
 import TaskColumn from "./TaskColumn";
 
@@ -49,21 +55,46 @@ export default function TasksBoard({
     }),
   );
 
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTask, setActiveTask] =
     useState<Task | null>(null);
 
-  /*
-   * Real tasks will come from:
-   *
-   * GET /workspaces/:slug/tasks
-   *
-   * No mock tasks.
-   */
-  const tasks: Task[] = [];
+  const [loading, setLoading] = useState(true);
+  const [movingTaskId, setMovingTaskId] =
+    useState<string | null>(null);
 
-  function handleDragStart(event: any) {
+  const [createStatus, setCreateStatus] =
+    useState<TaskStatus | null>(null);
+
+  const loadTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const data =
+        await getWorkspaceTasks(workspaceSlug);
+
+      setTasks(data);
+    } catch (error) {
+      console.error(
+        "Failed to load tasks:",
+        error,
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceSlug]);
+
+  useEffect(() => {
+    void loadTasks();
+  }, [loadTasks]);
+
+  function handleDragStart(event: {
+    active: {
+      id: string | number;
+    };
+  }) {
     const task = tasks.find(
-      (item) => item.id === event.active.id,
+      (item) => item.id === String(event.active.id),
     );
 
     setActiveTask(task ?? null);
@@ -73,7 +104,9 @@ export default function TasksBoard({
     setActiveTask(null);
   }
 
-  function handleDragEnd(event: DragEndEvent) {
+  async function handleDragEnd(
+    event: DragEndEvent,
+  ) {
     const { active, over } = event;
 
     setActiveTask(null);
@@ -82,35 +115,100 @@ export default function TasksBoard({
       return;
     }
 
-    /*
-     * We'll connect this to:
-     *
-     * PATCH
-     * /workspaces/:slug/tasks/:taskId/move
-     *
-     * after the UI is finalized.
-     */
-    console.log("Move task", {
-      workspaceSlug,
-      taskId: active.id,
-      target: over.id,
-    });
+    const taskId = String(active.id);
+    const targetStatus = String(
+      over.id,
+    ) as TaskStatus;
+
+    const task = tasks.find(
+      (item) => item.id === taskId,
+    );
+
+    if (!task) {
+      return;
+    }
+
+    // Dropped back into the same column.
+    if (task.status === targetStatus) {
+      return;
+    }
+
+    // Only allow known board columns.
+    const isValidColumn = columns.some(
+      (column) => column.id === targetStatus,
+    );
+
+    if (!isValidColumn) {
+      return;
+    }
+
+    const targetTasks = tasks
+      .filter(
+        (item) =>
+          item.status === targetStatus &&
+          item.id !== taskId,
+      )
+      .sort(
+        (a, b) =>
+          a.position - b.position,
+      );
+
+    const newPosition =
+      targetTasks.length > 0
+        ? targetTasks[targetTasks.length - 1]
+            .position + 1
+        : 0;
+
+    // Optimistic UI update.
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === taskId
+          ? {
+              ...item,
+              status: targetStatus,
+              position: newPosition,
+            }
+          : item,
+      ),
+    );
+
+    try {
+      setMovingTaskId(taskId);
+
+      await moveTask(
+        workspaceSlug,
+        taskId,
+        targetStatus,
+        newPosition,
+      );
+
+      // Re-sync with backend positions/status.
+      await loadTasks();
+    } catch (error) {
+      console.error(
+        "Failed to move task:",
+        error,
+      );
+
+      // Restore server state if move fails.
+      await loadTasks();
+    } finally {
+      setMovingTaskId(null);
+    }
   }
 
-  function handleAddTask(status: TaskStatus) {
-    /*
-     * CreateTaskModal will be connected here.
-     */
-    console.log("Add task", {
-      workspaceSlug,
-      status,
-    });
+  function handleAddTask(
+    status: TaskStatus,
+  ) {
+    setCreateStatus(status);
+  }
+
+  function handleTaskCreated() {
+    setCreateStatus(null);
+    void loadTasks();
   }
 
   function handleTaskClick(task: Task) {
-    /*
-     * TaskDetailModal will be connected here.
-     */
     console.log("Open task", task.id);
   }
 
@@ -132,7 +230,9 @@ export default function TasksBoard({
 
         <button
           type="button"
-          onClick={() => handleAddTask("TODO")}
+          onClick={() =>
+            handleAddTask("TODO")
+          }
           className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[9px] bg-white/15 px-3 text-[12px] font-medium text-white transition hover:bg-white/25"
         >
           <Plus size={15} />
@@ -155,11 +255,13 @@ export default function TasksBoard({
                 const columnTasks = tasks
                   .filter(
                     (task) =>
-                      task.status === column.id,
+                      task.status ===
+                      column.id,
                   )
                   .sort(
                     (a, b) =>
-                      a.position - b.position,
+                      a.position -
+                      b.position,
                   );
 
                 return (
@@ -167,8 +269,15 @@ export default function TasksBoard({
                     key={column.id}
                     column={column}
                     tasks={columnTasks}
-                    onTaskClick={handleTaskClick}
-                    onAddTask={handleAddTask}
+                    onTaskClick={
+                      handleTaskClick
+                    }
+                    onAddTask={
+                      handleAddTask
+                    }
+                    movingTaskId={
+                      movingTaskId
+                    }
                   />
                 );
               })}
@@ -186,6 +295,8 @@ export default function TasksBoard({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* CreateTaskModal goes here */}
     </div>
   );
 }
