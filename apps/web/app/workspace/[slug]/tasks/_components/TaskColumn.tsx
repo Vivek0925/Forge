@@ -34,17 +34,15 @@ export default function TaskColumn({
 
   return (
     <section
-      ref={setNodeRef}
-      className={[
-        "flex h-full min-h-0 w-[310px] shrink-0 flex-col",
-        "overflow-hidden rounded-[14px]",
-        "bg-[#F1F1EC]",
-        "transition",
-        isOver
-          ? "ring-2 ring-white/60"
-          : "",
-      ].join(" ")}
-    >
+  ref={setNodeRef}
+  className={[
+    "flex h-fit max-h-full min-h-0 w-[310px] shrink-0 flex-col",
+    "overflow-hidden rounded-[14px]",
+    "bg-[#F1F1EC]",
+    "transition",
+    isOver ? "ring-2 ring-white/60" : "",
+  ].join(" ")}
+>
       {/* Column header */}
       <header className="flex h-[48px] shrink-0 items-center justify-between px-3">
         <div className="flex min-w-0 items-center gap-2">

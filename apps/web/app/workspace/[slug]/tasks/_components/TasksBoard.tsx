@@ -150,7 +150,7 @@ export default function TasksBoard({
       >
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="h-full overflow-x-auto overflow-y-hidden p-3 sm:p-4">
-            <div className="flex h-full min-w-max gap-3">
+            <div className="flex h-full min-w-max items-start gap-3">
               {columns.map((column) => {
                 const columnTasks = tasks
                   .filter(
