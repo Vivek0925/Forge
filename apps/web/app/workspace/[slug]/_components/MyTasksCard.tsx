@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback } from "react";
 import {
   CalendarDays,
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { getMyTasks, type Task } from "@/lib/tasks";
+import TaskDetailModal from "../tasks/_components/TaskDetailModal";
 
 type MyTasksCardProps = {
   workspaceSlug: string;
@@ -62,44 +63,30 @@ function StatusIcon({ status }: { status: Task["status"] }) {
   return <Circle className="h-4 w-4 text-[#8A8C98]" />;
 }
 
-export default function MyTasksCard({
-  workspaceSlug,
-}: MyTasksCardProps) {
+export default function MyTasksCard({ workspaceSlug }: MyTasksCardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-    async function loadTasks() {
-      try {
-        setLoading(true);
+  const loadTasks = useCallback(async () => {
+  try {
+    setLoading(true);
 
-        const data = await getMyTasks(workspaceSlug);
+    const data = await getMyTasks(workspaceSlug);
 
-        if (!cancelled) {
-          setTasks(data);
-        }
-      } catch (error) {
-        console.error("Failed to load my tasks:", error);
+    setTasks(data);
+  } catch (error) {
+    console.error("Failed to load my tasks:", error);
+    setTasks([]);
+  } finally {
+    setLoading(false);
+  }
+}, [workspaceSlug]);
 
-        if (!cancelled) {
-          setTasks([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTasks();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [workspaceSlug]);
-
+useEffect(() => {
+  void loadTasks();
+}, [loadTasks]);
   return (
     <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
       <div className="flex items-center justify-between gap-4">
@@ -138,9 +125,11 @@ export default function MyTasksCard({
         ) : (
           <div className="space-y-2">
             {tasks.map((task) => (
-              <div
+              <button
+                type="button"
                 key={task.id}
-                className="flex items-center gap-3 rounded-[18px] border border-white bg-white px-4 py-3 shadow-[0_8px_20px_rgba(20,20,28,0.04)]"
+                onClick={() => setSelectedTask(task)}
+                className="flex w-full items-center gap-3 rounded-[18px] border border-white bg-white px-4 py-3 text-left shadow-[0_8px_20px_rgba(20,20,28,0.04)] transition hover:-translate-y-[1px] hover:shadow-[0_10px_24px_rgba(20,20,28,0.07)]"
               >
                 <StatusIcon status={task.status} />
 
@@ -170,11 +159,21 @@ export default function MyTasksCard({
                 >
                   {getPriorityLabel(task.priority)}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </div>
+      <TaskDetailModal
+        open={selectedTask !== null}
+        task={selectedTask}
+        workspaceSlug={workspaceSlug}
+        onClose={() => setSelectedTask(null)}
+        onUpdated={() => {
+          setSelectedTask(null);
+          void loadTasks();
+        }}
+      />
     </div>
   );
 }
