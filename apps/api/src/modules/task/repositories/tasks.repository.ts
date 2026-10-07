@@ -175,6 +175,44 @@ export class TasksRepository {
     });
   }
 
+ async findByAssignee(
+  workspaceId: string,
+  assigneeId: string,
+) {
+  return this.prisma.task.findMany({
+    where: {
+      workspaceId,
+      assigneeId,
+    },
+    orderBy: [
+      {
+        status: 'asc',
+      },
+      {
+        position: 'asc',
+      },
+    ],
+    include: {
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+}
+
   async shiftPositionsAfterRemoval(
     workspaceId: string,
     status: TaskStatus,

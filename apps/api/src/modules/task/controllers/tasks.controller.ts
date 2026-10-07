@@ -21,20 +21,24 @@ import { TasksService } from '../services/tasks.service';
 
 @Controller('workspaces/:slug/tasks')
 @UseGuards(JwtAuthGuard)
+
 export class TasksController {
-  constructor(
-    private readonly tasksService: TasksService,
-  ) {}
+  constructor(private readonly tasksService: TasksService) {}
+
+  @Get('my')
+async getMyTasks(
+  @CurrentUser() user: CurrentUserData,
+  @Param('slug') slug: string,
+) {
+  return this.tasksService.findMyTasks(user.id, slug);
+}
 
   @Get()
   async findAll(
     @CurrentUser() user: CurrentUserData,
     @Param('slug') slug: string,
   ) {
-    return this.tasksService.findAll(
-      user.id,
-      slug,
-    );
+    return this.tasksService.findAll(user.id, slug);
   }
 
   @Post()
@@ -43,11 +47,7 @@ export class TasksController {
     @Param('slug') slug: string,
     @Body() dto: CreateTaskDto,
   ) {
-    return this.tasksService.create(
-      user.id,
-      slug,
-      dto,
-    );
+    return this.tasksService.create(user.id, slug, dto);
   }
 
   @Get(':taskId')
@@ -56,11 +56,7 @@ export class TasksController {
     @Param('slug') slug: string,
     @Param('taskId') taskId: string,
   ) {
-    return this.tasksService.findOne(
-      user.id,
-      slug,
-      taskId,
-    );
+    return this.tasksService.findOne(user.id, slug, taskId);
   }
 
   @Patch(':taskId')
@@ -70,12 +66,7 @@ export class TasksController {
     @Param('taskId') taskId: string,
     @Body() dto: UpdateTaskDto,
   ) {
-    return this.tasksService.update(
-      user.id,
-      slug,
-      taskId,
-      dto,
-    );
+    return this.tasksService.update(user.id, slug, taskId, dto);
   }
 
   @Patch(':taskId/move')
@@ -85,12 +76,7 @@ export class TasksController {
     @Param('taskId') taskId: string,
     @Body() dto: MoveTaskDto,
   ) {
-    return this.tasksService.move(
-      user.id,
-      slug,
-      taskId,
-      dto,
-    );
+    return this.tasksService.move(user.id, slug, taskId, dto);
   }
 
   @Delete(':taskId')
@@ -99,10 +85,6 @@ export class TasksController {
     @Param('slug') slug: string,
     @Param('taskId') taskId: string,
   ) {
-    return this.tasksService.remove(
-      user.id,
-      slug,
-      taskId,
-    );
+    return this.tasksService.remove(user.id, slug, taskId);
   }
 }

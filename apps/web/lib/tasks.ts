@@ -73,6 +73,14 @@ export async function createTask(
   );
 }
 
+export async function getMyTasks(
+  workspaceSlug: string,
+) {
+  return api<Task[]>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/my`,
+  );
+}
+
 export async function moveTask(
   workspaceSlug: string,
   taskId: string,
@@ -89,4 +97,5 @@ export async function moveTask(
       }),
     },
   );
+
 }

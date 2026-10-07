@@ -21,29 +21,20 @@ export class TasksService {
     private readonly workspaceService: WorkspaceService,
   ) {}
 
-  async create(
-    userId: string,
-    workspaceSlug: string,
-    dto: CreateTaskDto,
-  ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+  async create(userId: string, workspaceSlug: string, dto: CreateTaskDto) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
     if (dto.assigneeId) {
-      await this.validateAssignee(
-        workspace.id,
-        dto.assigneeId,
-      );
+      await this.validateAssignee(workspace.id, dto.assigneeId);
     }
 
-    const position =
-      await this.tasksRepository.getNextPosition(
-        workspace.id,
-        TaskStatus.TODO,
-      );
+    const position = await this.tasksRepository.getNextPosition(
+      workspace.id,
+      TaskStatus.TODO,
+    );
 
     return this.tasksRepository.create({
       workspaceId: workspace.id,
@@ -51,43 +42,29 @@ export class TasksService {
       description: dto.description?.trim() || null,
       priority: dto.priority,
       assigneeId: dto.assigneeId,
-      dueDate: dto.dueDate
-        ? new Date(dto.dueDate)
-        : null,
+      dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       status: TaskStatus.TODO,
       position,
       createdById: userId,
     });
   }
 
-  async findAll(
-    userId: string,
-    workspaceSlug: string,
-  ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
-
-    return this.tasksRepository.findByWorkspace(
-      workspace.id,
+  async findAll(userId: string, workspaceSlug: string) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
     );
+
+    return this.tasksRepository.findByWorkspace(workspace.id);
   }
 
-  async findOne(
-    userId: string,
-    workspaceSlug: string,
-    taskId: string,
-  ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+  async findOne(userId: string, workspaceSlug: string, taskId: string) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-    const task =
-      await this.tasksRepository.findById(taskId);
+    const task = await this.tasksRepository.findById(taskId);
 
     if (!task || task.workspaceId !== workspace.id) {
       throw new NotFoundException('Task not found.');
@@ -102,24 +79,19 @@ export class TasksService {
     taskId: string,
     dto: UpdateTaskDto,
   ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-    const task =
-      await this.tasksRepository.findById(taskId);
+    const task = await this.tasksRepository.findById(taskId);
 
     if (!task || task.workspaceId !== workspace.id) {
       throw new NotFoundException('Task not found.');
     }
 
     if (dto.assigneeId) {
-      await this.validateAssignee(
-        workspace.id,
-        dto.assigneeId,
-      );
+      await this.validateAssignee(workspace.id, dto.assigneeId);
     }
 
     const data = {
@@ -128,8 +100,7 @@ export class TasksService {
       }),
 
       ...(dto.description !== undefined && {
-        description:
-          dto.description?.trim() || null,
+        description: dto.description?.trim() || null,
       }),
 
       ...(dto.priority !== undefined && {
@@ -141,9 +112,7 @@ export class TasksService {
       }),
 
       ...(dto.dueDate !== undefined && {
-        dueDate: dto.dueDate
-          ? new Date(dto.dueDate)
-          : null,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
       }),
 
       ...(dto.status !== undefined &&
@@ -152,10 +121,7 @@ export class TasksService {
         }),
     };
 
-    return this.tasksRepository.update(
-      taskId,
-      data,
-    );
+    return this.tasksRepository.update(taskId, data);
   }
 
   async move(
@@ -164,23 +130,18 @@ export class TasksService {
     taskId: string,
     dto: MoveTaskDto,
   ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-    const task =
-      await this.tasksRepository.findById(taskId);
+    const task = await this.tasksRepository.findById(taskId);
 
     if (!task || task.workspaceId !== workspace.id) {
       throw new NotFoundException('Task not found.');
     }
 
-    const targetPosition = Math.max(
-      0,
-      dto.position,
-    );
+    const targetPosition = Math.max(0, dto.position);
 
     if (task.status === dto.status) {
       if (targetPosition === task.position) {
@@ -202,8 +163,7 @@ export class TasksService {
           task.id,
         );
 
-        const refreshedPosition =
-          Math.max(0, targetPosition - 1);
+        const refreshedPosition = Math.max(0, targetPosition - 1);
 
         await this.tasksRepository.shiftPositions(
           workspace.id,
@@ -212,21 +172,15 @@ export class TasksService {
           task.id,
         );
 
-        return this.tasksRepository.update(
-          task.id,
-          {
-            status: dto.status,
-            position: refreshedPosition,
-          },
-        );
+        return this.tasksRepository.update(task.id, {
+          status: dto.status,
+          position: refreshedPosition,
+        });
       }
 
-      return this.tasksRepository.update(
-        task.id,
-        {
-          position: targetPosition,
-        },
-      );
+      return this.tasksRepository.update(task.id, {
+        position: targetPosition,
+      });
     }
 
     await this.tasksRepository.shiftPositionsAfterRemoval(
@@ -243,28 +197,27 @@ export class TasksService {
       task.id,
     );
 
-    return this.tasksRepository.update(
-      task.id,
-      {
-        status: dto.status,
-        position: targetPosition,
-      },
-    );
+    return this.tasksRepository.update(task.id, {
+      status: dto.status,
+      position: targetPosition,
+    });
   }
+  async findMyTasks(userId: string, workspaceSlug: string) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-  async remove(
-    userId: string,
-    workspaceSlug: string,
-    taskId: string,
-  ) {
-    const workspace =
-      await this.workspaceService.findAccessibleWorkspace(
-        userId,
-        workspaceSlug,
-      );
+    return this.tasksRepository.findByAssignee(workspace.id, userId);
+  }
+  
+  async remove(userId: string, workspaceSlug: string, taskId: string) {
+    const workspace = await this.workspaceService.findAccessibleWorkspace(
+      userId,
+      workspaceSlug,
+    );
 
-    const task =
-      await this.tasksRepository.findById(taskId);
+    const task = await this.tasksRepository.findById(taskId);
 
     if (!task || task.workspaceId !== workspace.id) {
       throw new NotFoundException('Task not found.');
@@ -283,20 +236,13 @@ export class TasksService {
       id: task.id,
     };
   }
-private async validateAssignee(
-  workspaceId: string,
-  userId: string,
-) {
-  const isMember =
-    await this.workspaceService.isMember(
-      workspaceId,
-      userId,
-    );
+  private async validateAssignee(workspaceId: string, userId: string) {
+    const isMember = await this.workspaceService.isMember(workspaceId, userId);
 
-  if (!isMember) {
-    throw new BadRequestException(
-      'Assignee is not a member of this workspace.',
-    );
+    if (!isMember) {
+      throw new BadRequestException(
+        'Assignee is not a member of this workspace.',
+      );
+    }
   }
-}
 }
