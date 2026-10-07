@@ -1,4 +1,3 @@
-import WorkspaceSectionPage from "../_components/WorkspaceSectionPage";
 import TasksBoard from "./_components/TasksBoard";
 
 export default async function TasksPage({
@@ -8,13 +7,5 @@ export default async function TasksPage({
 }) {
   const { slug } = await params;
 
-  return (
-    <WorkspaceSectionPage
-      eyebrow="Tasks"
-      title="Tasks"
-      description="Organize and track work across your workspace."
-    >
-      <TasksBoard workspaceSlug={slug} />
-    </WorkspaceSectionPage>
-  );
+  return <TasksBoard workspaceSlug={slug} />;
 }

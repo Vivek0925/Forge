@@ -1,10 +1,11 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, MoreHorizontal } from "lucide-react";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 
 import type {
   Task,
@@ -16,7 +17,9 @@ type TaskColumnProps = {
   column: TaskColumnConfig;
   tasks: Task[];
   onTaskClick?: (task: Task) => void;
-  onAddTask?: (status: TaskColumnConfig["id"]) => void;
+  onAddTask?: (
+    status: TaskColumnConfig["id"],
+  ) => void;
 };
 
 export default function TaskColumn({
@@ -25,35 +28,51 @@ export default function TaskColumn({
   onTaskClick,
   onAddTask,
 }: TaskColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
   return (
-    <section className="flex h-full min-h-0 w-[310px] shrink-0 flex-col rounded-[18px] bg-[#F5F6F4] p-3">
-      <header className="flex items-center justify-between px-1 pb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[13px] font-semibold text-[#27272A]">
+    <section
+      ref={setNodeRef}
+      className={[
+        "flex h-full min-h-0 w-[310px] shrink-0 flex-col",
+        "overflow-hidden rounded-[14px]",
+        "bg-[#F1F1EC]",
+        "transition",
+        isOver
+          ? "ring-2 ring-white/60"
+          : "",
+      ].join(" ")}
+    >
+      {/* Column header */}
+      <header className="flex h-[48px] shrink-0 items-center justify-between px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-[13px] font-semibold text-[#292929]">
             {column.title}
           </h2>
 
-          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#71717A]">
+          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black/5 px-1.5 text-[10px] font-medium text-[#777]">
             {tasks.length}
           </span>
         </div>
 
         <button
           type="button"
-          onClick={() => onAddTask?.(column.id)}
-          className="rounded-md p-1.5 text-[#71717A] transition hover:bg-white hover:text-[#18181B]"
-          aria-label={`Add task to ${column.title}`}
+          className="rounded-md p-1.5 text-[#737373] transition hover:bg-black/5 hover:text-[#292929]"
+          aria-label={`Column options for ${column.title}`}
         >
-          <Plus size={16} />
+          <MoreHorizontal size={16} />
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      {/* ONLY THIS AREA SCROLLS */}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2">
         <SortableContext
           items={tasks.map((task) => task.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-2">
+          <div className="space-y-2 pb-2">
             {tasks.map((task) => (
               <TaskCard
                 key={task.id}
@@ -65,22 +84,23 @@ export default function TaskColumn({
         </SortableContext>
 
         {tasks.length === 0 && (
-          <div className="flex min-h-[160px] items-center justify-center rounded-[12px] border border-dashed border-[#D4D4D8]">
-            <span className="text-[11px] text-[#A1A1AA]">
-              No tasks
-            </span>
+          <div className="flex min-h-[120px] items-center justify-center rounded-[10px] border border-dashed border-[#D2D2CC] text-[11px] text-[#999]">
+            No tasks
           </div>
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => onAddTask?.(column.id)}
-        className="mt-3 flex w-full items-center gap-2 rounded-[10px] px-2 py-2 text-left text-[12px] text-[#71717A] transition hover:bg-white hover:text-[#18181B]"
-      >
-        <Plus size={15} />
-        Add a task
-      </button>
+      {/* Fixed bottom action */}
+      <div className="shrink-0 p-2">
+        <button
+          type="button"
+          onClick={() => onAddTask?.(column.id)}
+          className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-[#686868] transition hover:bg-black/5 hover:text-[#292929]"
+        >
+          <Plus size={15} />
+          Add a task
+        </button>
+      </div>
     </section>
   );
 }

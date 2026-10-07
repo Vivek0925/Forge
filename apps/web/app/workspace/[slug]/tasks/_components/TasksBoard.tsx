@@ -1,15 +1,22 @@
 "use client";
 
 import {
+  closestCorners,
   DndContext,
   DragEndEvent,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
+import { useState } from "react";
 
-import type { Task, TaskStatus } from "./task-types";
+import type {
+  Task,
+  TaskStatus,
+} from "./task-types";
+import TaskCard from "./TaskCard";
 import TaskColumn from "./TaskColumn";
 
 const columns = [
@@ -31,7 +38,9 @@ type TasksBoardProps = {
   workspaceSlug: string;
 };
 
-export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
+export default function TasksBoard({
+  workspaceSlug,
+}: TasksBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -40,83 +49,118 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
     }),
   );
 
+  const [activeTask, setActiveTask] =
+    useState<Task | null>(null);
+
   /*
-   * Intentionally empty for now.
+   * Real tasks will come from:
    *
-   * These will be populated from:
    * GET /workspaces/:slug/tasks
    *
-   * No fake/mock tasks are being used.
+   * No mock tasks.
    */
   const tasks: Task[] = [];
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  function handleDragStart(event: any) {
+    const task = tasks.find(
+      (item) => item.id === event.active.id,
+    );
+
+    setActiveTask(task ?? null);
+  }
+
+  function handleDragCancel() {
+    setActiveTask(null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) {
+    setActiveTask(null);
+
+    if (!over) {
       return;
     }
 
     /*
-     * Backend move API will be connected here:
+     * We'll connect this to:
      *
-     * PATCH /workspaces/:slug/tasks/:taskId/move
+     * PATCH
+     * /workspaces/:slug/tasks/:taskId/move
+     *
+     * after the UI is finalized.
      */
-    console.log("Task moved", {
+    console.log("Move task", {
       workspaceSlug,
       taskId: active.id,
       target: over.id,
     });
-  };
+  }
 
-  const handleAddTask = (status: TaskStatus) => {
+  function handleAddTask(status: TaskStatus) {
     /*
      * CreateTaskModal will be connected here.
      */
-    console.log("Create task", {
+    console.log("Add task", {
       workspaceSlug,
       status,
     });
-  };
+  }
 
-  const handleTaskClick = (task: Task) => {
+  function handleTaskClick(task: Task) {
     /*
      * TaskDetailModal will be connected here.
      */
     console.log("Open task", task.id);
-  };
+  }
 
   return (
-  <div className="flex h-full min-h-0 flex-col gap-3">
-      {/* Board header */}
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-[16px] font-medium text-[#18181B]">Board</h2>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#DEDFE8] bg-[#6E548A] shadow-[0_18px_50px_rgba(20,20,28,0.08)] sm:rounded-[28px]">
+      {/* Board top bar */}
+      <header className="flex h-[60px] shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#49376B] px-4 text-white sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="truncate text-[16px] font-semibold">
+            Tasks
+          </h1>
 
-          <p className="mt-1 text-[12px] text-[#71717A]">
-            Organize workspace tasks and move them through the workflow.
-          </p>
+          <span className="hidden h-5 w-px bg-white/20 sm:block" />
+
+          <span className="hidden text-[12px] text-white/65 sm:block">
+            Workspace task board
+          </span>
         </div>
 
         <button
           type="button"
           onClick={() => handleAddTask("TODO")}
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-[10px] bg-[#059669] px-3.5 text-[12px] font-medium text-white transition hover:bg-[#047857]"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[9px] bg-white/15 px-3 text-[12px] font-medium text-white transition hover:bg-white/25"
         >
           <Plus size={15} />
           Add task
         </button>
-      </div>
+      </header>
 
       {/* Board */}
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragCancel={handleDragCancel}
+        onDragEnd={handleDragEnd}
+      >
         <div className="min-h-0 flex-1 overflow-hidden">
-          <div className="h-full overflow-x-auto overflow-y-hidden">
-            <div className="flex h-full min-w-max gap-4">
+          <div className="h-full overflow-x-auto overflow-y-hidden p-3 sm:p-4">
+            <div className="flex h-full min-w-max gap-3">
               {columns.map((column) => {
                 const columnTasks = tasks
-                  .filter((task) => task.status === column.id)
-                  .sort((a, b) => a.position - b.position);
+                  .filter(
+                    (task) =>
+                      task.status === column.id,
+                  )
+                  .sort(
+                    (a, b) =>
+                      a.position - b.position,
+                  );
 
                 return (
                   <TaskColumn
@@ -131,6 +175,16 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
             </div>
           </div>
         </div>
+
+        <DragOverlay>
+          {activeTask ? (
+            <div className="w-[310px]">
+              <TaskCard
+                task={activeTask}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );

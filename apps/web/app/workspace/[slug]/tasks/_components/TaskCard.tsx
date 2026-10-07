@@ -5,9 +5,7 @@ import {
   GripVertical,
   UserRound,
 } from "lucide-react";
-import {
-  useSortable,
-} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 import type { Task } from "./task-types";
@@ -45,52 +43,60 @@ export default function TaskCard({
       {...attributes}
       onClick={() => onClick?.(task)}
       className={[
-        "group rounded-[14px] border border-[#E5E7EB]",
+        "group rounded-[10px] border border-[#E1E1DC]",
         "bg-white p-3",
-        "shadow-[0_3px_12px_rgba(20,20,28,0.04)]",
-        "transition",
-        "hover:border-[#D1D5DB]",
-        "hover:shadow-[0_6px_18px_rgba(20,20,28,0.07)]",
+        "shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
         "cursor-pointer",
-        isDragging ? "opacity-50 shadow-lg" : "",
+        "transition",
+        "hover:border-[#D2D2CC]",
+        "hover:shadow-[0_3px_8px_rgba(0,0,0,0.08)]",
+        isDragging
+          ? "opacity-30"
+          : "",
       ].join(" ")}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-1.5">
         <button
           type="button"
           {...listeners}
-          onClick={(event) => event.stopPropagation()}
-          className="mt-0.5 cursor-grab rounded p-0.5 text-[#A1A1AA] opacity-0 transition group-hover:opacity-100 hover:bg-[#F4F4F5] active:cursor-grabbing"
+          onClick={(event) =>
+            event.stopPropagation()
+          }
+          className="mt-0.5 shrink-0 cursor-grab rounded p-0.5 text-[#A3A3A3] opacity-0 transition group-hover:opacity-100 hover:bg-[#F4F4F1] active:cursor-grabbing"
           aria-label="Drag task"
         >
-          <GripVertical size={15} />
+          <GripVertical size={14} />
         </button>
 
         <div className="min-w-0 flex-1">
-          <h3 className="text-[13px] font-medium leading-5 text-[#18181B]">
+          <h3 className="text-[13px] font-medium leading-[1.4] text-[#292929]">
             {task.title}
           </h3>
 
           {task.description && (
-            <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[#71717A]">
+            <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[#737373]">
               {task.description}
             </p>
           )}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <TaskPriorityBadge priority={task.priority} />
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <TaskPriorityBadge
+              priority={task.priority}
+            />
 
             {task.assigneeId && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-[#71717A]">
-                <UserRound size={12} />
+              <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
+                <UserRound size={11} />
                 Assigned
               </span>
             )}
 
             {task.dueDate && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-[#71717A]">
-                <CalendarDays size={12} />
-                {new Date(task.dueDate).toLocaleDateString()}
+              <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
+                <CalendarDays size={11} />
+                {new Date(
+                  task.dueDate,
+                ).toLocaleDateString()}
               </span>
             )}
           </div>
