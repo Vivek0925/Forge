@@ -39,9 +39,7 @@ export type WorkspaceMember = {
   userId: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
   user: {
-    id: string;
     name: string;
-    email: string;
     avatar: string | null;
   };
 };

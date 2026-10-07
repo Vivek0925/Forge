@@ -12,18 +12,13 @@ import {
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  getWorkspaceTasks,
-  moveTask,
-} from "@/lib/tasks";
+import { getWorkspaceTasks, moveTask } from "@/lib/tasks";
 
-import type {
-  Task,
-  TaskStatus,
-} from "./task-types";
+import type { Task, TaskStatus } from "./task-types";
 
 import TaskCard from "./TaskCard";
 import TaskColumn from "./TaskColumn";
+import CreateTaskModal from "./CreateTaskModal";
 
 const columns = [
   {
@@ -44,9 +39,7 @@ type TasksBoardProps = {
   workspaceSlug: string;
 };
 
-export default function TasksBoard({
-  workspaceSlug,
-}: TasksBoardProps) {
+export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -56,29 +49,22 @@ export default function TasksBoard({
   );
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [activeTask, setActiveTask] =
-    useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [movingTaskId, setMovingTaskId] =
-    useState<string | null>(null);
+  const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 
-  const [createStatus, setCreateStatus] =
-    useState<TaskStatus | null>(null);
+  const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null);
 
   const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
 
-      const data =
-        await getWorkspaceTasks(workspaceSlug);
+      const data = await getWorkspaceTasks(workspaceSlug);
 
       setTasks(data);
     } catch (error) {
-      console.error(
-        "Failed to load tasks:",
-        error,
-      );
+      console.error("Failed to load tasks:", error);
     } finally {
       setLoading(false);
     }
@@ -93,9 +79,7 @@ export default function TasksBoard({
       id: string | number;
     };
   }) {
-    const task = tasks.find(
-      (item) => item.id === String(event.active.id),
-    );
+    const task = tasks.find((item) => item.id === String(event.active.id));
 
     setActiveTask(task ?? null);
   }
@@ -104,9 +88,7 @@ export default function TasksBoard({
     setActiveTask(null);
   }
 
-  async function handleDragEnd(
-    event: DragEndEvent,
-  ) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
     setActiveTask(null);
@@ -116,13 +98,9 @@ export default function TasksBoard({
     }
 
     const taskId = String(active.id);
-    const targetStatus = String(
-      over.id,
-    ) as TaskStatus;
+    const targetStatus = String(over.id) as TaskStatus;
 
-    const task = tasks.find(
-      (item) => item.id === taskId,
-    );
+    const task = tasks.find((item) => item.id === taskId);
 
     if (!task) {
       return;
@@ -134,29 +112,19 @@ export default function TasksBoard({
     }
 
     // Only allow known board columns.
-    const isValidColumn = columns.some(
-      (column) => column.id === targetStatus,
-    );
+    const isValidColumn = columns.some((column) => column.id === targetStatus);
 
     if (!isValidColumn) {
       return;
     }
 
     const targetTasks = tasks
-      .filter(
-        (item) =>
-          item.status === targetStatus &&
-          item.id !== taskId,
-      )
-      .sort(
-        (a, b) =>
-          a.position - b.position,
-      );
+      .filter((item) => item.status === targetStatus && item.id !== taskId)
+      .sort((a, b) => a.position - b.position);
 
     const newPosition =
       targetTasks.length > 0
-        ? targetTasks[targetTasks.length - 1]
-            .position + 1
+        ? targetTasks[targetTasks.length - 1].position + 1
         : 0;
 
     // Optimistic UI update.
@@ -175,20 +143,12 @@ export default function TasksBoard({
     try {
       setMovingTaskId(taskId);
 
-      await moveTask(
-        workspaceSlug,
-        taskId,
-        targetStatus,
-        newPosition,
-      );
+      await moveTask(workspaceSlug, taskId, targetStatus, newPosition);
 
       // Re-sync with backend positions/status.
       await loadTasks();
     } catch (error) {
-      console.error(
-        "Failed to move task:",
-        error,
-      );
+      console.error("Failed to move task:", error);
 
       // Restore server state if move fails.
       await loadTasks();
@@ -197,9 +157,7 @@ export default function TasksBoard({
     }
   }
 
-  function handleAddTask(
-    status: TaskStatus,
-  ) {
+  function handleAddTask(status: TaskStatus) {
     setCreateStatus(status);
   }
 
@@ -217,9 +175,7 @@ export default function TasksBoard({
       {/* Board top bar */}
       <header className="flex h-[60px] shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#49376B] px-4 text-white sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-[16px] font-semibold">
-            Tasks
-          </h1>
+          <h1 className="truncate text-[16px] font-semibold">Tasks</h1>
 
           <span className="hidden h-5 w-px bg-white/20 sm:block" />
 
@@ -230,9 +186,7 @@ export default function TasksBoard({
 
         <button
           type="button"
-          onClick={() =>
-            handleAddTask("TODO")
-          }
+          onClick={() => handleAddTask("TODO")}
           className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[9px] bg-white/15 px-3 text-[12px] font-medium text-white transition hover:bg-white/25"
         >
           <Plus size={15} />
@@ -253,31 +207,17 @@ export default function TasksBoard({
             <div className="flex h-full min-w-max items-start gap-3">
               {columns.map((column) => {
                 const columnTasks = tasks
-                  .filter(
-                    (task) =>
-                      task.status ===
-                      column.id,
-                  )
-                  .sort(
-                    (a, b) =>
-                      a.position -
-                      b.position,
-                  );
+                  .filter((task) => task.status === column.id)
+                  .sort((a, b) => a.position - b.position);
 
                 return (
                   <TaskColumn
                     key={column.id}
                     column={column}
                     tasks={columnTasks}
-                    onTaskClick={
-                      handleTaskClick
-                    }
-                    onAddTask={
-                      handleAddTask
-                    }
-                    movingTaskId={
-                      movingTaskId
-                    }
+                    onTaskClick={handleTaskClick}
+                    onAddTask={handleAddTask}
+                    movingTaskId={movingTaskId}
                   />
                 );
               })}
@@ -288,15 +228,19 @@ export default function TasksBoard({
         <DragOverlay>
           {activeTask ? (
             <div className="w-[310px]">
-              <TaskCard
-                task={activeTask}
-              />
+              <TaskCard task={activeTask} />
             </div>
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {/* CreateTaskModal goes here */}
+      <CreateTaskModal
+        open={createStatus !== null}
+        workspaceSlug={workspaceSlug}
+        initialStatus={createStatus ?? "TODO"}
+        onClose={() => setCreateStatus(null)}
+        onCreated={handleTaskCreated}
+      />
     </div>
   );
 }

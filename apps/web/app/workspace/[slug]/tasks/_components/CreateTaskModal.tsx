@@ -224,8 +224,8 @@ export default function CreateTaskModal({
 
             {members.map((member) => (
               <option
-                key={member.user.id}
-                value={member.user.id}
+                key={member.userId}
+                value={member.userId}
               >
                 {member.user.name}
               </option>
