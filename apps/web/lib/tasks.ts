@@ -11,6 +11,13 @@ export type TaskPriority =
   | "HIGH"
   | "URGENT";
 
+export type TaskUser = {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+};
+
 export type Task = {
   id: string;
   workspaceId: string;
@@ -20,7 +27,9 @@ export type Task = {
   priority: TaskPriority;
   position: number;
   assigneeId: string | null;
+  assignee: TaskUser | null;
   createdById: string;
+  createdBy: TaskUser;
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
