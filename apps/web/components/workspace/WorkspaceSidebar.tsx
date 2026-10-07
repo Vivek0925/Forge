@@ -26,7 +26,6 @@ const navigation = [
   { label: "Overview", href: "", icon: LayoutDashboard },
   { label: "Projects", href: "/projects", icon: Folder },
   { label: "Tasks", href: "/tasks", icon: LayoutList },
-  { label: "Docs", href: "/docs", icon: FileText },
   { label: "Whiteboard", href: "/whiteboard", icon: Workflow },
 ];
 

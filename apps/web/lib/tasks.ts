@@ -82,6 +82,39 @@ export async function createTask(
   );
 }
 
+export async function deleteTask(
+  workspaceSlug: string,
+  taskId: string,
+) {
+  return api<{ id: string }>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/${taskId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+export async function updateTask(
+  workspaceSlug: string,
+  taskId: string,
+  input: {
+    title?: string;
+    description?: string;
+    priority?: TaskPriority;
+    status?: TaskStatus;
+    assigneeId?: string;
+    dueDate?: string;
+  },
+) {
+  return api<Task>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/${taskId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
+}
+
 export async function moveTask(
   workspaceSlug: string,
   taskId: string,
@@ -96,7 +129,7 @@ export async function moveTask(
         status,
         position,
       }),
-    },
+    }
+    ,
   );
-
 }
