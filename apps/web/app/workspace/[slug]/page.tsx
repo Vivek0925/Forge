@@ -97,7 +97,7 @@ export default async function WorkspacePage({
       </div>
 
       {/* Recent Documents */}
-      <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
+      <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] my-4 p-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="text-[13px] font-medium uppercase tracking-[0.18em] text-[#5B5D6E]">

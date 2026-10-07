@@ -12,7 +12,7 @@ export default function WorkspaceSectionPage({
   children,
 }: WorkspaceSectionPageProps) {
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
+    <section className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden rounded-[24px] border border-[#DEDFE8] bg-white shadow-[0_18px_50px_rgba(20,20,28,0.06)] sm:rounded-[32px]">
       <div className="shrink-0 px-5 py-5 sm:px-6 sm:py-6 md:px-7 md:py-6">
         <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#059669]">
           {eyebrow}
@@ -27,9 +27,9 @@ export default function WorkspaceSectionPage({
         </p>
       </div>
 
-      <div className="min-h-0 flex-1 px-5 pb-5 sm:px-6 sm:pb-6 md:px-7 md:pb-6">
-        {children}
-      </div>
+      <div className="min-h-0 px-5 pb-6 sm:px-6 sm:pb-7 md:px-7 md:pb-8">
+  {children}
+</div>
     </section>
   );
 }
