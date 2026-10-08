@@ -2,6 +2,10 @@
 
 import { MoreHorizontal, Plus } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import type { Task, TaskList } from "./task-types";
 import TaskCard from "./TaskCard";
@@ -59,30 +63,35 @@ export default function TaskListColumn({
         </button>
       </header>
 
-      {/* Cards */}
-      <div className="min-h-[20px] max-h-[calc(100dvh-220px)] space-y-2 overflow-y-auto px-2 pb-2">
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className={
-              movingTaskId === task.id
-                ? "opacity-50 transition-opacity"
-                : "transition-opacity"
-            }
-          >
-            <TaskCard
-              task={task}
-              onClick={onTaskClick}
-            />
-          </div>
-        ))}
+      {/* Sortable cards */}
+      <SortableContext
+        items={tasks.map((task) => task.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="min-h-[20px] max-h-[calc(100dvh-220px)] space-y-2 overflow-y-auto px-2 pb-2">
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              className={
+                movingTaskId === task.id
+                  ? "opacity-50 transition-opacity"
+                  : "transition-opacity"
+              }
+            >
+              <TaskCard
+                task={task}
+                onClick={onTaskClick}
+              />
+            </div>
+          ))}
 
-        {tasks.length === 0 && (
-          <div className="rounded-xl border border-dashed border-white/15 px-3 py-7 text-center text-[11px] text-white/35">
-            Drop a card here
-          </div>
-        )}
-      </div>
+          {tasks.length === 0 && (
+            <div className="rounded-xl border border-dashed border-white/15 px-3 py-7 text-center text-[11px] text-white/35">
+              Drop a card here
+            </div>
+          )}
+        </div>
+      </SortableContext>
 
       {/* Add card */}
       <button

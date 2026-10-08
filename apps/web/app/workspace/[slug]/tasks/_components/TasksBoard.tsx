@@ -86,159 +86,188 @@ export default function TasksBoard({
     setActiveTask(null);
   }
 
-  async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+ async function handleDragEnd(event: DragEndEvent) {
+  const { active, over } = event;
 
-    setActiveTask(null);
+  setActiveTask(null);
 
-    if (!over) {
-      return;
-    }
-
-    const taskId = String(active.id);
-    const overId = String(over.id);
-
-    const sourceList = lists.find((list) =>
-      list.tasks.some((task) => task.id === taskId),
-    );
-
-    if (!sourceList) {
-      return;
-    }
-
-    const task = sourceList.tasks.find((item) => item.id === taskId);
-
-    if (!task) {
-      return;
-    }
-
-    /*
-     * `over.id` can be either:
-     * - another task ID
-     * - a task-list ID
-     */
-    let targetList = lists.find((list) =>
-      list.tasks.some((item) => item.id === overId),
-    );
-
-    if (!targetList) {
-      targetList = lists.find((list) => list.id === overId);
-    }
-
-    if (!targetList) {
-      return;
-    }
-
-    const targetTasks = [...targetList.tasks]
-      .filter((item) => item.id !== taskId)
-      .sort((a, b) => a.position - b.position);
-
-    let newPosition = targetTasks.length;
-
-    const overTaskIndex = targetTasks.findIndex(
-      (item) => item.id === overId,
-    );
-
-    if (overTaskIndex !== -1) {
-      newPosition = overTaskIndex;
-    }
-
-    /*
-     * Nothing actually changed.
-     */
-    if (
-      sourceList.id === targetList.id &&
-      task.position === newPosition
-    ) {
-      return;
-    }
-
-    /*
-     * Optimistic update.
-     */
-    setLists((current) =>
-      current.map((list) => {
-        if (list.id === sourceList.id && list.id === targetList.id) {
-          const reordered = [...list.tasks]
-            .filter((item) => item.id !== taskId)
-            .sort((a, b) => a.position - b.position);
-
-          reordered.splice(newPosition, 0, {
-            ...task,
-            position: newPosition,
-          });
-
-          return {
-            ...list,
-            tasks: reordered.map((item, index) => ({
-              ...item,
-              position: index,
-            })),
-          };
-        }
-
-        if (list.id === sourceList.id) {
-          return {
-            ...list,
-            tasks: list.tasks
-              .filter((item) => item.id !== taskId)
-              .sort((a, b) => a.position - b.position)
-              .map((item, index) => ({
-                ...item,
-                position: index,
-              })),
-          };
-        }
-
-        if (list.id === targetList.id) {
-          const updatedTasks = [...list.tasks]
-            .filter((item) => item.id !== taskId)
-            .sort((a, b) => a.position - b.position);
-
-          updatedTasks.splice(newPosition, 0, {
-            ...task,
-            listId: targetList.id,
-            position: newPosition,
-          });
-
-          return {
-            ...list,
-            tasks: updatedTasks.map((item, index) => ({
-              ...item,
-              position: index,
-            })),
-          };
-        }
-
-        return list;
-      }),
-    );
-
-    try {
-      setMovingTaskId(taskId);
-
-      await moveTask(
-        workspaceSlug,
-        taskId,
-        targetList.id,
-        newPosition,
-      );
-
-      /*
-       * Re-sync positions with backend.
-       */
-      await loadLists();
-    } catch (error) {
-      console.error("Failed to move task:", error);
-
-      /*
-       * Restore server state.
-       */
-      await loadLists();
-    } finally {
-      setMovingTaskId(null);
-    }
+  if (!over) {
+    return;
   }
+
+  const taskId = String(active.id);
+  const overId = String(over.id);
+
+  const sourceList = lists.find((list) =>
+    list.tasks.some((task) => task.id === taskId),
+  );
+
+  if (!sourceList) {
+    return;
+  }
+
+  const task = sourceList.tasks.find(
+    (item) => item.id === taskId,
+  );
+
+  if (!task) {
+    return;
+  }
+
+  /*
+   * `over.id` can be:
+   * 1. another task
+   * 2. a list itself
+   */
+
+  let targetList = lists.find((list) =>
+    list.tasks.some((item) => item.id === overId),
+  );
+
+  if (!targetList) {
+    targetList = lists.find(
+      (list) => list.id === overId,
+    );
+  }
+
+  if (!targetList) {
+    return;
+  }
+
+  /*
+   * Remove the dragged task from the target ordering
+   * before calculating its new position.
+   */
+  const targetTasks = [...targetList.tasks]
+    .filter((item) => item.id !== taskId)
+    .sort((a, b) => a.position - b.position);
+
+  let newPosition = targetTasks.length;
+
+  /*
+   * If we're dropping over another card,
+   * insert before that card.
+   */
+  const overTaskIndex = targetTasks.findIndex(
+    (item) => item.id === overId,
+  );
+
+  if (overTaskIndex !== -1) {
+    newPosition = overTaskIndex;
+  }
+
+  /*
+   * Same list + same position = nothing to do.
+   */
+  if (
+    sourceList.id === targetList.id &&
+    task.position === newPosition
+  ) {
+    return;
+  }
+
+  /*
+   * Optimistic UI update.
+   */
+  setLists((current) =>
+    current.map((list) => {
+      /*
+       * Same-list reorder.
+       */
+      if (
+        list.id === sourceList.id &&
+        list.id === targetList.id
+      ) {
+        const reordered = list.tasks
+          .filter((item) => item.id !== taskId)
+          .sort((a, b) => a.position - b.position);
+
+        reordered.splice(newPosition, 0, {
+          ...task,
+          listId: list.id,
+          position: newPosition,
+        });
+
+        return {
+          ...list,
+          tasks: reordered.map((item, index) => ({
+            ...item,
+            position: index,
+          })),
+        };
+      }
+
+      /*
+       * Remove from source list.
+       */
+      if (list.id === sourceList.id) {
+        return {
+          ...list,
+          tasks: list.tasks
+            .filter((item) => item.id !== taskId)
+            .sort((a, b) => a.position - b.position)
+            .map((item, index) => ({
+              ...item,
+              position: index,
+            })),
+        };
+      }
+
+      /*
+       * Insert into target list.
+       */
+      if (list.id === targetList.id) {
+        const updatedTasks = list.tasks
+          .filter((item) => item.id !== taskId)
+          .sort((a, b) => a.position - b.position);
+
+        updatedTasks.splice(newPosition, 0, {
+          ...task,
+          listId: targetList.id,
+          position: newPosition,
+        });
+
+        return {
+          ...list,
+          tasks: updatedTasks.map((item, index) => ({
+            ...item,
+            position: index,
+          })),
+        };
+      }
+
+      return list;
+    }),
+  );
+
+  try {
+    setMovingTaskId(taskId);
+
+    await moveTask(
+      workspaceSlug,
+      taskId,
+      targetList.id,
+      newPosition,
+    );
+
+    /*
+     * Backend is the source of truth.
+     */
+    await loadLists();
+  } catch (error) {
+    console.error(
+      "Failed to move task:",
+      error,
+    );
+
+    /*
+     * Restore server state.
+     */
+    await loadLists();
+  } finally {
+    setMovingTaskId(null);
+  }
+}
 
   function handleAddTask(listId: string) {
     setCreateTaskListId(listId);
@@ -332,7 +361,7 @@ export default function TasksBoard({
                   <button
                     type="button"
                     onClick={handleAddList}
-                    className="flex h-[52px] w-[300px] shrink-0 items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
+                    className="flex h-[37px] w-[200px] shrink-0 items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
                   >
                     <Plus size={16} />
                     Add another list
