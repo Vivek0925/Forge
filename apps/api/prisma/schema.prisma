@@ -39,6 +39,8 @@ model User {
   assignedTasks Task[] @relation("AssignedTasks")
   createdTasks  Task[] @relation("CreatedTasks")
 
+  createdTaskLists TaskList[] @relation("CreatedTaskLists")
+
   @@unique([provider, providerId])
   @@map("users")
 }
@@ -95,6 +97,7 @@ model Workspace {
 
   meetings Meeting[]
   tasks Task[]
+  taskLists TaskList[]
 
   @@index([ownerId])
   @@map("workspaces")
@@ -288,10 +291,12 @@ model Task {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
+  listId String
+  list   TaskList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
   title       String
   description String?
 
-  status   TaskStatus   @default(TODO)
   priority TaskPriority @default(MEDIUM)
 
   position Int @default(0)
@@ -308,17 +313,34 @@ model Task {
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
-  @@index([workspaceId, status])
+  @@index([workspaceId, listId])
   @@index([assigneeId])
   @@index([createdById])
   @@map("tasks")
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
+model TaskList {
+  id          String    @id @default(cuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name        String
+  position    Int       @default(0)
+
+  createdById String
+  createdBy   User      @relation("CreatedTaskLists", fields: [createdById], references: [id], onDelete: Cascade)
+
+  tasks       Task[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, position])
+  @@map("task_lists")
 }
+
 
 enum TaskPriority {
   LOW
