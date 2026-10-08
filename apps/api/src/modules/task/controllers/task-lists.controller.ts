@@ -8,9 +8,9 @@ import {
   UseGuards,
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "../../auth/guards/jwt-auth.guard";
-import { CurrentUser } from "../../auth/decorators/current-user.decorator";
-import type { CurrentUserData } from "../../auth/types/current-user.type";
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import type { CurrentUserData } from '../../auth/interfaces/current-user.interface';
 
 import { CreateTaskListDto } from "../dto/create-task-list.dto";
 import { UpdateTaskListDto } from "../dto/update-task-list.dto";

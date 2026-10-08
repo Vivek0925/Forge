@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma, TaskStatus } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 
-import { PrismaService } from '../../../database/prisma.service';
+import { PrismaService } from "../../../database/prisma.service";
 
 @Injectable()
 export class TasksRepository {
@@ -27,26 +27,21 @@ export class TasksRepository {
             avatar: true,
           },
         },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
+          },
+        },
       },
     });
   }
 
   async findByWorkspace(workspaceId: string) {
     return this.prisma.task.findMany({
-      where: {
-        workspaceId,
-      },
-      orderBy: [
-        {
-          status: 'asc',
-        },
-        {
-          position: 'asc',
-        },
-        {
-          createdAt: 'asc',
-        },
-      ],
+      where: { workspaceId },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       include: {
         assignee: {
           select: {
@@ -62,6 +57,13 @@ export class TasksRepository {
             name: true,
             email: true,
             avatar: true,
+          },
+        },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
           },
         },
       },
@@ -70,9 +72,7 @@ export class TasksRepository {
 
   async findById(id: string) {
     return this.prisma.task.findUnique({
-      where: {
-        id,
-      },
+      where: { id },
       include: {
         assignee: {
           select: {
@@ -90,15 +90,20 @@ export class TasksRepository {
             avatar: true,
           },
         },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
+          },
+        },
       },
     });
   }
 
   async update(id: string, data: Prisma.TaskUpdateInput) {
     return this.prisma.task.update({
-      where: {
-        id,
-      },
+      where: { id },
       data,
       include: {
         assignee: {
@@ -117,26 +122,31 @@ export class TasksRepository {
             avatar: true,
           },
         },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
+          },
+        },
       },
     });
   }
 
   async delete(id: string) {
     return this.prisma.task.delete({
-      where: {
-        id,
-      },
+      where: { id },
     });
   }
 
-  async getNextPosition(workspaceId: string, status: TaskStatus) {
+  async getNextPosition(workspaceId: string, listId: string) {
     const lastTask = await this.prisma.task.findFirst({
       where: {
         workspaceId,
-        status,
+        listId,
       },
       orderBy: {
-        position: 'desc',
+        position: "desc",
       },
       select: {
         position: true,
@@ -148,14 +158,14 @@ export class TasksRepository {
 
   async shiftPositions(
     workspaceId: string,
-    status: TaskStatus,
+    listId: string,
     position: number,
     excludeTaskId?: string,
   ) {
     return this.prisma.task.updateMany({
       where: {
         workspaceId,
-        status,
+        listId,
         position: {
           gte: position,
         },
@@ -175,54 +185,16 @@ export class TasksRepository {
     });
   }
 
- async findByAssignee(
-  workspaceId: string,
-  assigneeId: string,
-) {
-  return this.prisma.task.findMany({
-    where: {
-      workspaceId,
-      assigneeId,
-    },
-    orderBy: [
-      {
-        status: 'asc',
-      },
-      {
-        position: 'asc',
-      },
-    ],
-    include: {
-      assignee: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          avatar: true,
-        },
-      },
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          avatar: true,
-        },
-      },
-    },
-  });
-}
-
   async shiftPositionsAfterRemoval(
     workspaceId: string,
-    status: TaskStatus,
+    listId: string,
     position: number,
     excludeTaskId: string,
   ) {
     return this.prisma.task.updateMany({
       where: {
         workspaceId,
-        status,
+        listId,
         position: {
           gt: position,
         },
@@ -233,6 +205,44 @@ export class TasksRepository {
       data: {
         position: {
           decrement: 1,
+        },
+      },
+    });
+  }
+
+  async findByAssignee(
+    workspaceId: string,
+    assigneeId: string,
+  ) {
+    return this.prisma.task.findMany({
+      where: {
+        workspaceId,
+        assigneeId,
+      },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        list: {
+          select: {
+            id: true,
+            name: true,
+            position: true,
+          },
         },
       },
     });

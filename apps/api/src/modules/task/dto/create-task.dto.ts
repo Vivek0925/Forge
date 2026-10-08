@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 
 import { TaskPriority } from '@prisma/client';
+import { IsNotEmpty } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
@@ -29,4 +30,8 @@ export class CreateTaskDto {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  listId!: string;
 }

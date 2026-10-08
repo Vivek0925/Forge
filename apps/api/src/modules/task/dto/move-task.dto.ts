@@ -1,10 +1,9 @@
-import { IsEnum, IsInt, Min } from 'class-validator';
-
-import { TaskStatus } from '@prisma/client';
+import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class MoveTaskDto {
-  @IsEnum(TaskStatus)
-  status!: TaskStatus;
+  @IsString()
+  @IsNotEmpty()
+  listId!: string;
 
   @IsInt()
   @Min(0)

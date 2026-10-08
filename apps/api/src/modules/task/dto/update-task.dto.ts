@@ -1,12 +1,13 @@
 import {
   IsDateString,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
 
-import { TaskPriority, TaskStatus } from '@prisma/client';
+import { TaskPriority } from '@prisma/client';
 
 export class UpdateTaskDto {
   @IsOptional()
@@ -25,13 +26,14 @@ export class UpdateTaskDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  listId?: string;
+
+  @IsOptional()
+  @IsString()
   assigneeId?: string | null;
 
   @IsOptional()
   @IsDateString()
   dueDate?: string | null;
-
-  @IsOptional()
-  @IsEnum(TaskStatus)
-  status?: TaskStatus;
 }
