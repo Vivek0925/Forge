@@ -101,7 +101,7 @@ export class TasksRepository {
     });
   }
 
-  async update(id: string, data: Prisma.TaskUpdateInput) {
+  async update(id: string, data: Prisma.TaskUncheckedUpdateInput) {
     return this.prisma.task.update({
       where: { id },
       data,
