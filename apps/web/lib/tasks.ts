@@ -5,11 +5,8 @@ export type TaskStatus =
   | "IN_PROGRESS"
   | "DONE";
 
-export type TaskPriority =
-  | "LOW"
-  | "MEDIUM"
-  | "HIGH"
-  | "URGENT";
+
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 
 export type TaskUser = {
   id: string;
@@ -21,21 +18,44 @@ export type TaskUser = {
 export type Task = {
   id: string;
   workspaceId: string;
+
+  listId: string;
+
   title: string;
   description: string | null;
-  status: TaskStatus;
+
   priority: TaskPriority;
   position: number;
+
   assigneeId: string | null;
   assignee: TaskUser | null;
+
   createdById: string;
   createdBy: TaskUser;
+
   dueDate: string | null;
+
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TaskList = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  position: number;
+
+  createdById: string;
+  createdBy: TaskUser;
+
+  tasks: Task[];
+
   createdAt: string;
   updatedAt: string;
 };
 
 export type CreateTaskInput = {
+  listId: string;
   title: string;
   description?: string;
   priority?: TaskPriority;
@@ -52,6 +72,53 @@ export type WorkspaceMember = {
     avatar: string | null;
   };
 };
+
+export async function getTaskLists(workspaceSlug: string) {
+  return api<TaskList[]>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/task-lists`,
+  );
+}
+
+export async function createTaskList(
+  workspaceSlug: string,
+  name: string,
+) {
+  return api<TaskList>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/task-lists`,
+    {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+export async function updateTaskList(
+  workspaceSlug: string,
+  listId: string,
+  name: string,
+) {
+  return api<TaskList>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/task-lists/${listId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    },
+  );
+}
+
+export async function moveTaskList(
+  workspaceSlug: string,
+  listId: string,
+  position: number,
+) {
+  return api<TaskList>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/task-lists/${listId}/move`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ position }),
+    },
+  );
+}
 
 export async function getWorkspaceTasks(
   workspaceSlug: string,
@@ -110,9 +177,9 @@ export async function updateTask(
     title?: string;
     description?: string;
     priority?: TaskPriority;
-    status?: TaskStatus;
-    assigneeId?: string;
-    dueDate?: string;
+    listId?: string;
+    assigneeId?: string | null;
+    dueDate?: string | null;
   },
 ) {
   return api<Task>(
@@ -127,7 +194,7 @@ export async function updateTask(
 export async function moveTask(
   workspaceSlug: string,
   taskId: string,
-  status: TaskStatus,
+  listId: string,
   position: number,
 ) {
   return api<Task>(
@@ -135,10 +202,9 @@ export async function moveTask(
     {
       method: "PATCH",
       body: JSON.stringify({
-        status,
+        listId,
         position,
       }),
-    }
-    ,
+    },
   );
 }
