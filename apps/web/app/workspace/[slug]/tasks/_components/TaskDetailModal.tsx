@@ -5,14 +5,14 @@ import { CalendarDays, Loader2, Trash2, UserRound, X } from "lucide-react";
 
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-11;
 import {
   deleteTask,
+  getTaskLists,
   getWorkspaceMembers,
   updateTask,
   type Task,
+  type TaskList,
   type TaskPriority,
-  type TaskStatus,
   type WorkspaceMember,
 } from "@/lib/tasks";
 
@@ -23,15 +23,6 @@ type TaskDetailModalProps = {
   onClose: () => void;
   onUpdated: () => void;
 };
-
-const statuses: {
-  value: TaskStatus;
-  label: string;
-}[] = [
-  { value: "TODO", label: "To Do" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "DONE", label: "Done" },
-];
 
 const priorities: {
   value: TaskPriority;
@@ -51,13 +42,13 @@ export default function TaskDetailModal({
   onUpdated,
 }: TaskDetailModalProps) {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [lists, setLists] = useState<TaskList[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
-  const [status, setStatus] = useState<TaskStatus>("TODO");
+  const [listId, setListId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
-
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +58,36 @@ export default function TaskDetailModal({
       return;
     }
 
+    useEffect(() => {
+      if (!open) {
+        return;
+      }
+
+      let cancelled = false;
+
+      async function loadLists() {
+        try {
+          const data = await getTaskLists(workspaceSlug);
+
+          if (!cancelled) {
+            setLists(data);
+          }
+        } catch (error) {
+          console.error("Failed to load task lists:", error);
+        }
+      }
+
+      void loadLists();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [open, workspaceSlug]);
+
     setTitle(task.title);
     setDescription(task.description ?? "");
     setPriority(task.priority);
-    setStatus(task.status);
+    setListId(task.listId);
     setAssigneeId(task.assigneeId ?? "");
     setDueDate(task.dueDate ? task.dueDate.slice(0, 10) : "");
     setError(null);
@@ -117,9 +134,9 @@ export default function TaskDetailModal({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
-        status,
-        assigneeId: assigneeId || undefined,
-        dueDate: dueDate || undefined,
+        listId,
+        assigneeId: assigneeId || null,
+        dueDate: dueDate || null,
       });
 
       onUpdated();
@@ -191,17 +208,17 @@ export default function TaskDetailModal({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="text-[12px] font-medium text-[#5B5D6E]">
-              Status
+              List
             </label>
 
             <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value as TaskStatus)}
+              value={listId}
+              onChange={(event) => setListId(event.target.value)}
               className="mt-1.5 w-full rounded-[12px] border border-[#DEDFE8] bg-white px-3 py-2.5 text-[13px] text-[#14141C] outline-none"
             >
-              {statuses.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
+              {lists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
                 </option>
               ))}
             </select>
