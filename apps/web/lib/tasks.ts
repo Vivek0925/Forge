@@ -20,6 +20,11 @@ export type Task = {
   workspaceId: string;
 
   listId: string;
+  list: {
+  id: string;
+  name: string;
+  position: number;
+};
 
   title: string;
   description: string | null;
@@ -37,6 +42,7 @@ export type Task = {
 
   createdAt: string;
   updatedAt: string;
+  
 };
 
 export type TaskList = {

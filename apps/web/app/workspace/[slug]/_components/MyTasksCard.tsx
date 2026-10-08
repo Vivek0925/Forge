@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState,useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   CalendarDays,
   CheckCircle2,
@@ -51,12 +51,22 @@ function formatDueDate(date: string | null) {
   }).format(new Date(date));
 }
 
-function StatusIcon({ status }: { status: Task["status"] }) {
-  if (status === "DONE") {
+function StatusIcon({ listName }: { listName: string }) {
+  const normalized = listName.trim().toLowerCase();
+
+  if (
+    normalized === "done" ||
+    normalized === "completed" ||
+    normalized === "complete"
+  ) {
     return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
   }
 
-  if (status === "IN_PROGRESS") {
+  if (
+    normalized === "in progress" ||
+    normalized === "in-progress" ||
+    normalized === "doing"
+  ) {
     return <Clock3 className="h-4 w-4 text-blue-600" />;
   }
 
@@ -70,23 +80,23 @@ export default function MyTasksCard({ workspaceSlug }: MyTasksCardProps) {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const loadTasks = useCallback(async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const data = await getMyTasks(workspaceSlug);
+      const data = await getMyTasks(workspaceSlug);
 
-    setTasks(data);
-  } catch (error) {
-    console.error("Failed to load my tasks:", error);
-    setTasks([]);
-  } finally {
-    setLoading(false);
-  }
-}, [workspaceSlug]);
+      setTasks(data);
+    } catch (error) {
+      console.error("Failed to load my tasks:", error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceSlug]);
 
-useEffect(() => {
-  void loadTasks();
-}, [loadTasks]);
+  useEffect(() => {
+    void loadTasks();
+  }, [loadTasks]);
   return (
     <div className="rounded-[28px] border border-[#DEDFE8] bg-[#FAFAF8] p-6">
       <div className="flex items-center justify-between gap-4">
@@ -131,7 +141,7 @@ useEffect(() => {
                 onClick={() => setSelectedTask(task)}
                 className="flex w-full items-center gap-3 rounded-[18px] border border-white bg-white px-4 py-3 text-left shadow-[0_8px_20px_rgba(20,20,28,0.04)] transition hover:-translate-y-[1px] hover:shadow-[0_10px_24px_rgba(20,20,28,0.07)]"
               >
-                <StatusIcon status={task.status} />
+                <StatusIcon listName={task.list?.name ?? ""} />
 
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14px] font-medium text-[#14141C]">
@@ -140,7 +150,7 @@ useEffect(() => {
 
                   <div className="mt-1 flex items-center gap-2 text-[12px] text-[#8A8C98]">
                     <span className="capitalize">
-                      {task.status.replace("_", " ").toLowerCase()}
+                      {task.list?.name ?? "Unknown list"}
                     </span>
 
                     <span>•</span>
