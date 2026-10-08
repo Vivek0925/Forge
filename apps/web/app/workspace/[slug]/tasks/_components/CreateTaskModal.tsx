@@ -16,7 +16,7 @@ import {
 type CreateTaskModalProps = {
   open: boolean;
   workspaceSlug: string;
-  initialStatus: "TODO" | "IN_PROGRESS" | "DONE";
+  listId: string;
   onClose: () => void;
   onCreated: () => void;
 };
@@ -24,27 +24,21 @@ type CreateTaskModalProps = {
 export default function CreateTaskModal({
   open,
   workspaceSlug,
-  initialStatus,
+  listId,
   onClose,
   onCreated,
 }: CreateTaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] =
-    useState<TaskPriority>("MEDIUM");
-  const [assigneeId, setAssigneeId] =
-    useState("");
+  const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
+  const [assigneeId, setAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
 
-  const [members, setMembers] = useState<
-    WorkspaceMember[]
-  >([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
 
-  const [loadingMembers, setLoadingMembers] =
-    useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
-  const [submitting, setSubmitting] =
-    useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -60,8 +54,7 @@ export default function CreateTaskModal({
         setLoadingMembers(true);
         setError("");
 
-        const data =
-          await getWorkspaceMembers(workspaceSlug);
+        const data = await getWorkspaceMembers(workspaceSlug);
 
         if (!cancelled) {
           setMembers(data);
@@ -106,9 +99,7 @@ export default function CreateTaskModal({
     onClose();
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!title.trim()) {
@@ -121,14 +112,12 @@ export default function CreateTaskModal({
       setError("");
 
       await createTask(workspaceSlug, {
+        listId,
         title: title.trim(),
-        description:
-          description.trim() || undefined,
+        description: description.trim() || undefined,
         priority,
-        assigneeId:
-          assigneeId || undefined,
-        dueDate:
-          dueDate || undefined,
+        assigneeId: assigneeId || undefined,
+        dueDate: dueDate || undefined,
       });
 
       resetForm();
@@ -136,9 +125,7 @@ export default function CreateTaskModal({
       onClose();
     } catch (error) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to create task.",
+        error instanceof Error ? error.message : "Unable to create task.",
       );
     } finally {
       setSubmitting(false);
@@ -146,15 +133,8 @@ export default function CreateTaskModal({
   }
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      title="Create task"
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
-      >
+    <Modal open={open} onClose={handleClose} title="Create task">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
         <div>
           <label
@@ -167,9 +147,7 @@ export default function CreateTaskModal({
           <input
             id="task-title"
             value={title}
-            onChange={(event) =>
-              setTitle(event.target.value)
-            }
+            onChange={(event) => setTitle(event.target.value)}
             placeholder="What needs to be done?"
             autoFocus
             className="h-10 w-full rounded-[9px] border border-[#DEDFE8] bg-white px-3 text-[13px] text-[#14141C] outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
@@ -188,9 +166,7 @@ export default function CreateTaskModal({
           <textarea
             id="task-description"
             value={description}
-            onChange={(event) =>
-              setDescription(event.target.value)
-            }
+            onChange={(event) => setDescription(event.target.value)}
             placeholder="Add some details..."
             rows={3}
             className="w-full resize-none rounded-[9px] border border-[#DEDFE8] bg-white px-3 py-2.5 text-[13px] text-[#14141C] outline-none transition focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/10"
@@ -210,23 +186,16 @@ export default function CreateTaskModal({
           <select
             id="task-assignee"
             value={assigneeId}
-            onChange={(event) =>
-              setAssigneeId(event.target.value)
-            }
+            onChange={(event) => setAssigneeId(event.target.value)}
             disabled={loadingMembers}
             className="h-10 w-full rounded-[9px] border border-[#DEDFE8] bg-white px-3 text-[13px] text-[#14141C] outline-none focus:border-[#059669]"
           >
             <option value="">
-              {loadingMembers
-                ? "Loading members..."
-                : "Unassigned"}
+              {loadingMembers ? "Loading members..." : "Unassigned"}
             </option>
 
             {members.map((member) => (
-              <option
-                key={member.userId}
-                value={member.userId}
-              >
+              <option key={member.userId} value={member.userId}>
                 {member.user.name}
               </option>
             ))}
@@ -247,9 +216,7 @@ export default function CreateTaskModal({
               id="task-priority"
               value={priority}
               onChange={(event) =>
-                setPriority(
-                  event.target.value as TaskPriority,
-                )
+                setPriority(event.target.value as TaskPriority)
               }
               className="h-10 w-full rounded-[9px] border border-[#DEDFE8] bg-white px-3 text-[13px] outline-none focus:border-[#059669]"
             >
@@ -273,25 +240,10 @@ export default function CreateTaskModal({
               id="task-due-date"
               type="date"
               value={dueDate}
-              onChange={(event) =>
-                setDueDate(event.target.value)
-              }
+              onChange={(event) => setDueDate(event.target.value)}
               className="h-10 w-full rounded-[9px] border border-[#DEDFE8] bg-white px-3 text-[12px] outline-none focus:border-[#059669]"
             />
           </div>
-        </div>
-
-        {/* Status */}
-        <div className="rounded-[9px] bg-[#F7F7F4] px-3 py-2.5 text-[11px] text-[#737373]">
-          This task will be created in{" "}
-          <span className="font-medium text-[#292929]">
-            {initialStatus === "TODO"
-              ? "To Do"
-              : initialStatus === "IN_PROGRESS"
-                ? "In Progress"
-                : "Done"}
-          </span>
-          .
         </div>
 
         {error && (

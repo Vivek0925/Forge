@@ -12,34 +12,25 @@ import {
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import { getWorkspaceTasks, moveTask } from "@/lib/tasks";
+import {
+  createTaskList,
+  getTaskLists,
+  moveTask,
+} from "@/lib/tasks";
 
-import type { Task, TaskStatus } from "./task-types";
+import type { Task, TaskList } from "./task-types";
 
 import TaskCard from "./TaskCard";
-import TaskColumn from "./TaskColumn";
+import TaskListColumn from "./TaskListColumn";
 import CreateTaskModal from "./CreateTaskModal";
-
-const columns = [
-  {
-    id: "TODO" as const,
-    title: "To Do",
-  },
-  {
-    id: "IN_PROGRESS" as const,
-    title: "In Progress",
-  },
-  {
-    id: "DONE" as const,
-    title: "Done",
-  },
-];
 
 type TasksBoardProps = {
   workspaceSlug: string;
 };
 
-export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
+export default function TasksBoard({
+  workspaceSlug,
+}: TasksBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -48,38 +39,45 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
     }),
   );
 
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [lists, setLists] = useState<TaskList[]>([]);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 
-  const [createStatus, setCreateStatus] = useState<TaskStatus | null>(null);
+  const [createListOpen, setCreateListOpen] = useState(false);
+  const [createTaskListId, setCreateTaskListId] = useState<string | null>(
+    null,
+  );
 
-  const loadTasks = useCallback(async () => {
+  const loadLists = useCallback(async () => {
     try {
       setLoading(true);
 
-      const data = await getWorkspaceTasks(workspaceSlug);
+      const data = await getTaskLists(workspaceSlug);
 
-      setTasks(data);
+      setLists(data);
     } catch (error) {
-      console.error("Failed to load tasks:", error);
+      console.error("Failed to load task lists:", error);
     } finally {
       setLoading(false);
     }
   }, [workspaceSlug]);
 
   useEffect(() => {
-    void loadTasks();
-  }, [loadTasks]);
+    void loadLists();
+  }, [loadLists]);
 
   function handleDragStart(event: {
     active: {
       id: string | number;
     };
   }) {
-    const task = tasks.find((item) => item.id === String(event.active.id));
+    const taskId = String(event.active.id);
+
+    const task = lists
+      .flatMap((list) => list.tasks)
+      .find((item) => item.id === taskId);
 
     setActiveTask(task ?? null);
   }
@@ -98,72 +96,172 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
     }
 
     const taskId = String(active.id);
-    const targetStatus = String(over.id) as TaskStatus;
+    const overId = String(over.id);
 
-    const task = tasks.find((item) => item.id === taskId);
+    const sourceList = lists.find((list) =>
+      list.tasks.some((task) => task.id === taskId),
+    );
+
+    if (!sourceList) {
+      return;
+    }
+
+    const task = sourceList.tasks.find((item) => item.id === taskId);
 
     if (!task) {
       return;
     }
 
-    // Dropped back into the same column.
-    if (task.status === targetStatus) {
+    /*
+     * `over.id` can be either:
+     * - another task ID
+     * - a task-list ID
+     */
+    let targetList = lists.find((list) =>
+      list.tasks.some((item) => item.id === overId),
+    );
+
+    if (!targetList) {
+      targetList = lists.find((list) => list.id === overId);
+    }
+
+    if (!targetList) {
       return;
     }
 
-    // Only allow known board columns.
-    const isValidColumn = columns.some((column) => column.id === targetStatus);
-
-    if (!isValidColumn) {
-      return;
-    }
-
-    const targetTasks = tasks
-      .filter((item) => item.status === targetStatus && item.id !== taskId)
+    const targetTasks = [...targetList.tasks]
+      .filter((item) => item.id !== taskId)
       .sort((a, b) => a.position - b.position);
 
-    const newPosition =
-      targetTasks.length > 0
-        ? targetTasks[targetTasks.length - 1].position + 1
-        : 0;
+    let newPosition = targetTasks.length;
 
-    // Optimistic UI update.
-    setTasks((current) =>
-      current.map((item) =>
-        item.id === taskId
-          ? {
+    const overTaskIndex = targetTasks.findIndex(
+      (item) => item.id === overId,
+    );
+
+    if (overTaskIndex !== -1) {
+      newPosition = overTaskIndex;
+    }
+
+    /*
+     * Nothing actually changed.
+     */
+    if (
+      sourceList.id === targetList.id &&
+      task.position === newPosition
+    ) {
+      return;
+    }
+
+    /*
+     * Optimistic update.
+     */
+    setLists((current) =>
+      current.map((list) => {
+        if (list.id === sourceList.id && list.id === targetList.id) {
+          const reordered = [...list.tasks]
+            .filter((item) => item.id !== taskId)
+            .sort((a, b) => a.position - b.position);
+
+          reordered.splice(newPosition, 0, {
+            ...task,
+            position: newPosition,
+          });
+
+          return {
+            ...list,
+            tasks: reordered.map((item, index) => ({
               ...item,
-              status: targetStatus,
-              position: newPosition,
-            }
-          : item,
-      ),
+              position: index,
+            })),
+          };
+        }
+
+        if (list.id === sourceList.id) {
+          return {
+            ...list,
+            tasks: list.tasks
+              .filter((item) => item.id !== taskId)
+              .sort((a, b) => a.position - b.position)
+              .map((item, index) => ({
+                ...item,
+                position: index,
+              })),
+          };
+        }
+
+        if (list.id === targetList.id) {
+          const updatedTasks = [...list.tasks]
+            .filter((item) => item.id !== taskId)
+            .sort((a, b) => a.position - b.position);
+
+          updatedTasks.splice(newPosition, 0, {
+            ...task,
+            listId: targetList.id,
+            position: newPosition,
+          });
+
+          return {
+            ...list,
+            tasks: updatedTasks.map((item, index) => ({
+              ...item,
+              position: index,
+            })),
+          };
+        }
+
+        return list;
+      }),
     );
 
     try {
       setMovingTaskId(taskId);
 
-      await moveTask(workspaceSlug, taskId, targetStatus, newPosition);
+      await moveTask(
+        workspaceSlug,
+        taskId,
+        targetList.id,
+        newPosition,
+      );
 
-      // Re-sync with backend positions/status.
-      await loadTasks();
+      /*
+       * Re-sync positions with backend.
+       */
+      await loadLists();
     } catch (error) {
       console.error("Failed to move task:", error);
 
-      // Restore server state if move fails.
-      await loadTasks();
+      /*
+       * Restore server state.
+       */
+      await loadLists();
     } finally {
       setMovingTaskId(null);
     }
   }
 
-  function handleAddTask(status: TaskStatus) {
-    setCreateStatus(status);
+  function handleAddTask(listId: string) {
+    setCreateTaskListId(listId);
   }
 
   function handleTaskCreated() {
-    setCreateStatus(null);
-    void loadTasks();
+    setCreateTaskListId(null);
+    void loadLists();
+  }
+
+  async function handleAddList() {
+    const name = window.prompt("List name");
+
+    if (!name?.trim()) {
+      return;
+    }
+
+    try {
+      await createTaskList(workspaceSlug, name.trim());
+      await loadLists();
+    } catch (error) {
+      console.error("Failed to create task list:", error);
+    }
   }
 
   function handleTaskClick(task: Task) {
@@ -175,7 +273,9 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
       {/* Board top bar */}
       <header className="flex h-[60px] shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#49376B] px-4 text-white sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-[16px] font-semibold">Tasks</h1>
+          <h1 className="truncate text-[16px] font-semibold">
+            Tasks
+          </h1>
 
           <span className="hidden h-5 w-px bg-white/20 sm:block" />
 
@@ -186,8 +286,15 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
 
         <button
           type="button"
-          onClick={() => handleAddTask("TODO")}
-          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[9px] bg-white/15 px-3 text-[12px] font-medium text-white transition hover:bg-white/25"
+          onClick={() => {
+            const firstList = lists[0];
+
+            if (firstList) {
+              handleAddTask(firstList.id);
+            }
+          }}
+          disabled={lists.length === 0}
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[9px] bg-white/15 px-3 text-[12px] font-medium text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus size={15} />
           Add task
@@ -205,22 +312,33 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="h-full overflow-x-auto overflow-y-hidden p-3 sm:p-4">
             <div className="flex h-full min-w-max items-start gap-3">
-              {columns.map((column) => {
-                const columnTasks = tasks
-                  .filter((task) => task.status === column.id)
-                  .sort((a, b) => a.position - b.position);
+              {loading ? (
+                <div className="px-2 py-3 text-sm text-white/70">
+                  Loading task board...
+                </div>
+              ) : (
+                <>
+                  {lists.map((list) => (
+                    <TaskListColumn
+                      key={list.id}
+                      list={list}
+                      onTaskClick={handleTaskClick}
+                      onAddTask={handleAddTask}
+                      movingTaskId={movingTaskId}
+                    />
+                  ))}
 
-                return (
-                  <TaskColumn
-                    key={column.id}
-                    column={column}
-                    tasks={columnTasks}
-                    onTaskClick={handleTaskClick}
-                    onAddTask={handleAddTask}
-                    movingTaskId={movingTaskId}
-                  />
-                );
-              })}
+                  {/* Add another list */}
+                  <button
+                    type="button"
+                    onClick={handleAddList}
+                    className="flex h-[52px] w-[300px] shrink-0 items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
+                  >
+                    <Plus size={16} />
+                    Add another list
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -235,10 +353,10 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
       </DndContext>
 
       <CreateTaskModal
-        open={createStatus !== null}
+        open={createTaskListId !== null}
         workspaceSlug={workspaceSlug}
-        initialStatus={createStatus ?? "TODO"}
-        onClose={() => setCreateStatus(null)}
+        listId={createTaskListId ?? ""}
+        onClose={() => setCreateTaskListId(null)}
         onCreated={handleTaskCreated}
       />
     </div>

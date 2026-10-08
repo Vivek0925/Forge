@@ -10,11 +10,11 @@
   "author": "",
   "license": "ISC",
   "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "^11.9.0",
-      "onFail": "download"
-    }
-  },
+  "packageManager": {
+    "name": "pnpm",
+    "version": "11.9.0",
+    "onFail": "warn"
+  }
+},
   "type": "module"
 }

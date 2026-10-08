@@ -8,18 +8,16 @@ import TaskCard from "./TaskCard";
 
 type TaskListColumnProps = {
   list: TaskList;
-  onAddCard: (listId: string) => void;
+  onAddTask: (listId: string) => void;
   onTaskClick: (task: Task) => void;
-  onRename: (list: TaskList) => void;
-  onDelete: (list: TaskList) => void;
+  movingTaskId: string | null;
 };
 
 export default function TaskListColumn({
   list,
-  onAddCard,
+  onAddTask,
   onTaskClick,
-  onRename,
-  onDelete,
+  movingTaskId,
 }: TaskListColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: list.id,
@@ -52,26 +50,31 @@ export default function TaskListColumn({
           </span>
         </div>
 
-        <div className="relative flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onRename(list)}
-            className="rounded-md p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
-            aria-label={`Edit ${list.name}`}
-          >
-            <MoreHorizontal size={16} />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="rounded-md p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
+          aria-label={`List options for ${list.name}`}
+        >
+          <MoreHorizontal size={16} />
+        </button>
       </header>
 
       {/* Cards */}
       <div className="min-h-[20px] max-h-[calc(100dvh-220px)] space-y-2 overflow-y-auto px-2 pb-2">
         {tasks.map((task) => (
-          <TaskCard
+          <div
             key={task.id}
-            task={task}
-            onClick={onTaskClick}
-          />
+            className={
+              movingTaskId === task.id
+                ? "opacity-50 transition-opacity"
+                : "transition-opacity"
+            }
+          >
+            <TaskCard
+              task={task}
+              onClick={onTaskClick}
+            />
+          </div>
         ))}
 
         {tasks.length === 0 && (
@@ -84,19 +87,12 @@ export default function TaskListColumn({
       {/* Add card */}
       <button
         type="button"
-        onClick={() => onAddCard(list.id)}
+        onClick={() => onAddTask(list.id)}
         className="mx-2 mb-2 flex h-9 shrink-0 items-center gap-2 rounded-xl px-2 text-left text-[12px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
       >
         <Plus size={15} />
         Add a card
       </button>
-
-      {/* Delete via simple menu for now */}
-      <button
-        type="button"
-        onClick={() => onDelete(list)}
-        className="hidden"
-      />
     </section>
   );
 }
