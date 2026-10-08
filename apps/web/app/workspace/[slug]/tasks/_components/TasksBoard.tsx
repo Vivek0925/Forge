@@ -12,11 +12,7 @@ import {
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  createTaskList,
-  getTaskLists,
-  moveTask,
-} from "@/lib/tasks";
+import { createTaskList, getTaskLists, moveTask } from "@/lib/tasks";
 
 import type { Task, TaskList } from "./task-types";
 
@@ -28,9 +24,7 @@ type TasksBoardProps = {
   workspaceSlug: string;
 };
 
-export default function TasksBoard({
-  workspaceSlug,
-}: TasksBoardProps) {
+export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -45,10 +39,11 @@ export default function TasksBoard({
   const [loading, setLoading] = useState(true);
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 
-  const [createListOpen, setCreateListOpen] = useState(false);
-  const [createTaskListId, setCreateTaskListId] = useState<string | null>(
-    null,
-  );
+  const [newListName, setNewListName] = useState("");
+  const [creatingList, setCreatingList] = useState(false);
+  const [createTaskListId, setCreateTaskListId] = useState<string | null>(null);
+
+  const [isAddingList, setIsAddingList] = useState(false);
 
   const loadLists = useCallback(async () => {
     try {
@@ -86,188 +81,168 @@ export default function TasksBoard({
     setActiveTask(null);
   }
 
- async function handleDragEnd(event: DragEndEvent) {
-  const { active, over } = event;
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
 
-  setActiveTask(null);
+    setActiveTask(null);
 
-  if (!over) {
-    return;
-  }
+    if (!over) {
+      return;
+    }
 
-  const taskId = String(active.id);
-  const overId = String(over.id);
+    const taskId = String(active.id);
+    const overId = String(over.id);
 
-  const sourceList = lists.find((list) =>
-    list.tasks.some((task) => task.id === taskId),
-  );
-
-  if (!sourceList) {
-    return;
-  }
-
-  const task = sourceList.tasks.find(
-    (item) => item.id === taskId,
-  );
-
-  if (!task) {
-    return;
-  }
-
-  /*
-   * `over.id` can be:
-   * 1. another task
-   * 2. a list itself
-   */
-
-  let targetList = lists.find((list) =>
-    list.tasks.some((item) => item.id === overId),
-  );
-
-  if (!targetList) {
-    targetList = lists.find(
-      (list) => list.id === overId,
+    const sourceList = lists.find((list) =>
+      list.tasks.some((task) => task.id === taskId),
     );
-  }
 
-  if (!targetList) {
-    return;
-  }
+    if (!sourceList) {
+      return;
+    }
 
-  /*
-   * Remove the dragged task from the target ordering
-   * before calculating its new position.
-   */
-  const targetTasks = [...targetList.tasks]
-    .filter((item) => item.id !== taskId)
-    .sort((a, b) => a.position - b.position);
+    const task = sourceList.tasks.find((item) => item.id === taskId);
 
-  let newPosition = targetTasks.length;
+    if (!task) {
+      return;
+    }
 
-  /*
-   * If we're dropping over another card,
-   * insert before that card.
-   */
-  const overTaskIndex = targetTasks.findIndex(
-    (item) => item.id === overId,
-  );
+    /*
+     * `over.id` can be:
+     * 1. another task
+     * 2. a list itself
+     */
 
-  if (overTaskIndex !== -1) {
-    newPosition = overTaskIndex;
-  }
+    let targetList = lists.find((list) =>
+      list.tasks.some((item) => item.id === overId),
+    );
 
-  /*
-   * Same list + same position = nothing to do.
-   */
-  if (
-    sourceList.id === targetList.id &&
-    task.position === newPosition
-  ) {
-    return;
-  }
+    if (!targetList) {
+      targetList = lists.find((list) => list.id === overId);
+    }
 
-  /*
-   * Optimistic UI update.
-   */
-  setLists((current) =>
-    current.map((list) => {
-      /*
-       * Same-list reorder.
-       */
-      if (
-        list.id === sourceList.id &&
-        list.id === targetList.id
-      ) {
-        const reordered = list.tasks
-          .filter((item) => item.id !== taskId)
-          .sort((a, b) => a.position - b.position);
+    if (!targetList) {
+      return;
+    }
 
-        reordered.splice(newPosition, 0, {
-          ...task,
-          listId: list.id,
-          position: newPosition,
-        });
+    /*
+     * Remove the dragged task from the target ordering
+     * before calculating its new position.
+     */
+    const targetTasks = [...targetList.tasks]
+      .filter((item) => item.id !== taskId)
+      .sort((a, b) => a.position - b.position);
 
-        return {
-          ...list,
-          tasks: reordered.map((item, index) => ({
-            ...item,
-            position: index,
-          })),
-        };
-      }
+    let newPosition = targetTasks.length;
 
-      /*
-       * Remove from source list.
-       */
-      if (list.id === sourceList.id) {
-        return {
-          ...list,
-          tasks: list.tasks
+    /*
+     * If we're dropping over another card,
+     * insert before that card.
+     */
+    const overTaskIndex = targetTasks.findIndex((item) => item.id === overId);
+
+    if (overTaskIndex !== -1) {
+      newPosition = overTaskIndex;
+    }
+
+    /*
+     * Same list + same position = nothing to do.
+     */
+    if (sourceList.id === targetList.id && task.position === newPosition) {
+      return;
+    }
+
+    /*
+     * Optimistic UI update.
+     */
+    setLists((current) =>
+      current.map((list) => {
+        /*
+         * Same-list reorder.
+         */
+        if (list.id === sourceList.id && list.id === targetList.id) {
+          const reordered = list.tasks
             .filter((item) => item.id !== taskId)
-            .sort((a, b) => a.position - b.position)
-            .map((item, index) => ({
+            .sort((a, b) => a.position - b.position);
+
+          reordered.splice(newPosition, 0, {
+            ...task,
+            listId: list.id,
+            position: newPosition,
+          });
+
+          return {
+            ...list,
+            tasks: reordered.map((item, index) => ({
               ...item,
               position: index,
             })),
-        };
-      }
+          };
+        }
+
+        /*
+         * Remove from source list.
+         */
+        if (list.id === sourceList.id) {
+          return {
+            ...list,
+            tasks: list.tasks
+              .filter((item) => item.id !== taskId)
+              .sort((a, b) => a.position - b.position)
+              .map((item, index) => ({
+                ...item,
+                position: index,
+              })),
+          };
+        }
+
+        /*
+         * Insert into target list.
+         */
+        if (list.id === targetList.id) {
+          const updatedTasks = list.tasks
+            .filter((item) => item.id !== taskId)
+            .sort((a, b) => a.position - b.position);
+
+          updatedTasks.splice(newPosition, 0, {
+            ...task,
+            listId: targetList.id,
+            position: newPosition,
+          });
+
+          return {
+            ...list,
+            tasks: updatedTasks.map((item, index) => ({
+              ...item,
+              position: index,
+            })),
+          };
+        }
+
+        return list;
+      }),
+    );
+
+    try {
+      setMovingTaskId(taskId);
+
+      await moveTask(workspaceSlug, taskId, targetList.id, newPosition);
 
       /*
-       * Insert into target list.
+       * Backend is the source of truth.
        */
-      if (list.id === targetList.id) {
-        const updatedTasks = list.tasks
-          .filter((item) => item.id !== taskId)
-          .sort((a, b) => a.position - b.position);
+      await loadLists();
+    } catch (error) {
+      console.error("Failed to move task:", error);
 
-        updatedTasks.splice(newPosition, 0, {
-          ...task,
-          listId: targetList.id,
-          position: newPosition,
-        });
-
-        return {
-          ...list,
-          tasks: updatedTasks.map((item, index) => ({
-            ...item,
-            position: index,
-          })),
-        };
-      }
-
-      return list;
-    }),
-  );
-
-  try {
-    setMovingTaskId(taskId);
-
-    await moveTask(
-      workspaceSlug,
-      taskId,
-      targetList.id,
-      newPosition,
-    );
-
-    /*
-     * Backend is the source of truth.
-     */
-    await loadLists();
-  } catch (error) {
-    console.error(
-      "Failed to move task:",
-      error,
-    );
-
-    /*
-     * Restore server state.
-     */
-    await loadLists();
-  } finally {
-    setMovingTaskId(null);
+      /*
+       * Restore server state.
+       */
+      await loadLists();
+    } finally {
+      setMovingTaskId(null);
+    }
   }
-}
 
   function handleAddTask(listId: string) {
     setCreateTaskListId(listId);
@@ -278,18 +253,26 @@ export default function TasksBoard({
     void loadLists();
   }
 
-  async function handleAddList() {
-    const name = window.prompt("List name");
+  async function handleCreateList() {
+    const name = newListName.trim();
 
-    if (!name?.trim()) {
+    if (!name || creatingList) {
       return;
     }
 
     try {
-      await createTaskList(workspaceSlug, name.trim());
+      setCreatingList(true);
+
+      await createTaskList(workspaceSlug, name);
+
+      setNewListName("");
+      setIsAddingList(false);
+
       await loadLists();
     } catch (error) {
       console.error("Failed to create task list:", error);
+    } finally {
+      setCreatingList(false);
     }
   }
 
@@ -302,9 +285,7 @@ export default function TasksBoard({
       {/* Board top bar */}
       <header className="flex h-[60px] shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-[#49376B] px-4 text-white sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <h1 className="truncate text-[16px] font-semibold">
-            Tasks
-          </h1>
+          <h1 className="truncate text-[16px] font-semibold">Tasks</h1>
 
           <span className="hidden h-5 w-px bg-white/20 sm:block" />
 
@@ -358,14 +339,61 @@ export default function TasksBoard({
                   ))}
 
                   {/* Add another list */}
-                  <button
-                    type="button"
-                    onClick={handleAddList}
-                    className="flex h-[37px] w-[200px] shrink-0 items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
-                  >
-                    <Plus size={16} />
-                    Add another list
-                  </button>
+                  <div className="w-[310px] shrink-0">
+                    {isAddingList ? (
+                      <div className="rounded-2xl border border-white/10 bg-black/10 p-3 backdrop-blur-sm">
+                        <input
+                          autoFocus
+                          value={newListName}
+                          onChange={(event) =>
+                            setNewListName(event.target.value)
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void handleCreateList();
+                            }
+
+                            if (event.key === "Escape") {
+                              setNewListName("");
+                            }
+                          }}
+                          placeholder="List name"
+                          maxLength={100}
+                          className="h-10 w-full rounded-[9px] border border-white/15 bg-white px-3 text-[13px] text-[#14141C] outline-none placeholder:text-[#8A8C98] focus:border-[#059669] focus:ring-2 focus:ring-[#059669]/20"
+                        />
+
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleCreateList()}
+                            disabled={!newListName.trim() || creatingList}
+                            className="h-9 rounded-[9px] bg-white px-3 text-[12px] font-medium text-[#292929] transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {creatingList ? "Adding..." : "Add list"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNewListName("")}
+                            disabled={creatingList}
+                            className="h-9 rounded-[9px] px-3 text-[12px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingList(true)}
+                        className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
+                      >
+                        <Plus size={16} />
+                        Add another list
+                      </button>
+                    )}
+                  </div>
                 </>
               )}
             </div>
