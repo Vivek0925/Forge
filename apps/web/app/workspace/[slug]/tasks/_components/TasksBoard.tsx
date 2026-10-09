@@ -19,6 +19,7 @@ import type { Task, TaskList } from "./task-types";
 import TaskCard from "./TaskCard";
 import TaskListColumn from "./TaskListColumn";
 import CreateTaskModal from "./CreateTaskModal";
+import TaskDetailModal from "./TaskDetailModal";
 
 type TasksBoardProps = {
   workspaceSlug: string;
@@ -44,6 +45,7 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
   const [createTaskListId, setCreateTaskListId] = useState<string | null>(null);
 
   const [isAddingList, setIsAddingList] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const loadLists = useCallback(async () => {
     try {
@@ -277,7 +279,7 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
   }
 
   function handleTaskClick(task: Task) {
-    console.log("Open task", task.id);
+    setSelectedTask(task);
   }
 
   return (
@@ -310,7 +312,6 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
           Add task
         </button>
       </header>
-
       {/* Board */}
       <DndContext
         sensors={sensors}
@@ -356,6 +357,7 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
 
                             if (event.key === "Escape") {
                               setNewListName("");
+                              setIsAddingList(false);
                             }
                           }}
                           placeholder="List name"
@@ -375,7 +377,10 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
 
                           <button
                             type="button"
-                            onClick={() => setNewListName("")}
+                            onClick={() => {
+                              setNewListName("");
+                              setIsAddingList(false);
+                            }}
                             disabled={creatingList}
                             className="h-9 rounded-[9px] px-3 text-[12px] font-medium text-white/60 transition hover:bg-white/10 hover:text-white"
                           >
@@ -408,13 +413,22 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
           ) : null}
         </DragOverlay>
       </DndContext>
-
       <CreateTaskModal
         open={createTaskListId !== null}
         workspaceSlug={workspaceSlug}
         listId={createTaskListId ?? ""}
         onClose={() => setCreateTaskListId(null)}
         onCreated={handleTaskCreated}
+      />
+      <TaskDetailModal
+        open={selectedTask !== null}
+        workspaceSlug={workspaceSlug}
+        task={selectedTask}
+        onClose={() => setSelectedTask(null)}
+        onUpdated={() => {
+          setSelectedTask(null);
+          void loadLists();
+        }}
       />
     </div>
   );

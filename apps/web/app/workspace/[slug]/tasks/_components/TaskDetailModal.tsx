@@ -53,36 +53,38 @@ export default function TaskDetailModal({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load task lists
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadLists() {
+      try {
+        const data = await getTaskLists(workspaceSlug);
+
+        if (!cancelled) {
+          setLists(data);
+        }
+      } catch (error) {
+        console.error("Failed to load task lists:", error);
+      }
+    }
+
+    void loadLists();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, workspaceSlug]);
+
+  // Populate the form when a task is selected
   useEffect(() => {
     if (!open || !task) {
       return;
     }
-
-    useEffect(() => {
-      if (!open) {
-        return;
-      }
-
-      let cancelled = false;
-
-      async function loadLists() {
-        try {
-          const data = await getTaskLists(workspaceSlug);
-
-          if (!cancelled) {
-            setLists(data);
-          }
-        } catch (error) {
-          console.error("Failed to load task lists:", error);
-        }
-      }
-
-      void loadLists();
-
-      return () => {
-        cancelled = true;
-      };
-    }, [open, workspaceSlug]);
 
     setTitle(task.title);
     setDescription(task.description ?? "");
