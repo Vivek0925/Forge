@@ -59,7 +59,8 @@ export default function TaskCard({
         isDragging ? "opacity-30" : "",
       ].join(" ")}
     >
-      <div className="flex min-w-0 items-start gap-2">
+      <div className="relative min-w-0">
+        {/* Completion checkbox */}
         <button
           type="button"
           aria-label={
@@ -72,12 +73,20 @@ export default function TaskCard({
             onToggleComplete?.(task);
           }}
           className={[
-            "mt-[1px] flex h-[19px] w-[19px] shrink-0 items-center justify-center",
-            "rounded-full transition-all duration-150",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+            "absolute left-0 top-0.5 z-10 flex h-[19px] w-[19px]",
+            "items-center justify-center rounded-full border-2",
+            "transition-all duration-200 ease-out",
+            "focus-visible:outline-none focus-visible:ring-2",
+            "focus-visible:ring-emerald-500",
             isCompleted
-              ? "bg-[#16A34A] text-white opacity-100"
-              : "border-2 border-[#A3A3A3] bg-transparent text-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:border-[#16A34A] hover:bg-[#16A34A] hover:text-white",
+              ? "border-[#16A34A] bg-[#16A34A] text-white opacity-100"
+              : "border-[#A3A3A3] bg-transparent text-transparent",
+            isCompleted
+              ? "translate-x-0"
+              : "pointer-events-none -translate-x-2 opacity-0 group-hover:pointer-events-auto group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-x-0 group-focus-within:opacity-100",
+            !isCompleted
+              ? "hover:border-[#16A34A] hover:bg-[#16A34A] hover:text-white"
+              : "",
           ].join(" ")}
         >
           {isCompleted && <Check size={12} strokeWidth={3} />}
@@ -85,28 +94,24 @@ export default function TaskCard({
             <Check
               size={11}
               strokeWidth={3}
-              className="opacity-0 group-hover:opacity-100"
+              className="opacity-0 transition-opacity group-hover:opacity-100"
             />
           )}
         </button>
 
-        <div className="min-w-0 flex-1">
+        {/* Task content slides to make room for the checkbox */}
+        <div className="min-w-0">
           <h3
             className={[
-              "text-[13px] font-medium leading-[1.4]",
+              "min-w-0 text-[13px] font-medium leading-[1.4]",
+              "transition-transform duration-200 ease-out",
               isCompleted
-                ? "text-[#858585] line-through"
-                : "text-[#292929]",
+                ? "translate-x-7 text-[#858585] line-through"
+                : "text-[#292929] group-hover:translate-x-7 group-focus-within:translate-x-7",
             ].join(" ")}
           >
             {task.title}
           </h3>
-
-          {task.description && (
-            <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[#737373]">
-              {task.description}
-            </p>
-          )}
 
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <TaskPriorityBadge priority={task.priority} />
