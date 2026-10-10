@@ -135,6 +135,28 @@ export class WorkspaceService {
   return Boolean(membership);
 }
 
+async isWorkspaceAdminOrOwner(
+  workspaceId: string,
+  userId: string,
+): Promise<boolean> {
+  const workspace = await this.workspaceRepository.findById(workspaceId);
+
+  if (!workspace) {
+    return false;
+  }
+
+  if (workspace.ownerId === userId) {
+    return true;
+  }
+
+  const membership = await this.workspaceRepository.findMember(
+    workspaceId,
+    userId,
+  );
+
+  return membership?.role === 'OWNER' || membership?.role === 'ADMIN';
+}
+
   private generateSlug(name: string): string {
     return name
       .trim()

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -100,6 +101,8 @@ export class TasksService {
       throw new NotFoundException('Task not found.');
     }
 
+    await this.assertCanManageTask(workspace.id, userId, task);
+
     if (dto.assigneeId) {
       await this.validateAssignee(workspace.id, dto.assigneeId);
     }
@@ -157,6 +160,8 @@ export class TasksService {
     if (!task || task.workspaceId !== workspace.id) {
       throw new NotFoundException('Task not found.');
     }
+
+    await this.assertCanManageTask(workspace.id, userId, task);
 
     const targetList = await this.taskListsRepository.findById(
       dto.listId,
@@ -259,6 +264,8 @@ export class TasksService {
       throw new NotFoundException('Task not found.');
     }
 
+    await this.assertCanManageTask(workspace.id, userId, task);
+
     await this.tasksRepository.shiftPositionsAfterRemoval(
       workspace.id,
       task.listId,
@@ -272,6 +279,30 @@ export class TasksService {
       id: task.id,
     };
   }
+
+  private async assertCanManageTask(
+  workspaceId: string,
+  userId: string,
+  task: {
+    createdById: string;
+    assigneeId: string | null;
+  },
+): Promise<void> {
+  const isAdminOrOwner =
+    await this.workspaceService.isWorkspaceAdminOrOwner(
+      workspaceId,
+      userId,
+    );
+
+  const isCreator = task.createdById === userId;
+  const isAssignee = task.assigneeId === userId;
+
+  if (!isAdminOrOwner && !isCreator && !isAssignee) {
+    throw new ForbiddenException(
+      "You don't have permission to modify this task.",
+    );
+  }
+}
 
   private async validateAssignee(
     workspaceId: string,
