@@ -66,7 +66,7 @@ export default function TaskListColumn({
         items={tasks.map((task) => task.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="min-h-[20px] max-h-[calc(100dvh-220px)] space-y-2 overflow-y-auto px-2 pb-2">
+        <div className="min-h-[20px] space-y-2 overflow-visible px-2 pb-2">
           {tasks.map((task) => (
             <div
               key={task.id}

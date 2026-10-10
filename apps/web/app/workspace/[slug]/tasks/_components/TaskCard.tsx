@@ -73,7 +73,7 @@ export default function TaskCard({
             onToggleComplete?.(task);
           }}
           className={[
-            "absolute left-0 top-0.5 z-10 flex h-[19px] w-[19px]",
+            "absolute left-0 top-0 z-10 flex h-[19px] w-[19px]",
             "items-center justify-center rounded-full border-2",
             "transition-all duration-200 ease-out",
             "focus-visible:outline-none focus-visible:ring-2",
