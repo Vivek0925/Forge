@@ -14,6 +14,7 @@ type TaskListColumnProps = {
   list: TaskList;
   onAddTask: (listId: string) => void;
   onTaskClick: (task: Task) => void;
+  onToggleComplete?: (task: Task) => void;
   movingTaskId: string | null;
 };
 
@@ -21,15 +22,14 @@ export default function TaskListColumn({
   list,
   onAddTask,
   onTaskClick,
+  onToggleComplete,
   movingTaskId,
 }: TaskListColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: list.id,
   });
 
-  const tasks = [...list.tasks].sort(
-    (a, b) => a.position - b.position,
-  );
+  const tasks = [...list.tasks].sort((a, b) => a.position - b.position);
 
   return (
     <section
@@ -49,9 +49,7 @@ export default function TaskListColumn({
             {list.name}
           </h2>
 
-          <span className="text-[11px] text-white/45">
-            {tasks.length}
-          </span>
+          <span className="text-[11px] text-white/45">{tasks.length}</span>
         </div>
 
         <button
@@ -81,6 +79,8 @@ export default function TaskListColumn({
               <TaskCard
                 task={task}
                 onClick={onTaskClick}
+                onToggleComplete={onToggleComplete}
+                isCompleted={list.name.trim().toUpperCase() === "DONE"}
               />
             </div>
           ))}

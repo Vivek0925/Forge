@@ -282,6 +282,76 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
     setSelectedTask(task);
   }
 
+  async function handleToggleComplete(task: Task) {
+    const sourceList = lists.find((list) =>
+      list.tasks.some((item) => item.id === task.id),
+    );
+
+    if (!sourceList || movingTaskId) return;
+
+    const isCompleted = sourceList.name.trim().toUpperCase() === "DONE";
+
+    const targetList = isCompleted
+      ? lists.find((list) => list.name.trim().toUpperCase() === "TODO")
+      : lists.find((list) => list.name.trim().toUpperCase() === "DONE");
+
+    if (!targetList || targetList.id === sourceList.id) return;
+
+    const targetPosition = targetList.tasks.length;
+
+    const previousLists = lists;
+
+    setMovingTaskId(task.id);
+
+    setLists((current) =>
+      current.map((list) => {
+        if (list.id === sourceList.id) {
+          return {
+            ...list,
+            tasks: list.tasks
+              .filter((item) => item.id !== task.id)
+              .map((item, index) => ({
+                ...item,
+                position: index,
+              })),
+          };
+        }
+
+        if (list.id === targetList.id) {
+          return {
+            ...list,
+            tasks: [
+              ...list.tasks,
+              {
+                ...task,
+                listId: targetList.id,
+                list: {
+                  id: targetList.id,
+                  name: targetList.name,
+                  position: targetList.position,
+                },
+                position: targetPosition,
+              },
+            ],
+          };
+        }
+
+        return list;
+      }),
+    );
+
+    try {
+      await moveTask(workspaceSlug, task.id, targetList.id, targetPosition);
+
+      await loadLists();
+    } catch (error) {
+      console.error("Failed to toggle task completion:", error);
+      setLists(previousLists);
+    } finally {
+      setMovingTaskId(null);
+    }
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#DEDFE8] bg-[#6E548A] shadow-[0_18px_50px_rgba(20,20,28,0.08)] sm:rounded-[28px]">
       {/* Board top bar */}
@@ -334,6 +404,7 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
                       key={list.id}
                       list={list}
                       onTaskClick={handleTaskClick}
+                      onToggleComplete={handleToggleComplete}
                       onAddTask={handleAddTask}
                       movingTaskId={movingTaskId}
                     />
@@ -408,7 +479,12 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
         <DragOverlay>
           {activeTask ? (
             <div className="w-[310px]">
-              <TaskCard task={activeTask} />
+              <TaskCard
+                task={activeTask}
+                isCompleted={
+                  activeTask.list?.name.trim().toUpperCase() === "DONE"
+                }
+              />
             </div>
           ) : null}
         </DragOverlay>

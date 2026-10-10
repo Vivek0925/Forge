@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Check } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -10,9 +10,16 @@ import TaskPriorityBadge from "./TaskPriorityBadge";
 type TaskCardProps = {
   task: Task;
   onClick?: (task: Task) => void;
+  onToggleComplete?: (task: Task) => void;
+  isCompleted?: boolean;
 };
 
-export default function TaskCard({ task, onClick }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onClick,
+  onToggleComplete,
+  isCompleted = false,
+}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -52,52 +59,91 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
         isDragging ? "opacity-30" : "",
       ].join(" ")}
     >
-      <div className="min-w-0">
-        <h3 className="text-[13px] font-medium leading-[1.4] text-[#292929]">
-          {task.title}
-        </h3>
+      <div className="flex min-w-0 items-start gap-2">
+        <button
+          type="button"
+          aria-label={
+            isCompleted ? "Mark task incomplete" : "Mark task complete"
+          }
+          aria-pressed={isCompleted}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleComplete?.(task);
+          }}
+          className={[
+            "mt-[1px] flex h-[19px] w-[19px] shrink-0 items-center justify-center",
+            "rounded-full transition-all duration-150",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+            isCompleted
+              ? "bg-[#16A34A] text-white opacity-100"
+              : "border-2 border-[#A3A3A3] bg-transparent text-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:border-[#16A34A] hover:bg-[#16A34A] hover:text-white",
+          ].join(" ")}
+        >
+          {isCompleted && <Check size={12} strokeWidth={3} />}
+          {!isCompleted && (
+            <Check
+              size={11}
+              strokeWidth={3}
+              className="opacity-0 group-hover:opacity-100"
+            />
+          )}
+        </button>
 
-        {task.description && (
-          <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[#737373]">
-            {task.description}
-          </p>
-        )}
+        <div className="min-w-0 flex-1">
+          <h3
+            className={[
+              "text-[13px] font-medium leading-[1.4]",
+              isCompleted
+                ? "text-[#858585] line-through"
+                : "text-[#292929]",
+            ].join(" ")}
+          >
+            {task.title}
+          </h3>
 
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <TaskPriorityBadge priority={task.priority} />
+          {task.description && (
+            <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.5] text-[#737373]">
+              {task.description}
+            </p>
+          )}
 
-          {task.assignee ? (
-            <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] text-[#737373]">
-              {task.assignee.avatar ? (
-                <img
-                  src={task.assignee.avatar}
-                  alt=""
-                  draggable={false}
-                  className="h-4 w-4 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#E9E5EF] text-[8px] font-medium text-[#5B476F]">
-                  {task.assignee.name.charAt(0).toUpperCase()}
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <TaskPriorityBadge priority={task.priority} />
+
+            {task.assignee ? (
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-[10px] text-[#737373]">
+                {task.assignee.avatar ? (
+                  <img
+                    src={task.assignee.avatar}
+                    alt=""
+                    draggable={false}
+                    className="h-4 w-4 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#E9E5EF] text-[8px] font-medium text-[#5B476F]">
+                    {task.assignee.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+
+                <span className="max-w-[90px] truncate">
+                  {task.assignee.name}
                 </span>
-              )}
-
-              <span className="max-w-[90px] truncate">
-                {task.assignee.name}
               </span>
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
-              <span className="text-[12px]">+</span>
-              Assign
-            </span>
-          )}
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
+                <span className="text-[12px]">+</span>
+                Assign
+              </span>
+            )}
 
-          {task.dueDate && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
-              <CalendarDays size={11} />
-              {new Date(task.dueDate).toLocaleDateString()}
-            </span>
-          )}
+            {task.dueDate && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-[#737373]">
+                <CalendarDays size={11} />
+                {new Date(task.dueDate).toLocaleDateString()}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </article>
