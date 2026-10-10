@@ -31,3 +31,16 @@ export function login(data: LoginPayload) {
     body: JSON.stringify(data),
   });
 }
+
+export interface CurrentUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+}
+
+export function getCurrentUser() {
+  return request<CurrentUser>("/auth/me", {
+    method: "GET",
+  });
+}

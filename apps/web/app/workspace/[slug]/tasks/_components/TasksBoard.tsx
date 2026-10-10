@@ -392,7 +392,7 @@ export default function TasksBoard({ workspaceSlug }: TasksBoardProps) {
                       <button
                         type="button"
                         onClick={() => setIsAddingList(true)}
-                        className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
+                        className="flex h-[37px] w-[210px] items-center justify-center gap-2 rounded-[14px] border border-dashed border-white/25 bg-white/10 text-[13px] font-medium text-white/75 transition hover:border-white/40 hover:bg-white/15 hover:text-white"
                       >
                         <Plus size={16} />
                         Add another list
