@@ -214,3 +214,45 @@ export async function moveTask(
     },
   );
 }
+
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  authorId: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
+export async function getTaskComments(
+  workspaceSlug: string,
+  taskId: string,
+): Promise<TaskComment[]> {
+  return api<TaskComment[]>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/${encodeURIComponent(taskId)}/comments`,
+    { method: "GET" },
+  );
+}
+
+export async function createTaskComment(
+  workspaceSlug: string,
+  taskId: string,
+  content: string,
+): Promise<TaskComment> {
+  return api<TaskComment>(
+    `/workspaces/${encodeURIComponent(workspaceSlug)}/tasks/${encodeURIComponent(taskId)}/comments`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content }),
+    },
+  );
+}
