@@ -41,6 +41,8 @@ model User {
 
   createdTaskLists TaskList[] @relation("CreatedTaskLists")
 
+  taskComments TaskComment[] @relation("TaskCommentAuthor")
+
   @@unique([provider, providerId])
   @@map("users")
 }
@@ -307,6 +309,8 @@ model Task {
   createdById String
   createdBy   User @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Cascade)
 
+  comments TaskComment[]
+
   dueDate DateTime?
 
   createdAt DateTime @default(now())
@@ -317,6 +321,25 @@ model Task {
   @@index([assigneeId])
   @@index([createdById])
   @@map("tasks")
+}
+
+model TaskComment {
+  id String @id @default(cuid())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("TaskCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  content String @db.VarChar(5000)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId, createdAt])
+  @@index([authorId])
+  @@map("task_comments")
 }
 
 model TaskList {
