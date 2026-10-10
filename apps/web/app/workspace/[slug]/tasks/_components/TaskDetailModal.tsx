@@ -84,9 +84,7 @@ function formatTimestamp(value: string) {
     return `${minutes}m ago`;
   }
 
-  if (
-    date.toDateString() === now.toDateString()
-  ) {
+  if (date.toDateString() === now.toDateString()) {
     return date.toLocaleTimeString([], {
       hour: "numeric",
       minute: "2-digit",
@@ -96,10 +94,7 @@ function formatTimestamp(value: string) {
   return date.toLocaleDateString([], {
     month: "short",
     day: "numeric",
-    year:
-      date.getFullYear() !== now.getFullYear()
-        ? "numeric"
-        : undefined,
+    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
   });
 }
 
@@ -112,10 +107,7 @@ function Avatar({
   avatar: string | null;
   size?: "sm" | "md";
 }) {
-  const sizeClass =
-    size === "sm"
-      ? "h-7 w-7 text-[10px]"
-      : "h-9 w-9 text-xs";
+  const sizeClass = size === "sm" ? "h-7 w-7 text-[10px]" : "h-9 w-9 text-xs";
 
   const initials =
     name
@@ -154,22 +146,18 @@ export default function TaskDetailModal({
   onClose,
   onUpdated,
 }: TaskDetailModalProps) {
-  const [currentUser, setCurrentUser] =
-    useState<CurrentUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
 
-  const [members, setMembers] =
-    useState<WorkspaceMember[]>([]);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
 
   const [lists, setLists] = useState<TaskList[]>([]);
 
   const [editing, setEditing] = useState(false);
-  const [loadingPermissions, setLoadingPermissions] =
-    useState(true);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] =
-    useState<TaskPriority>("MEDIUM");
+  const [priority, setPriority] = useState<TaskPriority>("MEDIUM");
   const [listId, setListId] = useState("");
   const [assigneeId, setAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -180,8 +168,7 @@ export default function TaskDetailModal({
 
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentsError, setCommentsError] =
-    useState<string | null>(null);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [postingComment, setPostingComment] = useState(false);
 
@@ -192,17 +179,12 @@ export default function TaskDetailModal({
     setCommentsError(null);
 
     try {
-      const result = await getTaskComments(
-        workspaceSlug,
-        task.id,
-      );
+      const result = await getTaskComments(workspaceSlug, task.id);
 
       setComments(result);
     } catch (err) {
       setCommentsError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load comments.",
+        err instanceof Error ? err.message : "Unable to load comments.",
       );
     } finally {
       setCommentsLoading(false);
@@ -222,12 +204,11 @@ export default function TaskDetailModal({
       setError(null);
 
       try {
-        const [user, workspaceMembers, taskLists] =
-          await Promise.all([
-            getCurrentUser(),
-            getWorkspaceMembers(workspaceSlug),
-            getTaskLists(workspaceSlug),
-          ]);
+        const [user, workspaceMembers, taskLists] = await Promise.all([
+          getCurrentUser(),
+          getWorkspaceMembers(workspaceSlug),
+          getTaskLists(workspaceSlug),
+        ]);
 
         if (cancelled) return;
 
@@ -240,9 +221,7 @@ export default function TaskDetailModal({
         if (!cancelled) {
           setCurrentUser(null);
           setMembers([]);
-          setError(
-            "Unable to load your permissions. Try reopening the task.",
-          );
+          setError("Unable to load your permissions. Try reopening the task.");
         }
       } finally {
         if (!cancelled) {
@@ -281,9 +260,7 @@ export default function TaskDetailModal({
 
   if (!task) return null;
 
-  const member = members.find(
-    (item) => item.userId === currentUser?.id,
-  );
+  const member = members.find((item) => item.userId === currentUser?.id);
 
   const canManage =
     !!currentUser &&
@@ -294,41 +271,35 @@ export default function TaskDetailModal({
 
   const taskList = lists.find((item) => item.id === task.listId);
 
-  const assignee = members.find(
-    (item) => item.userId === task.assigneeId,
-  );
+  const assignee = members.find((item) => item.userId === task.assigneeId);
 
   const formattedCreatedDate = formatDate(task.createdAt);
 
- async function handleSave() {
-  if (!task || !canManage) return;
+  async function handleSave() {
+    if (!task || !canManage) return;
 
-  try {
-    setSaving(true);
-    setError(null);
+    try {
+      setSaving(true);
+      setError(null);
 
-    await updateTask(workspaceSlug, task.id, {
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      listId,
-      assigneeId: assigneeId || null,
-      dueDate: dueDate || null,
-    });
+      await updateTask(workspaceSlug, task.id, {
+        title: title.trim(),
+        description: description.trim(),
+        priority,
+        listId,
+        assigneeId: assigneeId || null,
+        dueDate: dueDate || null,
+      });
 
-    setEditing(false);
-    onUpdated();
-    onClose();
-  } catch (err) {
-    setError(
-      err instanceof Error
-        ? err.message
-        : "Failed to update task.",
-    );
-  } finally {
-    setSaving(false);
+      setEditing(false);
+      onUpdated();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task.");
+    } finally {
+      setSaving(false);
+    }
   }
-}
 
   async function handleDelete() {
     if (!task || !canManage) return;
@@ -348,19 +319,13 @@ export default function TaskDetailModal({
       onUpdated();
       onClose();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to delete task.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to delete task.");
     } finally {
       setDeleting(false);
     }
   }
 
-  async function handlePostComment(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handlePostComment(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const content = commentText.trim();
@@ -371,22 +336,13 @@ export default function TaskDetailModal({
       setPostingComment(true);
       setCommentsError(null);
 
-      const created = await createTaskComment(
-        workspaceSlug,
-        task.id,
-        content,
-      );
+      const created = await createTaskComment(workspaceSlug, task.id, content);
 
-      setComments((previous) => [
-        ...previous,
-        created,
-      ]);
+      setComments((previous) => [...previous, created]);
       setCommentText("");
     } catch (err) {
       setCommentsError(
-        err instanceof Error
-          ? err.message
-          : "Failed to post comment.",
+        err instanceof Error ? err.message : "Failed to post comment.",
       );
     } finally {
       setPostingComment(false);
@@ -399,7 +355,7 @@ export default function TaskDetailModal({
       onClose={onClose}
       title={editing ? "Edit task" : "Task details"}
     >
-      <div className="w-full min-w-0">
+      <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
         {loadingPermissions ? (
           <div className="flex items-center gap-2 py-10 text-sm text-[#737373]">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -413,9 +369,9 @@ export default function TaskDetailModal({
               </div>
             )}
 
-            <div className="grid min-w-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.9fr)]">
+            <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] md:overflow-hidden">
               {/* Left: task details */}
-              <section className="min-w-0 space-y-5">
+              <section className="min-h-0 min-w-0 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
                 {!editing ? (
                   <>
                     <div>
@@ -430,18 +386,12 @@ export default function TaskDetailModal({
                             variant="secondary"
                             onClick={() => {
                               setTitle(task.title);
-                              setDescription(
-                                task.description ?? "",
-                              );
+                              setDescription(task.description ?? "");
                               setPriority(task.priority);
                               setListId(task.listId);
-                              setAssigneeId(
-                                task.assigneeId ?? "",
-                              );
+                              setAssigneeId(task.assigneeId ?? "");
                               setDueDate(
-                                task.dueDate
-                                  ? task.dueDate.slice(0, 10)
-                                  : "",
+                                task.dueDate ? task.dueDate.slice(0, 10) : "",
                               );
                               setError(null);
                               setEditing(true);
@@ -455,9 +405,7 @@ export default function TaskDetailModal({
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <span className="rounded-md bg-[#EEE8F5] px-2.5 py-1 text-xs font-medium text-[#60467D]">
-                          {taskList?.name ??
-                            task.list?.name ??
-                            "Unknown list"}
+                          {taskList?.name ?? task.list?.name ?? "Unknown list"}
                         </span>
 
                         <span
@@ -476,8 +424,7 @@ export default function TaskDetailModal({
                       </h3>
 
                       <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-[#646471]">
-                        {task.description ||
-                          "No description provided."}
+                        {task.description || "No description provided."}
                       </p>
                     </div>
 
@@ -485,9 +432,7 @@ export default function TaskDetailModal({
                       <div className="flex items-start gap-3">
                         <UserRound className="mt-0.5 h-4 w-4 text-[#777784]" />
                         <div>
-                          <p className="text-xs text-[#777784]">
-                            Assignee
-                          </p>
+                          <p className="text-xs text-[#777784]">Assignee</p>
                           <p className="mt-1 text-sm text-[#292934]">
                             {assignee?.user.name ??
                               task.assignee?.name ??
@@ -499,9 +444,7 @@ export default function TaskDetailModal({
                       <div className="flex items-start gap-3">
                         <CalendarDays className="mt-0.5 h-4 w-4 text-[#777784]" />
                         <div>
-                          <p className="text-xs text-[#777784]">
-                            Due date
-                          </p>
+                          <p className="text-xs text-[#777784]">Due date</p>
                           <p className="mt-1 text-sm text-[#292934]">
                             {task.dueDate
                               ? formatDate(task.dueDate)
@@ -513,9 +456,7 @@ export default function TaskDetailModal({
                       <div className="flex items-start gap-3">
                         <Clock3 className="mt-0.5 h-4 w-4 text-[#777784]" />
                         <div>
-                          <p className="text-xs text-[#777784]">
-                            Created by
-                          </p>
+                          <p className="text-xs text-[#777784]">Created by</p>
                           <p className="mt-1 text-sm text-[#292934]">
                             {task.createdBy?.name ?? "Unknown"}
                           </p>
@@ -559,9 +500,7 @@ export default function TaskDetailModal({
                       </label>
                       <input
                         value={title}
-                        onChange={(event) =>
-                          setTitle(event.target.value)
-                        }
+                        onChange={(event) => setTitle(event.target.value)}
                         maxLength={200}
                         className={fieldClass}
                       />
@@ -573,13 +512,11 @@ export default function TaskDetailModal({
                       </label>
                       <textarea
                         value={description}
-                        onChange={(event) =>
-                          setDescription(event.target.value)
-                        }
+                        onChange={(event) => setDescription(event.target.value)}
                         rows={4}
                         maxLength={5000}
                         placeholder="Add a description..."
-                        className={`${fieldClass} resize-y`}
+                        className={`${fieldClass} min-h-24 resize-y sm:min-h-28`}
                       />
                     </div>
 
@@ -589,9 +526,7 @@ export default function TaskDetailModal({
                       </label>
                       <select
                         value={listId}
-                        onChange={(event) =>
-                          setListId(event.target.value)
-                        }
+                        onChange={(event) => setListId(event.target.value)}
                         className={fieldClass}
                       >
                         {lists.map((list) => (
@@ -609,17 +544,12 @@ export default function TaskDetailModal({
                       <select
                         value={priority}
                         onChange={(event) =>
-                          setPriority(
-                            event.target.value as TaskPriority,
-                          )
+                          setPriority(event.target.value as TaskPriority)
                         }
                         className={fieldClass}
                       >
                         {priorities.map((item) => (
-                          <option
-                            key={item.value}
-                            value={item.value}
-                          >
+                          <option key={item.value} value={item.value}>
                             {item.label}
                           </option>
                         ))}
@@ -632,17 +562,12 @@ export default function TaskDetailModal({
                       </label>
                       <select
                         value={assigneeId}
-                        onChange={(event) =>
-                          setAssigneeId(event.target.value)
-                        }
+                        onChange={(event) => setAssigneeId(event.target.value)}
                         className={fieldClass}
                       >
                         <option value="">Unassigned</option>
                         {members.map((item) => (
-                          <option
-                            key={item.userId}
-                            value={item.userId}
-                          >
+                          <option key={item.userId} value={item.userId}>
                             {item.user.name}
                           </option>
                         ))}
@@ -656,14 +581,12 @@ export default function TaskDetailModal({
                       <input
                         type="date"
                         value={dueDate}
-                        onChange={(event) =>
-                          setDueDate(event.target.value)
-                        }
+                        onChange={(event) => setDueDate(event.target.value)}
                         className={fieldClass}
                       />
                     </div>
 
-                    <div className="flex flex-wrap justify-end gap-2 border-t border-[#ECECE7] pt-4">
+                    <div className="flex flex-wrap justify-end gap-2 border-t border-[#ECECE7] bg-white py-4">
                       <Button
                         type="button"
                         variant="secondary"
@@ -680,10 +603,7 @@ export default function TaskDetailModal({
                         type="button"
                         onClick={handleSave}
                         disabled={
-                          saving ||
-                          deleting ||
-                          !title.trim() ||
-                          !listId
+                          saving || deleting || !title.trim() || !listId
                         }
                       >
                         {saving && (
@@ -697,8 +617,8 @@ export default function TaskDetailModal({
               </section>
 
               {/* Right: comments */}
-              <section className="flex min-h-[320px] min-w-0 flex-col border-t border-[#ECECE7] pt-5 md:min-h-[460px] md:border-l md:border-t-0 md:pl-5 md:pt-0">
-                <div className="flex items-center justify-between gap-2 border-b border-[#ECECE7] pb-4">
+              <section className="flex min-h-[360px] min-w-0 flex-col overflow-hidden border-t border-slate-200 md:min-h-0 md:border-l md:border-t-0">
+                <div className="flex h-[58px] shrink-0 items-center justify-between gap-2 border-b border-[#ECECE7] px-4 sm:px-6">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4 text-[#60467D]" />
                     <h3 className="text-sm font-semibold text-[#292934]">
@@ -723,7 +643,7 @@ export default function TaskDetailModal({
                   </button>
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto py-4">
+                <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-6">
                   {commentsLoading && comments.length === 0 ? (
                     <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#777784]">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -799,7 +719,7 @@ export default function TaskDetailModal({
 
                 <form
                   onSubmit={handlePostComment}
-                  className="border-t border-[#ECECE7] pt-4"
+                  className="shrink-0 border-t border-[#ECECE7] bg-white p-4 sm:p-5"
                 >
                   <div className="flex items-start gap-2.5">
                     <Avatar
@@ -811,9 +731,7 @@ export default function TaskDetailModal({
                     <div className="min-w-0 flex-1">
                       <textarea
                         value={commentText}
-                        onChange={(event) =>
-                          setCommentText(event.target.value)
-                        }
+                        onChange={(event) => setCommentText(event.target.value)}
                         onKeyDown={(event) => {
                           if (
                             event.key === "Enter" &&
